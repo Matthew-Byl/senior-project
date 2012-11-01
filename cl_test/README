@@ -1,3 +1,21 @@
 This is a unit and speed testing framework for OpenCL.
 
-Objectives:
+Objective: Enable TDD with OpenCL code.
+
+Tester, iteration 1: only correctness.
+======================================
+-Input: (1) Input data, (2) Output to compare against, (3) Source code for kernel, (3) Configuration
+-Either read from a config file or be a class itself.
+	-Advantage of class: parts that need customization can be overloaded.
+	-But have a command line version too (runopencl). This will be useful as a way to run an OpenCL kernel on the command line in general.
+
+JUnit: setUp(), tearDown()
+
+Sequence:
+  (1) Set up buffers. Can generate this programmatically or read them from files.
+  (2) For each platform and device,
+     a) Set up
+     b) Compile the 
+     b) Copy input buffers
+     c) Set kernel arguments
+     d) Run the ndrangekernel
