@@ -1,20 +1,26 @@
 #ifndef _CLUNIT_H
 #define _CLUNIT_H
 
+#include <iostream>
 #include <vector>
+
+#define __CL_ENABLE_EXCEPTIONS
 #include <CL/cl.hpp>
 
 class CLUnit
 {
 public:
-	CLUnit( std::string kernel, std::string src );
+	CLUnit( std::string function, std::string src );
+	CLUnit( std::string function, std::istream src );
+
 	void test();
 
 private:
 	/* Be careful to abstract anything that would be
 	   useful to overload into its own function. */
+	bool isVerbose = true;
 
-	std::string myKernel;
+	std::string myFunction;
 	std::string mySrc;
 
 /*
@@ -22,7 +28,7 @@ private:
 	void addBuffer();
 */
 
-	void testInContext( cl::Context ctx );
+	void testForDevice( cl::CommandQueue queue );
 /*	bool compareBuffers( bufferInfo 1, bufferInfo 2 ); */
 };
 
