@@ -16,10 +16,10 @@ string KernelGenerator::generate()
 	ret += "( ";
 
 	int i = 0;
-	for ( auto it : myArguments )
+	for ( auto &it : myArguments )
 	{
 		// global *someType arg3,
-		ret += "__global *" + it + " arg" + to_string( i ) + ", ";
+		ret += "__global *" + it.getType() + " arg" + to_string( i ) + ", ";
 		i++;
 	}
 
@@ -33,7 +33,7 @@ string KernelGenerator::generate()
 
 	ret += "\t" + myFunction + "( ";
 	i = 0;
-	for ( auto it : myArgumentTypes )
+	for ( auto &it : myArguments )
 	{
 		ret += "arg" + to_string( i ) + ", ";
 		i++;
@@ -50,13 +50,3 @@ string KernelGenerator::generate()
 	cout << ret << endl;
 	return ret;
 }
-
-/*
-int main ( void )
-{
-	KernelGenerator kg( "myFavouriteFunction" );
-	kg.addArgument( "Sphere" );
-	kg.addArgument( "SomeType" );
-	kg.generate();
-}
-*/

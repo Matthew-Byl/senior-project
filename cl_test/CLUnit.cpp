@@ -37,7 +37,7 @@ CLUnit::~CLUnit()
  */
 void CLUnit::test()
 {
-	KernelGenerator generator( myFunction );
+	KernelGenerator generator( myFunction, myArguments );
 
 	// Source doesn't depend on anything.
 	// For some reason, make_pair doesn't work. I have no clue why.

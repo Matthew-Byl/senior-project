@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "CLUnit.h"
 #include "CLUnitArgument.h"
 
 /*
@@ -19,7 +20,7 @@ public:
 
 private:
 	std::string myFunction;
-	std::vector<std::string> &myArguments;
+	std::vector<CLUnitArgument> &myArguments;
 };
 
 #endif
