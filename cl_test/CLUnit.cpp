@@ -6,6 +6,7 @@
  */
 
 #include "CLUnit.h"
+#include "KernelGenerator.h"
 using namespace std;
 
 CLUnit::CLUnit( string function, string src )
@@ -16,7 +17,7 @@ CLUnit::CLUnit( string function, string src )
 	mySrc = src;
 }
 
-CLUnit::CLUnit( string function, istream instream )
+CLUnit::CLUnit( string function, istream &instream )
 {
 	// Check to make sure non-empty?
 
@@ -26,12 +27,18 @@ CLUnit::CLUnit( string function, istream instream )
 	mySrc = string( istreambuf_iterator<char>( instream ), istreambuf_iterator<char>() );
 }
 
+CLUnit::~CLUnit()
+{
+}
+
 /*
  * Idea: run all the tests in parallell so we get
  *  done faster.
  */
 void CLUnit::test()
 {
+	KernelGenerator generator( myFunction );
+
 	// Source doesn't depend on anything.
 	// For some reason, make_pair doesn't work. I have no clue why.
 	cl::Program::Sources sources( 
@@ -59,7 +66,15 @@ void CLUnit::test()
 		cl::Context context( devices );
 		
 		cl::Program program( context, sources );
-		program.build( devices );
+		try {
+			program.build( devices );
+		} catch ( cl::Error err ) {
+			std::cout << "Build Status: " << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(devices[0]) << std::endl;
+			std::cout << "Build Options:\t" << program.getBuildInfo<CL_PROGRAM_BUILD_OPTIONS>(devices[0]) << std::endl;
+			std::cout << "Build Log:\t " << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(devices[0]) << std::endl;
+			return;
+		}
+
 		// Show error messages, if any.
 		
 		

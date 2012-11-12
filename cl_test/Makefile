@@ -1,4 +1,4 @@
-all: CLUnit.o main.o
+all: CLUnit.o main.o KernelGenerator.o CLUnitArgument.o
 	g++ -g *.o -o main -lOpenCL
 
 %.o: %.cpp
