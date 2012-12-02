@@ -22,3 +22,14 @@ std::string CLUnitIntArgument::getType()
 {
 	return "int";
 }
+
+void CLUnitIntArgument::enqueue( cl::CommandQueue &queue )
+{
+	queue.enqueueWriteBuffer(
+		myBuffer,
+		CL_TRUE,
+		0,
+		sizeof( cl_int ),
+		&myValue
+	);
+}

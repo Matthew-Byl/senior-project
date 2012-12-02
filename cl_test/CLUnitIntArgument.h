@@ -11,6 +11,7 @@ public:
 	CLUnitIntArgument( CLContext &context, cl_int value );
 	cl::Buffer &getBuffer();
 	std::string getType();
+	void enqueue( cl::CommandQueue &queue );
 	
 private:
 	cl_int myValue;

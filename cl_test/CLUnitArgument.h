@@ -21,6 +21,7 @@ public:
 //	virtual void updateFromBuffer( cl::Buffer &buffer ) = 0;
 	virtual cl::Buffer &getBuffer();
 	virtual std::string getType();
+	virtual void enqueue( cl::CommandQueue &queue ) { };
 
 	// operator == or compareWith().
 };
