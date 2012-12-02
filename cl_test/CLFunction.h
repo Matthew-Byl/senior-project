@@ -4,6 +4,7 @@
 #include "CLContext.h"
 #include "CLUnitArgument.h"
 #include "KernelGenerator.h"
+#include <iostream>
 
 /* Encapsulates an OpenCL function that can be called like normal code. */
 class CLFunction
@@ -48,6 +49,8 @@ T CLFunction::run( std::string type )
 	// Make those buffers arguments for the kernel.
 	for ( int i = 0; i < buffers.size(); i++ )
 	{
+		std::cout << "Setting argument " << i << std::endl;
+//		printf( "%x\n", buffers[i] );
 		kernel.setArg( i, buffers[i] );
 	}
 

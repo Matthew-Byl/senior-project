@@ -36,7 +36,7 @@ string KernelGenerator::generate()
 	ret += "\t*ret = " + myFunction + "( ";
 	for ( int i = 0; i < myArguments.size(); i++  )
 	{
-		ret += "arg" + to_string( i ) + ", ";
+		ret += "*arg" + to_string( i ) + ", ";
 	}	
 
 	// take off last comma.

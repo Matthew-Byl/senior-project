@@ -4,6 +4,7 @@
 const char *src = 
 	"int add_one( int i ) " \
 	"{" \
+	"   printf(\"From OpenCL: %d\\n\", i ); " \
 	"   return i + 1;" \
 	"}";
 

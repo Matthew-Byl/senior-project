@@ -4,7 +4,6 @@
 #include <string>
 #include <vector>
 
-#include "CLUnit.h"
 #include "CLUnitArgument.h"
 
 /*
