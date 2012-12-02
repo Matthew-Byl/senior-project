@@ -1,13 +1,18 @@
 #include "CLFunction.h"
+#include "CLUnitIntArgument.h"
 
 const char *src = 
-	"int add_one( int in ) " \
+	"int add_one( int i ) " \
 	"{" \
-	"   return in + 1;" \
+	"   return i + 1;" \
 	"}";
 
 int main( void )
 {
-	CLFunction add_one( "add_one", src );
+	CLContext context( 0, 0 );
+	CLFunction add_one( "add_one", src, context );
+	CLUnitIntArgument arg( context, 1 );
+
+	add_one.addArgument( arg );
 	add_one.run();
 }

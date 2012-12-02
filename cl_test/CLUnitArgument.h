@@ -1,6 +1,7 @@
 #ifndef _CL_UNIT_ARGUMENT
 #define _CL_UNIT_ARGUMENT
 
+#include "CLContext.h"
 #include <string>
 
 /*
