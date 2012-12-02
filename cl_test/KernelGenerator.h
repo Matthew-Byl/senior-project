@@ -17,6 +17,7 @@ class KernelGenerator
 public:
 	KernelGenerator( std::string function, std::vector<CLUnitArgument> &arguments );
 	std::string generate();
+	std::string getKernelFunction();
 
 private:
 	std::string myFunction;

@@ -1,12 +1,13 @@
-#include "CLUnit.h"
-#include "CLUnitValueArgument.h"
+#include "CLFunction.h"
 
 const char *src = 
-	"__kernel void someFunction( void ) "		\
-	"{  int i; i = 0; i++; } ";
+	"int add_one( int in ) " \
+	"{" \
+	"   return in + 1;" \
+	"}";
 
 int main( void )
 {
-	CLUnit test( "someFunction", src );
-	test.test();
+	CLFunction add_one( "add_one", src );
+	add_one.run();
 }

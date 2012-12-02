@@ -1,6 +1,8 @@
 #ifndef _CL_UNIT_ARGUMENT
 #define _CL_UNIT_ARGUMENT
 
+#include <string>
+
 /*
  * Types of arguments we'll eventually need to be able
  *  to handle:
@@ -16,8 +18,8 @@ class CLUnitArgument
 {
 public:
 //	virtual void updateFromBuffer( cl::Buffer &buffer ) = 0;
-	virtual cl::Buffer getBuffer() = 0;
-	virtual std::string getType() = 0;
+	virtual cl::Buffer &getBuffer();
+	virtual std::string getType();
 
 	// operator == or compareWith().
 };

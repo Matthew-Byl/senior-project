@@ -12,7 +12,7 @@ KernelGenerator::KernelGenerator( std::string function, std::vector<CLUnitArgume
 
 string KernelGenerator::generate()
 {
-	string ret = "__kernel run" + myFunction;
+	string ret = "__kernel void run" + myFunction;
 	ret += "( ";
 
 	int i = 0;
@@ -49,4 +49,9 @@ string KernelGenerator::generate()
 
 	cout << ret << endl;
 	return ret;
+}
+
+string KernelGenerator::getKernelFunction()
+{
+	return "run" + myFunction;
 }
