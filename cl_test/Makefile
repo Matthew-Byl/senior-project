@@ -1,4 +1,4 @@
-all: CLUnit.o main.o KernelGenerator.o CLFunction.o CLUnitArgument.o CLUnitIntArgument.o CLContext.o
+all: main.o KernelGenerator.o CLFunction.o CLUnitArgument.o CLUnitIntArgument.o CLContext.o
 	clang++ -g -L /opt/AMDAPP/lib/x86_64 *.o -o main -lOpenCL
 
 %.o: %.cpp

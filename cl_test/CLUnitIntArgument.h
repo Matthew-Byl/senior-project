@@ -9,8 +9,8 @@ class CLUnitIntArgument : public CLUnitArgument
 {
 public:
 	CLUnitIntArgument( CLContext &context, cl_int value );
-	virtual cl::Buffer &getBuffer();
-	virtual std::string getType();
+	cl::Buffer &getBuffer();
+	std::string getType();
 	
 private:
 	cl_int myValue;

@@ -8,15 +8,20 @@ CLFunction::CLFunction( std::string function, std::string kernel, CLContext &con
 
 }
 
-void CLFunction::addArgument( const CLUnitArgument &argument )
+void CLFunction::addArgument( CLUnitArgument &argument )
 {
-	myArguments.push_back( argument );
+	myArguments.push_back( &argument );
 }
 
 void CLFunction::run()
 {
 	KernelGenerator generator( myFunction, myArguments );
-	string src( myKernel + "\n" + generator.generate() );
+	string src( myKernel + "\n\n" + generator.generate() );
+
+	cout << "FULL SOURCE" << endl;
+	cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
+	cout << src << endl;
+	cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
 
 	cl::Program program = myContext.buildProgram( src );
 	cl::Kernel kernel(

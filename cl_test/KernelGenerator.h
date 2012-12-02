@@ -15,13 +15,13 @@
 class KernelGenerator
 {
 public:
-	KernelGenerator( std::string function, std::vector<CLUnitArgument> &arguments );
+	KernelGenerator( std::string function, std::vector<CLUnitArgument*> &arguments );
 	std::string generate();
 	std::string getKernelFunction();
 
 private:
 	std::string myFunction;
-	std::vector<CLUnitArgument> &myArguments;
+	std::vector<CLUnitArgument*> &myArguments;
 };
 
 #endif

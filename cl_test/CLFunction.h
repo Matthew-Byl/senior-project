@@ -9,11 +9,11 @@ class CLFunction
 {
 public:
 	CLFunction( std::string function, std::string kernel, CLContext &context );
-	void addArgument( const CLUnitArgument &argument );
+	void addArgument( CLUnitArgument &argument );
 	void run();
 private:
 	CLContext &myContext;
-	std::vector<CLUnitArgument> myArguments;
+	std::vector<CLUnitArgument*> myArguments;
 	std::string myFunction;
 	std::string myKernel;
 };
