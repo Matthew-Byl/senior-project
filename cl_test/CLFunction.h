@@ -1,7 +1,7 @@
 #ifndef _CL_FUNCTION_H
 #define _CL_FUNCTION_H
 
-#include "CLContext.cpp"
+#include "CLContext.h"
 #include "CLUnitArgument.h"
 
 /* Encapsulates an OpenCL function that can be called like normal code. */
