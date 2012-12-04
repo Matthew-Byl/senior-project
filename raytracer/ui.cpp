@@ -9,8 +9,8 @@
 #include <fstream>
 using namespace std;
 
-#define SIZEX 100
-#define SIZEY 150
+#define SIZEX 700
+#define SIZEY 500
 #define PIXEL_BUFFER_SIZE SIZEX * SIZEY * 4
 GdkPixbuf *gdk_pixel_buffer;
 //unsigned char pixel_buffer[PIXEL_BUFFER_SIZE];
@@ -103,8 +103,9 @@ int main( int argc, char *argv[] )
 		0,
 		cl_pixel_buffer );
 
-//	run_kernel();
+	run_kernel();
 
+/*
 	unsigned char *pb = gdk_pixbuf_get_pixels( gdk_pixel_buffer );
 	printf( "%d\n", gdk_pixbuf_get_rowstride (gdk_pixel_buffer) );
 	for ( int i = 0; i < SIZEX; i++ )
@@ -119,6 +120,7 @@ int main( int argc, char *argv[] )
 			px[3] = 255;
 		}
 	}
+*/
 
 	// Initialize UI
 	GtkWidget *window;
