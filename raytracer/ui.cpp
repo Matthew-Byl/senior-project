@@ -1,22 +1,53 @@
 #include <gtk/gtk.h>
 
-#define __OPENCL_ENABLE_EXCEPTIONS
+#define __CL_ENABLE_EXCEPTIONS
 #include <CL/cl.hpp>
 
 #include <string>
+#include <iostream>
 #include <vector>
 #include <fstream>
 using namespace std;
 
-unsigned char pixel_buffer[500*500];
+#define SIZEX 2
+#define SIZEY 3
+#define PIXEL_BUFFER_SIZE SIZEX * SIZEY * 4
+unsigned char pixel_buffer[PIXEL_BUFFER_SIZE];
 cl::Context context;
 cl::CommandQueue queue;
 cl::Kernel kernel;
+cl::Buffer cl_pixel_buffer;
 vector<cl::Device> devices;
 
 void run_kernel()
 {
-	
+	cl::NDRange globalWorkSize( SIZEX, SIZEY );
+	queue.enqueueNDRangeKernel(
+		kernel,
+		cl::NullRange,
+		globalWorkSize,
+		cl::NullRange,
+		NULL,
+		NULL );
+
+	queue.enqueueReadBuffer(
+		cl_pixel_buffer,
+		CL_TRUE,
+		0,
+		sizeof(unsigned char) * PIXEL_BUFFER_SIZE,
+		pixel_buffer,
+		NULL,
+		NULL );
+
+	for ( int i = 0; i < PIXEL_BUFFER_SIZE; i++ )
+		printf( "%d ", pixel_buffer[i] );
+
+	printf( "\n" );
+}
+
+static void clicked( GtkWidget *widget, gpointer data )
+{
+	run_kernel();
 }
 
 int main( int argc, char *argv[] )
@@ -43,15 +74,31 @@ int main( int argc, char *argv[] )
 		context,
 		sources );
 
-	program.build(
-		devices,
-		NULL,
-		NULL,
-		NULL );
+	try {
+		program.build( devices );
+	} catch ( cl::Error err ) {
+		std::cout << "Build Status: " << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(devices[0]) << std::endl;
+		std::cout << "Build Options:\t" << program.getBuildInfo<CL_PROGRAM_BUILD_OPTIONS>(devices[0]) << std::endl;
+		std::cout << "Build Log:\t " << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(devices[0]) << std::endl;
+		return 1;
+	}
 
 	kernel = cl::Kernel(
 		program,
 		"raytrace" );
+
+	cl_pixel_buffer = cl::Buffer(
+		context,
+		CL_MEM_READ_WRITE,
+		sizeof( unsigned char ) * PIXEL_BUFFER_SIZE,
+		NULL
+	);
+
+	kernel.setArg(
+		0,
+		cl_pixel_buffer );
+
+	run_kernel();
 
 	// Initialize UI
 	GtkWidget *window;
@@ -61,6 +108,8 @@ int main( int argc, char *argv[] )
 	
 	window = gtk_window_new( GTK_WINDOW_TOPLEVEL );
 	button = gtk_button_new_with_label( "Hello, world!" );
+
+	g_signal_connect( button, "clicked", G_CALLBACK( clicked ), NULL );
 
 	gtk_container_add( GTK_CONTAINER( window ), button );
 	gtk_widget_show( button );
