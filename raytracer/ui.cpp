@@ -9,10 +9,11 @@
 #include <fstream>
 using namespace std;
 
-#define SIZEX 2
-#define SIZEY 3
+#define SIZEX 100
+#define SIZEY 150
 #define PIXEL_BUFFER_SIZE SIZEX * SIZEY * 4
-unsigned char pixel_buffer[PIXEL_BUFFER_SIZE];
+GdkPixbuf *gdk_pixel_buffer;
+//unsigned char pixel_buffer[PIXEL_BUFFER_SIZE];
 cl::Context context;
 cl::CommandQueue queue;
 cl::Kernel kernel;
@@ -35,23 +36,27 @@ void run_kernel()
 		CL_TRUE,
 		0,
 		sizeof(unsigned char) * PIXEL_BUFFER_SIZE,
-		pixel_buffer,
+		gdk_pixbuf_get_pixels( gdk_pixel_buffer ),
 		NULL,
 		NULL );
 
-	for ( int i = 0; i < PIXEL_BUFFER_SIZE; i++ )
-		printf( "%d ", pixel_buffer[i] );
+//	for ( int i = 0; i < PIXEL_BUFFER_SIZE; i++ )
+//		printf( "%d ", gdk_pixbuf_get_pixels( gdk_pixel_buffer)[i] );
 
-	printf( "\n" );
+//	printf( "\n" );
 }
 
 static void clicked( GtkWidget *widget, gpointer data )
 {
-	run_kernel();
+//	run_kernel();
+	gtk_image_set_from_pixbuf( GTK_IMAGE( data ), gdk_pixel_buffer );
 }
 
 int main( int argc, char *argv[] )
 {
+	gtk_init( &argc, &argv );
+	gdk_pixel_buffer = gdk_pixbuf_new( GDK_COLORSPACE_RGB, TRUE, 8, SIZEX, SIZEY );
+
 	// Initialize OpenCL
 	vector<cl::Platform> platforms;
 	cl::Platform::get( &platforms );
@@ -98,22 +103,41 @@ int main( int argc, char *argv[] )
 		0,
 		cl_pixel_buffer );
 
-	run_kernel();
+//	run_kernel();
+
+	unsigned char *pb = gdk_pixbuf_get_pixels( gdk_pixel_buffer );
+	printf( "%d\n", gdk_pixbuf_get_rowstride (gdk_pixel_buffer) );
+	for ( int i = 0; i < SIZEX; i++ )
+	{
+		for ( int j = 0; j < SIZEY; j++ )
+		{
+			unsigned char *px = pb + ( SIZEX * j * 4 ) + ( i * 4 );
+
+			px[0] = 0;
+			px[1] = 0;
+			px[2] = 255;
+			px[3] = 255;
+		}
+	}
 
 	// Initialize UI
 	GtkWidget *window;
 	GtkWidget *button;
-
-	gtk_init( &argc, &argv );
+	GtkWidget *image;
+	GtkWidget *vbox;
 	
 	window = gtk_window_new( GTK_WINDOW_TOPLEVEL );
 	button = gtk_button_new_with_label( "Hello, world!" );
+	image = gtk_image_new_from_pixbuf( gdk_pixel_buffer );
+	vbox = gtk_vbox_new( FALSE, 10 );
 
-	g_signal_connect( button, "clicked", G_CALLBACK( clicked ), NULL );
+	g_signal_connect( button, "clicked", G_CALLBACK( clicked ), (gpointer) image );
 
-	gtk_container_add( GTK_CONTAINER( window ), button );
-	gtk_widget_show( button );
-	gtk_widget_show( window );
+	gtk_container_add( GTK_CONTAINER( vbox ), image );
+	gtk_container_add( GTK_CONTAINER( vbox ), button );
+	gtk_container_add( GTK_CONTAINER( window ), vbox );
+
+	gtk_widget_show_all( window );
 
 	gtk_main();
 
