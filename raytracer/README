@@ -1,0 +1,20 @@
+What I promised Plantinga:
+
+Prof. Plantinga,
+
+We talked about how an OpenCL raytracer would be sufficient as an honors project. Here's what I think a reasonably-sized project would include:
+
+    Cube, sphere, and plane geometries
+    Coloured and mirrored surfaces
+    Optional fog for distance
+    Saving in some well-known graphics format like PNG
+
+I propose a due date of Dec. 14, since that will let me use some otherwise dead time during exam week to work on it.
+
+Does this sound reasonable? Do we have to do any paperwork yet?
+
+John,
+
+Yes, that sounds appropriate. I would add some kind of real-time display of a changing environment, if possible -- simply generating a ray-traced scene in a fraction of a second doesn't make for a very interesting demonstration.
+
+Prof. Plantinga
