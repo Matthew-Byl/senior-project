@@ -1,3 +1,4 @@
+#pragma OPENCL EXTENSION cl_amd_printf : enable
 #define NUM_CHANNELS 4
 #include "objects.h"
 
@@ -135,6 +136,22 @@ int closest_object(
 	return min_object;
 }
 
+/*
+float get_normal(
+	float3 camera_position,
+	float3 camera_direction,
+	Object object )
+{
+
+}	
+
+// Shadows, specular, ambient, diffuse, etc.
+float compute_lighting( float3 position, float3 normal, int3 colour )
+{
+
+}
+*/
+
 __kernel void raytrace( 
 	__global uchar4 *pixbuf )
 //	__global float3 *camera_position,
@@ -143,9 +160,9 @@ __kernel void raytrace(
 {
 	Object world[1];
 	world[0].colour = (int3)( 255, 0, 0 );
-	world[0].type = PLANE_TYPE;
+	world[0].type = SPHERE_TYPE;
 	world[0].position = (float3)(0,0,0);
-	world[0].objects.plane.normal = (float3)(0,0,1);
+	world[0].objects.sphere.radius = 1;
 
 	int num_objects = 1;
 	float3 camera_position = (float3)( -3, 0, 1 );
@@ -165,16 +182,20 @@ __kernel void raytrace(
 		&distance,
 		world
 	);
-	
-//	printf( "Closest object (%d, %d): %d\n", x, y, closest );
 
-	if (distance > 255 )
-		distance = 255;
+//	printf( "Distance: %f\n", distance );
 
 	if ( closest == -1 )
 		set_pixel( pixbuf, 0, 0, 0 );
 	else
+	{
+		distance -= 2;
+		distance *= 200;
+
+		if ( distance > 255 )
+			distance = 255;
 		set_pixel( pixbuf, 255 - distance, 255, 255 );
+	}
 }
 
 /*
@@ -205,3 +226,4 @@ __kernel void raytrace( __global uchar4 *pixbuf )
 	(*pixel).w = 255;
 }
 */
+

@@ -99,7 +99,7 @@ int main( int argc, char *argv[] )
 	vector<cl::Platform> platforms;
 	cl::Platform::get( &platforms );
 
-    platforms[0].getDevices( CL_DEVICE_TYPE_CPU, &devices );
+    platforms[0].getDevices( CL_DEVICE_TYPE_GPU, &devices );
 
     context = cl::Context( devices, NULL, NULL, NULL );
     queue = cl::CommandQueue( context, devices[0], 0 );
