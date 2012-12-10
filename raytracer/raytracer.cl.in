@@ -1,0 +1,45 @@
+#define NUM_CHANNELS 4
+#include "objects.h"
+
+float3 get_ray_direction( size_t x, size_t num_x, size_t y, size_t num_y )
+{
+	float xFrac = (float) x / (float) num_x;
+	float yFrac = (float) y / (float) num_y;
+
+	float3 direction = (float3)( 1.0, -(xFrac - 0.5), -(yFrac - 0.5) );
+	return normalize( direction );
+}
+
+__kernel void raytrace2( 
+	__global uchar4 *pixbuf,
+	float4 camera_position)
+{
+
+}
+
+__kernel void raytrace( __global uchar4 *pixbuf )
+{
+	size_t x = get_global_id( 0 );
+	size_t y = get_global_id( 1 );
+
+	// Important for stride.
+	size_t num_x = get_global_size( 0 );
+	size_t num_y = get_global_size( 1 );
+
+	float3 dir = get_ray_direction( x, num_x, y, num_y );
+//	printf( "%d %d: %f %f %f\n", x, y, dir.x, dir.y, dir.z );
+
+	// set to red.
+	__global uchar4 *pixel = pixbuf + ( y * num_x ) + x;
+//	printf( "x, y: %d %d Pixel address: %d %d\n", x, y, pixel, num_y );
+
+	if ( x % 2 == 0 )
+		(*pixel).x = 0;
+	else
+		(*pixel).x = 255;
+	(*pixel).y = 255;
+	(*pixel).z = 0;
+
+	// 255 is no transparency.
+	(*pixel).w = 255;
+}
