@@ -10,13 +10,174 @@ float3 get_ray_direction( size_t x, size_t num_x, size_t y, size_t num_y )
 	return normalize( direction );
 }
 
-__kernel void raytrace2( 
-	__global uchar4 *pixbuf,
-	float4 camera_position)
+void set_pixel( __global uchar4 *pixbuf, uchar r, uchar g, uchar b )
 {
+	size_t x = get_global_id( 0 );
+	size_t y = get_global_id( 1 );
+	size_t num_x = get_global_size( 0 );
 
+	__global uchar4 *pixel = pixbuf + ( y * num_x ) + x;
+	(*pixel).x = r;
+	(*pixel).y = g;
+	(*pixel).z = b;
+	(*pixel).w = 255;
 }
 
+float sphere_get_distance(
+	float3 camera_position,
+	float3 camera_direction,
+	Object object )
+{
+	// v = camera_position - sphere_position;
+	float3 v = camera_position - object.position;
+	float v_dot_d = dot( v, camera_direction );
+	
+	float r = object.objects.sphere.radius;
+
+	// I don't know if this is correct or not.
+	float v_len = length( v );
+	float discriminant = ( v_dot_d * v_dot_d ) - ( ( v_len * v_len ) - ( r * r ) );
+	
+	// No intersection.
+	if ( discriminant < 0 )
+	{
+		return -1;
+	}
+
+	float intersect_1 = -v_dot_d + sqrt( discriminant );
+	float intersect_2 = -v_dot_d - sqrt( discriminant );
+	float min_intersect = min( intersect_1, intersect_2 );
+
+	float3 intersection_point = camera_position + ( min_intersect * camera_direction );
+	return distance( camera_position, intersection_point );
+}
+
+float plane_get_distance(
+	float3 camera_position,
+	float3 camera_direction,
+	Object object )
+{
+	// point on the plane:
+	float3 point = object.position;
+	float3 normal = object.objects.plane.normal;
+
+//	printf( "Normal: %f %f %f\n", normal.x, normal.y, normal.z );
+
+	float numerator = dot( point - camera_position, normal );
+	float denominator = dot( camera_direction, normal );
+
+	// If either numerator or denominator 0, then we either
+	//  never intersect or always intersect the plane, so
+	//  don't show it.
+	if ( numerator == 0 || denominator == 0 )
+		return -1;
+	
+	float3 position = camera_position + ( numerator / denominator) * camera_direction;
+
+//	printf( "Intersection: %f %f %f\n", position.x, position.y, position.z );
+
+	return distance( camera_position, position );
+}
+
+float get_distance( 
+	float3 camera_position,
+	float3 camera_direction,
+	Object object )
+{
+	if ( object.type == SPHERE_TYPE )
+	{
+		return sphere_get_distance(
+			camera_position,
+			camera_direction,
+			object
+		);
+	}
+	else if ( object.type == PLANE_TYPE )
+	{
+		return plane_get_distance(
+			camera_position,
+			camera_direction,
+			object
+		);
+	}
+
+	return -1;
+}
+
+// Returns index of closest object, or -1 if none;
+int closest_object( 
+	float3 camera_position,
+	float3 camera_direction,
+	int num_objects,
+	float *distance,
+	Object *world )
+{
+	float min_distance = 1000000000;
+	int min_object = -1;
+
+	for ( int i = 0; i < num_objects; i++ )
+	{
+		float distance = get_distance(
+			camera_position,
+			camera_direction,
+			world[i]
+		);
+
+		if ( distance > 0
+			 && distance < min_distance )
+		{
+			min_distance = distance;
+			min_object = i;
+		}
+	}
+
+	*distance = min_distance;
+	return min_object;
+}
+
+__kernel void raytrace( 
+	__global uchar4 *pixbuf )
+//	__global float3 *camera_position,
+//	__global int *num_objects,
+//	__global Object *world )
+{
+	Object world[1];
+	world[0].colour = (int3)( 255, 0, 0 );
+	world[0].type = PLANE_TYPE;
+	world[0].position = (float3)(0,0,0);
+	world[0].objects.plane.normal = (float3)(0,0,1);
+
+	int num_objects = 1;
+	float3 camera_position = (float3)( -3, 0, 1 );
+
+	// Get information about our relative position.
+	size_t x = get_global_id( 0 );
+	size_t y = get_global_id( 1 );
+	size_t num_x = get_global_size( 0 );
+	size_t num_y = get_global_size( 1 );	
+
+	float3 camera_direction = get_ray_direction( x, num_x, y, num_y );
+	float distance;
+	int closest = closest_object( 
+		camera_position,
+		camera_direction,
+		num_objects,
+		&distance,
+		world
+	);
+	
+//	printf( "Closest object (%d, %d): %d\n", x, y, closest );
+
+	if (distance > 255 )
+		distance = 255;
+
+	if ( closest == -1 )
+		set_pixel( pixbuf, 0, 0, 0 );
+	else
+		set_pixel( pixbuf, 255 - distance, 255, 255 );
+}
+
+/*
 __kernel void raytrace( __global uchar4 *pixbuf )
 {
 	size_t x = get_global_id( 0 );
@@ -43,3 +204,4 @@ __kernel void raytrace( __global uchar4 *pixbuf )
 	// 255 is no transparency.
 	(*pixel).w = 255;
 }
+*/

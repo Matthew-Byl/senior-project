@@ -15,8 +15,8 @@
 #include <fstream>
 using namespace std;
 
-#define SIZEX 10
-#define SIZEY 15
+#define SIZEX 700
+#define SIZEY 700
 #define PIXEL_BUFFER_SIZE SIZEX * SIZEY * 4
 GdkPixbuf *gdk_pixel_buffer;
 //unsigned char pixel_buffer[PIXEL_BUFFER_SIZE];
@@ -99,7 +99,7 @@ int main( int argc, char *argv[] )
 	vector<cl::Platform> platforms;
 	cl::Platform::get( &platforms );
 
-    platforms[0].getDevices( CL_DEVICE_TYPE_GPU, &devices );
+    platforms[0].getDevices( CL_DEVICE_TYPE_CPU, &devices );
 
     context = cl::Context( devices, NULL, NULL, NULL );
     queue = cl::CommandQueue( context, devices[0], 0 );

@@ -18,9 +18,14 @@ typedef struct {
 	float intensity;
 } Light;
 
+typedef struct {
+	FLOAT3_T normal;
+} Plane;
+
 /* Object types */
 #define SPHERE_TYPE 0
-#define LIGHT_TYPE 1
+#define PLANE_TYPE 1
+#define LIGHT_TYPE 2
 
 typedef struct {
 	INT3_T colour;
@@ -29,6 +34,7 @@ typedef struct {
 	union {
 		Sphere sphere;
 		Light light;
+		Plane plane;
 	} objects;
 } Object;
 
