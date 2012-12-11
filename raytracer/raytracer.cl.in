@@ -28,6 +28,7 @@ float sphere_get_distance(
 	float3 camera_position,
 	float3 camera_direction,
 	float3 *normal,
+	float3 *intersect,
 	Object object )
 {
 	// v = camera_position - sphere_position;
@@ -56,8 +57,10 @@ float sphere_get_distance(
 
 	float3 intersection_point = camera_position + ( min_intersect * camera_direction );
 
+	// Is there a divide-by-zero?
 	*normal = intersection_point - object.position / 
 		fabs( intersection_point - object.position );
+	*intersect = intersection_point;
 
 	return distance( camera_position, intersection_point );
 }
@@ -66,6 +69,7 @@ float plane_get_distance(
 	float3 camera_position,
 	float3 camera_direction,
 	float3 *normal,
+	float3 *intersect,
 	Object object )
 {
 	// point on the plane:
@@ -97,7 +101,8 @@ float plane_get_distance(
 		+ ( ( numerator / denominator) * camera_direction );
 
 //	printf( "Intersection: %f %f %f\n", position.x, position.y, position.z );
-
+	
+	*intersect = position;
 	*normal = p_normal;
 	return distance( camera_position, position );
 }
@@ -106,6 +111,7 @@ float get_distance(
 	float3 camera_position,
 	float3 camera_direction,
 	float3 *normal,
+	float3 *intersect,
 	Object object )
 {
 	if ( object.type == SPHERE_TYPE )
@@ -114,6 +120,7 @@ float get_distance(
 			camera_position,
 			camera_direction,
 			normal,
+			intersect,
 			object
 		);
 	}
@@ -123,6 +130,7 @@ float get_distance(
 			camera_position,
 			camera_direction,
 			normal,
+			intersect,
 			object
 		);
 	}
@@ -137,17 +145,21 @@ int closest_object(
 	int num_objects,
 	float *distance,
 	float3 *normal,
+	float3 *intersect,
 	__global Object *world )
 {
 	float min_distance = 1000000000;
 	int min_object = -1;
+	float3 min_normal;
 
 	for ( int i = 0; i < num_objects; i++ )
 	{
+		float3 normal_t;
 		float distance = get_distance(
 			camera_position,
 			camera_direction,
-			normal,
+			&normal_t,
+			intersect,
 			world[i]
 		);
 
@@ -156,59 +168,74 @@ int closest_object(
 		{
 			min_distance = distance;
 			min_object = i;
+			min_normal = normal_t;
 		}
 	}
 
+	*normal = min_normal;
 	*distance = min_distance;
 	return min_object;
 }
 
 // Shadows, specular, ambient, diffuse, etc.
-#define L_AMBIENT 0.5
-uchar3 compute_lighting( float3 position, float3 normal, uchar3 colour, float distance )
+#define L_AMBIENT 0.5f
+#define DIFFUSE_ATTENUATION 2.0f
+uchar3 compute_lighting( 
+	__global Light *lights, 
+	int num_lights,
+	float3 camera_position,
+	float3 camera_direction,
+	float3 position, 
+	float3 normal, 
+	uchar3 colour, 
+	float object_distance )
 {
-	float distance_factor = 0.05 * distance;
+	float3 f_colour;
+	f_colour.x = (float) colour.x;
+	f_colour.y = (float) colour.y;
+	f_colour.z = (float) colour.z;
+
+	// Fog
+	float distance_factor = 0.05 * object_distance;
 	if ( distance_factor > 1 )
 		distance_factor = 1;
 	float3 fog = (float3)( 128, 128, 128 ) * distance_factor;
 
-	float3 f_ambient;
-	f_ambient.x = L_AMBIENT * (float) colour.x;
-	f_ambient.y = L_AMBIENT * (float) colour.y;
-	f_ambient.z = L_AMBIENT * (float) colour.z;
+	// Ambient
+	float3 f_ambient = L_AMBIENT * f_colour;
 
-	f_ambient -= fog;
+	// Diffuse
+	float3 f_diffuse = (float3)(0,0,0);
+	for ( int i = 0; i < num_lights; i++ )
+	{
+		// TODO: See whether light blocked.
 
-	return (uchar3)( f_ambient.x, f_ambient.y, f_ambient.z );
+		float light_distance = fabs( distance( position, lights[i].position ) );
+		float3 light_vector = position - lights[i].position;
+
+		float angle = dot( light_vector, normal );
+
+		f_diffuse += f_colour * angle
+			* pow( 1 / light_distance, DIFFUSE_ATTENUATION );
+	}
+	
+//	float3 light = f_ambient + f_diffuse - fog;
+	float3 light = f_ambient + f_diffuse;
+
+	float3 clamped_light = fmin( light, (float3)( 255, 255, 255 ) );
+
+	return (uchar3)( clamped_light.x, clamped_light.y, clamped_light.z );
 }
-
-
-float3 sphere_get_normal(
-	float3 camera_position,
-	float3 camera_direction,
-	Object object )
-{
-	return ( float3 )( 0, 0, 0 );
-}
-
-float3 get_normal(
-	float3 camera_position,
-	float3 camera_direction,
-	Object object )
-{
-	return ( float3 )( 0, 0, 0 );
-}	
 
 __kernel void raytrace( 
 	__global uchar4 *pixbuf,
 	__global Object *objects,
 	__global Light *lights,
-	__global float3 *camera_position )
+	__global float3 *camera_position,
+	__global int *num_objects )
 //	__global float3 *camera_position,
 //	__global int *num_objects,
 {
-	int num_objects = 3;
-
 	// Get information about our relative position.
 	size_t x = get_global_id( 0 );
 	size_t y = get_global_id( 1 );
@@ -218,12 +245,14 @@ __kernel void raytrace(
 	float3 camera_direction = get_ray_direction( x, num_x, y, num_y );
 	float distance;
 	float3 normal;
+	float3 intersect;
 	int closest = closest_object( 
 		*camera_position,
 		camera_direction,
-		num_objects,
+		*num_objects,
 		&distance,
 		&normal,
+		&intersect,
 		objects
 	);
 
@@ -234,7 +263,11 @@ __kernel void raytrace(
 	else
 	{
 		uchar3 colour = compute_lighting(
-			objects[closest].position,
+			lights,
+			1,
+			*camera_position,
+			camera_direction,
+			intersect,
 			normal,
 			objects[closest].colour,
 			distance

@@ -30,6 +30,7 @@ cl_float3 camera_position;
 GtkWidget *camera_x;
 GtkWidget *camera_y;
 GtkWidget *camera_z;
+GtkWidget *light_y;
 GtkWidget *image;
 
 void run_tests()
@@ -67,34 +68,37 @@ void run_kernel()
 	objects[0].colour.s[1] = 0;
 	objects[0].colour.s[2] = 0;
 	objects[0].type = SPHERE_TYPE;
-	objects[0].position.s[0] = 1;
-	objects[0].position.s[1] = 0;
+	objects[0].position.s[0] = 0;
+	objects[0].position.s[1] = -1;
 	objects[0].position.s[2] = 0;
 	objects[0].objects.sphere.radius = 0.5;
 
-	objects[2].colour.s[0] = 255;
-	objects[2].colour.s[1] = 0;
-	objects[2].colour.s[2] = 0;
-	objects[2].type = SPHERE_TYPE;
-	objects[2].position.s[0] = -1;
-	objects[2].position.s[1] = 0;
-	objects[2].position.s[2] = 2;
-	objects[2].objects.sphere.radius = 0.5;
-
-	objects[1].colour.s[0] = 0;
+	objects[1].colour.s[0] = 255;
 	objects[1].colour.s[1] = 255;
 	objects[1].colour.s[2] = 0;
-	objects[1].type = PLANE_TYPE;
-	objects[1].position.s[0] = 0;
-	objects[1].position.s[1] = 0;
-	objects[1].position.s[2] = -1;
-	objects[1].objects.plane.normal.s[0] = 0;
-	objects[1].objects.plane.normal.s[1] = 0;
-	objects[1].objects.plane.normal.s[2] = 1;
-	
-	light.position.s[0] = 10;
-	light.position.s[1] = 10;
-	light.position.s[2] = 10;
+	objects[1].type = SPHERE_TYPE;
+	objects[1].position.s[0] = -3;
+	objects[1].position.s[1] = gtk_range_get_value( GTK_RANGE( light_y ) );
+	objects[1].position.s[2] = 2;
+	objects[1].objects.sphere.radius = 0.4;
+
+	if ( NUM_OBJECTS > 2 )
+	{
+		objects[2].colour.s[0] = 0;
+		objects[2].colour.s[1] = 255;
+		objects[2].colour.s[2] = 0;
+		objects[2].type = PLANE_TYPE;
+		objects[2].position.s[0] = 0;
+		objects[2].position.s[1] = 0;
+		objects[2].position.s[2] = -1;
+		objects[2].objects.plane.normal.s[0] = 0;
+		objects[2].objects.plane.normal.s[1] = 0;
+		objects[2].objects.plane.normal.s[2] = 1;	
+	}
+
+	light.position.s[0] = -3;
+	light.position.s[1] = gtk_range_get_value( GTK_RANGE( light_y ) );;
+	light.position.s[2] = 2;
 
 	cl::Buffer cl_objects(
 		context,
@@ -156,6 +160,26 @@ void run_kernel()
 		cl_camera
 	);	
 
+	int num_objects = NUM_OBJECTS;
+	cl::Buffer cl_num_objects(
+		context,
+		CL_MEM_READ_ONLY,
+		sizeof( cl_int ),
+		NULL
+		);
+	queue.enqueueWriteBuffer(
+		cl_num_objects,
+		CL_TRUE,
+		0,
+		sizeof( num_objects ),
+		&num_objects,
+		NULL,
+		NULL
+	);
+	kernel.setArg(
+		4,
+		cl_num_objects
+	);	
 
 	cl::NDRange globalWorkSize( SIZEX, SIZEY );
 	queue.enqueueNDRangeKernel(
@@ -183,15 +207,12 @@ void run_kernel()
 
 static void clicked( GtkWidget *widget, gpointer data )
 {
-	clock_t start = clock();
-	for ( int i = 0; i < 100000; i++ )
+	for ( int i = 0; i < 10; i++ )
 	{
 		run_kernel();
-//		gtk_image_set_from_pixbuf( GTK_IMAGE( data ), gdk_pixel_buffer );
+		gtk_image_set_from_pixbuf( GTK_IMAGE( image ), gdk_pixel_buffer );
+		usleep( 1000 );
 	}
-	clock_t end = clock();
-
-	printf( "Took %d for 60.\n", end - start );
 }
 
 static void destroy( GtkWidget *widget,
@@ -278,9 +299,6 @@ int main( int argc, char *argv[] )
 		0,
 		cl_pixel_buffer );
 
-	run_kernel();
-
-
 	// Initialize UI
 	GtkWidget *window;
 	GtkWidget *button;
@@ -288,26 +306,35 @@ int main( int argc, char *argv[] )
 	
 	window = gtk_window_new( GTK_WINDOW_TOPLEVEL );
 	button = gtk_button_new_with_label( "Hello, world!" );
+
+	light_y = gtk_hscale_new_with_range(
+		-30,
+		30,
+		0.1 );
+	gtk_range_set_value( GTK_RANGE( light_y ), 0 );
+	g_signal_connect( light_y, "value-changed", G_CALLBACK( move_camera ), NULL );
+
+	run_kernel();
 	image = gtk_image_new_from_pixbuf( gdk_pixel_buffer );
 	vbox = gtk_vbox_new( FALSE, 10 );
 
 	camera_x = gtk_hscale_new_with_range(
-		-10,
-		10,
+		-30,
+		30,
 		0.1 );
 	gtk_range_set_value( GTK_RANGE( camera_x ), 0 );
 	g_signal_connect( camera_x, "value-changed", G_CALLBACK( move_camera ), NULL );
 
 	camera_y = gtk_hscale_new_with_range(
-		-10,
-		10,
+		-30,
+		30,
 		0.1 );
 	gtk_range_set_value( GTK_RANGE( camera_y ), 0 );
 	g_signal_connect( camera_y, "value-changed", G_CALLBACK( move_camera ), NULL );
 
 	camera_z = gtk_hscale_new_with_range(
-		-10,
-		10,
+		-30,
+		30,
 		0.1 );
 	gtk_range_set_value( GTK_RANGE( camera_z ), 0 );
 	g_signal_connect( camera_z, "value-changed", G_CALLBACK( move_camera ), NULL );
@@ -321,6 +348,7 @@ int main( int argc, char *argv[] )
 	gtk_container_add( GTK_CONTAINER( vbox ), camera_x );
 	gtk_container_add( GTK_CONTAINER( vbox ), camera_y );
 	gtk_container_add( GTK_CONTAINER( vbox ), camera_z );
+	gtk_container_add( GTK_CONTAINER( vbox ), light_y );
 	gtk_container_add( GTK_CONTAINER( window ), vbox );
 
 	gtk_widget_show_all( window );

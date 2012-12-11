@@ -18,7 +18,7 @@ typedef struct {
 
 typedef struct {
 	FLOAT3_T position;
-	float intensity;
+//	float intensity;
 } Light;
 
 typedef struct {
