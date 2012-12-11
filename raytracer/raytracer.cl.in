@@ -151,15 +151,17 @@ int closest_object(
 	float min_distance = 1000000000;
 	int min_object = -1;
 	float3 min_normal;
+	float3 min_intersect;
 
 	for ( int i = 0; i < num_objects; i++ )
 	{
 		float3 normal_t;
+		float3 intersect_t;
 		float distance = get_distance(
 			camera_position,
 			camera_direction,
 			&normal_t,
-			intersect,
+			&intersect_t,
 			world[i]
 		);
 
@@ -169,10 +171,12 @@ int closest_object(
 			min_distance = distance;
 			min_object = i;
 			min_normal = normal_t;
+			min_intersect = intersect_t;
 		}
 	}
 
 	*normal = min_normal;
+	*intersect = min_intersect;
 	*distance = min_distance;
 	return min_object;
 }
