@@ -25,6 +25,12 @@ cl::CommandQueue queue;
 cl::Kernel kernel;
 cl::Buffer cl_pixel_buffer;
 vector<cl::Device> devices;
+cl_float3 camera_position;
+
+GtkWidget *camera_x;
+GtkWidget *camera_y;
+GtkWidget *camera_z;
+GtkWidget *image;
 
 void run_tests()
 {
@@ -52,7 +58,7 @@ void run_tests()
 
 void run_kernel()
 {
-#define NUM_OBJECTS 1
+#define NUM_OBJECTS 3
 	Object objects[NUM_OBJECTS];
 	Light light;
 	cl_float3 camera;
@@ -65,14 +71,30 @@ void run_kernel()
 	objects[0].position.s[1] = 0;
 	objects[0].position.s[2] = 0;
 	objects[0].objects.sphere.radius = 0.5;
+
+	objects[2].colour.s[0] = 255;
+	objects[2].colour.s[1] = 0;
+	objects[2].colour.s[2] = 0;
+	objects[2].type = SPHERE_TYPE;
+	objects[2].position.s[0] = 0;
+	objects[2].position.s[1] = 0;
+	objects[2].position.s[2] = 2;
+	objects[2].objects.sphere.radius = 0.5;
+
+	objects[1].colour.s[0] = 0;
+	objects[1].colour.s[1] = 255;
+	objects[1].colour.s[2] = 0;
+	objects[1].type = PLANE_TYPE;
+	objects[1].position.s[0] = 0;
+	objects[1].position.s[1] = 1;
+	objects[1].position.s[2] = 0;
+	objects[1].objects.plane.normal.s[0] = 0;
+	objects[1].objects.plane.normal.s[1] = 0;
+	objects[1].objects.plane.normal.s[2] = 0;
 	
 	light.position.s[0] = 10;
 	light.position.s[1] = 10;
 	light.position.s[2] = 10;
-
-	camera.s[0] = 0;
-	camera.s[1] = 0;
-	camera.s[2] = -5;
 
 	cl::Buffer cl_objects(
 		context,
@@ -113,6 +135,27 @@ void run_kernel()
 		2,
 		cl_lights
 	);	
+
+	cl::Buffer cl_camera(
+		context,
+		CL_MEM_READ_ONLY,
+		sizeof( cl_float3 ),
+		NULL
+		);
+	queue.enqueueWriteBuffer(
+		cl_camera,
+		CL_TRUE,
+		0,
+		sizeof( camera_position ),
+		&camera_position,
+		NULL,
+		NULL
+	);
+	kernel.setArg(
+		3,
+		cl_camera
+	);	
+
 
 	cl::NDRange globalWorkSize( SIZEX, SIZEY );
 	queue.enqueueNDRangeKernel(
@@ -157,8 +200,28 @@ static void destroy( GtkWidget *widget,
     gtk_main_quit ();
 }
 
+static void move_camera( GtkWidget *widget,
+						 gpointer   data )
+{
+	gfloat x = gtk_range_get_value( GTK_RANGE( camera_x ) );
+	gfloat y = gtk_range_get_value( GTK_RANGE( camera_y ) );
+	gfloat z = gtk_range_get_value( GTK_RANGE( camera_z ) );
+
+	camera_position.s[0] = x;
+	camera_position.s[1] = y;
+	camera_position.s[2] = z;
+
+	run_kernel();
+	gtk_image_set_from_pixbuf( GTK_IMAGE( image ), gdk_pixel_buffer );
+}
+
+
 int main( int argc, char *argv[] )
 {
+	camera_position.s[0] = 0;
+	camera_position.s[1] = 0;
+	camera_position.s[2] = 0;
+
 	run_tests();
 
 	gtk_init( &argc, &argv );
@@ -221,7 +284,6 @@ int main( int argc, char *argv[] )
 	// Initialize UI
 	GtkWidget *window;
 	GtkWidget *button;
-	GtkWidget *image;
 	GtkWidget *vbox;
 	
 	window = gtk_window_new( GTK_WINDOW_TOPLEVEL );
@@ -229,13 +291,36 @@ int main( int argc, char *argv[] )
 	image = gtk_image_new_from_pixbuf( gdk_pixel_buffer );
 	vbox = gtk_vbox_new( FALSE, 10 );
 
-	g_signal_connect( button, "clicked", G_CALLBACK( clicked ), (gpointer) image );
+	camera_x = gtk_hscale_new_with_range(
+		-10,
+		10,
+		0.1 );
+	gtk_range_set_value( GTK_RANGE( camera_x ), 0 );
+	g_signal_connect( camera_x, "value-changed", G_CALLBACK( move_camera ), NULL );
 
-	g_signal_connect (window, "destroy",
-					  G_CALLBACK (destroy), NULL);
+	camera_y = gtk_hscale_new_with_range(
+		-10,
+		10,
+		0.1 );
+	gtk_range_set_value( GTK_RANGE( camera_y ), 0 );
+	g_signal_connect( camera_y, "value-changed", G_CALLBACK( move_camera ), NULL );
+
+	camera_z = gtk_hscale_new_with_range(
+		-10,
+		10,
+		0.1 );
+	gtk_range_set_value( GTK_RANGE( camera_z ), 0 );
+	g_signal_connect( camera_z, "value-changed", G_CALLBACK( move_camera ), NULL );
+
+
+	g_signal_connect( button, "clicked", G_CALLBACK( clicked ), (gpointer) image );
+	g_signal_connect (window, "destroy", G_CALLBACK (destroy), NULL);
 
 	gtk_container_add( GTK_CONTAINER( vbox ), image );
 	gtk_container_add( GTK_CONTAINER( vbox ), button );
+	gtk_container_add( GTK_CONTAINER( vbox ), camera_x );
+	gtk_container_add( GTK_CONTAINER( vbox ), camera_y );
+	gtk_container_add( GTK_CONTAINER( vbox ), camera_z );
 	gtk_container_add( GTK_CONTAINER( window ), vbox );
 
 	gtk_widget_show_all( window );
