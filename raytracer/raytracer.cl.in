@@ -75,7 +75,7 @@ float plane_get_distance(
 //	float denominator = dot( camera_direction, p_normal );
 
 	float numerator = dot( camera_position, p_normal );
-	float denominator = dot( p_normal, camera_direction );
+	float denominator = -dot( p_normal, camera_direction );
 
 	// If either numerator or denominator 0, then we either
 	//  never intersect or always intersect the plane, so
