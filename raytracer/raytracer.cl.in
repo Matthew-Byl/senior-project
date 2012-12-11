@@ -58,8 +58,8 @@ float sphere_get_distance(
 	float3 intersection_point = camera_position + ( min_intersect * camera_direction );
 
 	// Is there a divide-by-zero?
-	*normal = intersection_point - object.position / 
-		fabs( intersection_point - object.position );
+	*normal = normalize( intersection_point - object.position / 
+						 fabs( intersection_point - object.position ) );
 	*intersect = intersection_point;
 
 	return distance( camera_position, intersection_point );
@@ -103,7 +103,7 @@ float plane_get_distance(
 //	printf( "Intersection: %f %f %f\n", position.x, position.y, position.z );
 	
 	*intersect = position;
-	*normal = p_normal;
+	*normal = normalize( p_normal );
 	return distance( camera_position, position );
 }
 
@@ -225,8 +225,8 @@ uchar3 compute_lighting(
 			* pow( 1 / light_distance, DIFFUSE_ATTENUATION );
 	}
 	
-//	float3 light = f_ambient + f_diffuse - fog;
-	float3 light = f_ambient + f_diffuse;
+	float3 light = f_ambient + f_diffuse - fog;
+//	float3 light = f_ambient + f_diffuse;
 
 	float3 clamped_light = fmin( light, (float3)( 255, 255, 255 ) );
 
