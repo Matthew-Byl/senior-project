@@ -86,11 +86,11 @@ void run_kernel()
 	objects[1].colour.s[2] = 0;
 	objects[1].type = PLANE_TYPE;
 	objects[1].position.s[0] = 0;
-	objects[1].position.s[1] = 1;
+	objects[1].position.s[1] = 0;
 	objects[1].position.s[2] = 0;
 	objects[1].objects.plane.normal.s[0] = 0;
 	objects[1].objects.plane.normal.s[1] = 0;
-	objects[1].objects.plane.normal.s[2] = 0;
+	objects[1].objects.plane.normal.s[2] = 1;
 	
 	light.position.s[0] = 10;
 	light.position.s[1] = 10;
