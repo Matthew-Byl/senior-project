@@ -15,8 +15,8 @@
 #include <fstream>
 using namespace std;
 
-#define SIZEX 700
-#define SIZEY 700
+#define SIZEX 500
+#define SIZEY 500
 #define PIXEL_BUFFER_SIZE SIZEX * SIZEY * 4
 GdkPixbuf *gdk_pixel_buffer;
 //unsigned char pixel_buffer[PIXEL_BUFFER_SIZE];
@@ -30,7 +30,9 @@ cl_float3 camera_position;
 GtkWidget *camera_x;
 GtkWidget *camera_y;
 GtkWidget *camera_z;
+GtkWidget *light_x;
 GtkWidget *light_y;
+GtkWidget *light_z;
 GtkWidget *image;
 
 void run_tests()
@@ -77,10 +79,10 @@ void run_kernel()
 	objects[1].colour.s[1] = 255;
 	objects[1].colour.s[2] = 0;
 	objects[1].type = SPHERE_TYPE;
-	objects[1].position.s[0] = -3;
+	objects[1].position.s[0] = gtk_range_get_value( GTK_RANGE( light_x ) );
 	objects[1].position.s[1] = gtk_range_get_value( GTK_RANGE( light_y ) );
-	objects[1].position.s[2] = 2;
-	objects[1].objects.sphere.radius = 0.4;
+	objects[1].position.s[2] = gtk_range_get_value( GTK_RANGE( light_z ) );
+	objects[1].objects.sphere.radius = 0.1;
 
 	if ( NUM_OBJECTS > 2 )
 	{
@@ -96,9 +98,9 @@ void run_kernel()
 		objects[2].objects.plane.normal.s[2] = 1;	
 	}
 
-	light.position.s[0] = -3;
-	light.position.s[1] = gtk_range_get_value( GTK_RANGE( light_y ) );;
-	light.position.s[2] = 2;
+	light.position.s[0] = gtk_range_get_value( GTK_RANGE( light_x ) );
+	light.position.s[1] = gtk_range_get_value( GTK_RANGE( light_y ) );
+	light.position.s[2] = gtk_range_get_value( GTK_RANGE( light_z ) );
 
 	cl::Buffer cl_objects(
 		context,
@@ -307,12 +309,28 @@ int main( int argc, char *argv[] )
 	window = gtk_window_new( GTK_WINDOW_TOPLEVEL );
 	button = gtk_button_new_with_label( "Hello, world!" );
 
+
+	light_x = gtk_hscale_new_with_range(
+		-30,
+		30,
+		0.1 );
+	gtk_range_set_value( GTK_RANGE( light_x ), 0 );
+	g_signal_connect( light_x, "value-changed", G_CALLBACK( move_camera ), NULL );
+
 	light_y = gtk_hscale_new_with_range(
 		-30,
 		30,
 		0.1 );
 	gtk_range_set_value( GTK_RANGE( light_y ), 0 );
 	g_signal_connect( light_y, "value-changed", G_CALLBACK( move_camera ), NULL );
+
+	light_z = gtk_hscale_new_with_range(
+		-30,
+		30,
+		0.1 );
+	gtk_range_set_value( GTK_RANGE( light_z ), 0 );
+	g_signal_connect( light_z, "value-changed", G_CALLBACK( move_camera ), NULL );
+
 
 	run_kernel();
 	image = gtk_image_new_from_pixbuf( gdk_pixel_buffer );
@@ -348,7 +366,9 @@ int main( int argc, char *argv[] )
 	gtk_container_add( GTK_CONTAINER( vbox ), camera_x );
 	gtk_container_add( GTK_CONTAINER( vbox ), camera_y );
 	gtk_container_add( GTK_CONTAINER( vbox ), camera_z );
+	gtk_container_add( GTK_CONTAINER( vbox ), light_x );
 	gtk_container_add( GTK_CONTAINER( vbox ), light_y );
+	gtk_container_add( GTK_CONTAINER( vbox ), light_z );
 	gtk_container_add( GTK_CONTAINER( window ), vbox );
 
 	gtk_widget_show_all( window );

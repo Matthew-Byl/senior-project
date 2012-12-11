@@ -58,8 +58,9 @@ float sphere_get_distance(
 	float3 intersection_point = camera_position + ( min_intersect * camera_direction );
 
 	// Is there a divide-by-zero?
-	*normal = normalize( intersection_point - object.position / 
-						 fabs( intersection_point - object.position ) );
+	*normal = normalize( intersection_point - object.position /
+						 ( fabs( intersection_point - object.position )
+						   + (float3)(0.001,0.001,0.001)) );
 	*intersect = intersection_point;
 
 	return distance( camera_position, intersection_point );
@@ -76,16 +77,8 @@ float plane_get_distance(
 	float3 point = object.position;
 	float3 p_normal = object.objects.plane.normal;
 
-//	printf( "P_Normal: %f %f %f\n", p_normal.x, p_normal.y, p_normal.z );
-
 	float numerator = dot( point - camera_position, p_normal );
 	float denominator = dot( camera_direction, p_normal );
-
-//	float numerator = dot( point, p_normal) + dot( camera_position, p_normal );
-//	float denominator = dot( camera_direction, p_normal );
-
-//	float numerator = dot( camera_position, p_normal );
-//	float denominator = -dot( p_normal, camera_direction );
 
 	// If either numerator or denominator 0, then we either
 	//  never intersect or always intersect the plane, so
@@ -99,8 +92,6 @@ float plane_get_distance(
 	float3 position = 
 		camera_position 
 		+ ( ( numerator / denominator) * camera_direction );
-
-//	printf( "Intersection: %f %f %f\n", position.x, position.y, position.z );
 	
 	*intersect = position;
 	*normal = normalize( p_normal );
@@ -183,7 +174,7 @@ int closest_object(
 
 // Shadows, specular, ambient, diffuse, etc.
 #define L_AMBIENT 0.5f
-#define DIFFUSE_ATTENUATION 2.0f
+#define DIFFUSE_ATTENUATION 3.0f
 uchar3 compute_lighting( 
 	__global Light *lights, 
 	int num_lights,
@@ -217,9 +208,9 @@ uchar3 compute_lighting(
 		float light_distance = distance( position, lights[i].position );
 		float3 light_vector = lights[i].position - position;
 
-		float angle = dot( light_vector, normal );
-		if ( angle < 0 )
-			continue;
+		float angle = fabs( dot( light_vector, normal ) );
+//		if ( angle < 0 )
+//			continue;
 
 		f_diffuse += f_colour * angle
 			* pow( 1 / light_distance, DIFFUSE_ATTENUATION );
@@ -264,7 +255,7 @@ __kernel void raytrace(
 
 	if ( closest == -1 )
 	{
-		set_pixel( pixbuf, 0, 0, 0 );
+		set_pixel( pixbuf, 0x08, 0x6C, 0xA2 );
 	}
 	else
 	{
