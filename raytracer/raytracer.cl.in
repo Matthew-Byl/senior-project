@@ -214,10 +214,12 @@ uchar3 compute_lighting(
 	{
 		// TODO: See whether light blocked.
 
-		float light_distance = fabs( distance( position, lights[i].position ) );
-		float3 light_vector = position - lights[i].position;
+		float light_distance = distance( position, lights[i].position );
+		float3 light_vector = lights[i].position - position;
 
 		float angle = dot( light_vector, normal );
+		if ( angle < 0 )
+			continue;
 
 		f_diffuse += f_colour * angle
 			* pow( 1 / light_distance, DIFFUSE_ATTENUATION );
