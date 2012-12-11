@@ -111,7 +111,7 @@ int closest_object(
 	float3 camera_direction,
 	int num_objects,
 	float *distance,
-	Object *world )
+	__global Object *world )
 {
 	float min_distance = 1000000000;
 	int min_object = -1;
@@ -136,33 +136,49 @@ int closest_object(
 	return min_object;
 }
 
-/*
-float get_normal(
+// Shadows, specular, ambient, diffuse, etc.
+#define L_AMBIENT 0.5
+uchar3 compute_lighting( float3 position, float3 normal, uchar3 colour )
+{
+	float3 f_ambient;
+	f_ambient.x = L_AMBIENT * (float) colour.x;
+	f_ambient.y = L_AMBIENT * (float) colour.y;
+	f_ambient.z = L_AMBIENT * (float) colour.z;
+
+	return (uchar3)( f_ambient.x, f_ambient.y, f_ambient.z );
+}
+
+
+float3 sphere_get_normal(
 	float3 camera_position,
 	float3 camera_direction,
 	Object object )
 {
+	return ( float3 )( 0, 0, 0 );
+}
 
+float3 get_normal(
+	float3 camera_position,
+	float3 camera_direction,
+	Object object )
+{
+	return ( float3 )( 0, 0, 0 );
 }	
 
-// Shadows, specular, ambient, diffuse, etc.
-float compute_lighting( float3 position, float3 normal, int3 colour )
-{
-
-}
-*/
-
 __kernel void raytrace( 
-	__global uchar4 *pixbuf )
+	__global uchar4 *pixbuf,
+	__global Object *objects,
+	__global Light *lights )
 //	__global float3 *camera_position,
 //	__global int *num_objects,
-//	__global Object *world )
 {
+/*
 	Object world[1];
 	world[0].colour = (int3)( 255, 0, 0 );
 	world[0].type = SPHERE_TYPE;
 	world[0].position = (float3)(0,0,0);
 	world[0].objects.sphere.radius = 1;
+*/
 
 	int num_objects = 1;
 	float3 camera_position = (float3)( -3, 0, 1 );
@@ -180,11 +196,11 @@ __kernel void raytrace(
 		camera_direction,
 		num_objects,
 		&distance,
-		world
+		objects
 	);
 
 //	printf( "Distance: %f\n", distance );
-
+/*
 	if ( closest == -1 )
 		set_pixel( pixbuf, 0, 0, 0 );
 	else
@@ -195,6 +211,28 @@ __kernel void raytrace(
 		if ( distance > 255 )
 			distance = 255;
 		set_pixel( pixbuf, 255 - distance, 255, 255 );
+	}
+*/
+
+	if ( closest == -1 )
+	{
+		set_pixel( pixbuf, 0, 0, 0 );
+	}
+	else
+	{
+		float3 normal = get_normal(
+			camera_position,
+			camera_direction,
+			objects[closest]
+		);
+		
+		uchar3 colour = compute_lighting(
+			objects[closest].position,
+			normal,
+			objects[closest].colour
+		);
+
+		set_pixel( pixbuf, colour.x, colour.y, colour.z );
 	}
 }
 

@@ -52,6 +52,68 @@ void run_tests()
 
 void run_kernel()
 {
+#define NUM_OBJECTS 1
+	Object objects[NUM_OBJECTS];
+	Light light;
+	cl_float3 camera;
+
+	objects[0].colour.s[0] = 255;
+	objects[0].colour.s[1] = 0;
+	objects[0].colour.s[2] = 0;
+	objects[0].type = SPHERE_TYPE;
+	objects[0].position.s[0] = 0;
+	objects[0].position.s[1] = 0;
+	objects[0].position.s[2] = 0;
+	objects[0].objects.sphere.radius = 0.5;
+	
+	light.position.s[0] = 10;
+	light.position.s[1] = 10;
+	light.position.s[2] = 10;
+
+	camera.s[0] = 0;
+	camera.s[1] = 0;
+	camera.s[2] = -5;
+
+	cl::Buffer cl_objects(
+		context,
+		CL_MEM_READ_ONLY,
+		sizeof( Object ) * NUM_OBJECTS,
+		NULL
+	);
+	queue.enqueueWriteBuffer(
+		cl_objects,
+		CL_TRUE,
+		0,
+		sizeof( Object ) * NUM_OBJECTS,
+		objects,
+		NULL,
+		NULL
+	);
+	kernel.setArg(
+		1,
+		cl_objects
+	);
+
+	cl::Buffer cl_lights(
+		context,
+		CL_MEM_READ_ONLY,
+		sizeof( light ),
+		NULL
+		);
+	queue.enqueueWriteBuffer(
+		cl_lights,
+		CL_TRUE,
+		0,
+		sizeof( light ),
+		&light,
+		NULL,
+		NULL
+	);
+	kernel.setArg(
+		2,
+		cl_lights
+	);	
+
 	cl::NDRange globalWorkSize( SIZEX, SIZEY );
 	queue.enqueueNDRangeKernel(
 		kernel,
@@ -78,8 +140,15 @@ void run_kernel()
 
 static void clicked( GtkWidget *widget, gpointer data )
 {
-//	run_kernel();
-	gtk_image_set_from_pixbuf( GTK_IMAGE( data ), gdk_pixel_buffer );
+	clock_t start = clock();
+	for ( int i = 0; i < 100000; i++ )
+	{
+		run_kernel();
+//		gtk_image_set_from_pixbuf( GTK_IMAGE( data ), gdk_pixel_buffer );
+	}
+	clock_t end = clock();
+
+	printf( "Took %d for 60.\n", end - start );
 }
 
 static void destroy( GtkWidget *widget,
@@ -147,7 +216,6 @@ int main( int argc, char *argv[] )
 		cl_pixel_buffer );
 
 	run_kernel();
-
 
 
 	// Initialize UI
