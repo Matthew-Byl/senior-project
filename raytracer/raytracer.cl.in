@@ -50,6 +50,10 @@ float sphere_get_distance(
 	float intersect_2 = -v_dot_d - sqrt( discriminant );
 	float min_intersect = min( intersect_1, intersect_2 );
 
+	// It is behind us.
+	if ( min_intersect < 0 )
+		return -1;
+
 	float3 intersection_point = camera_position + ( min_intersect * camera_direction );
 
 	*normal = intersection_point - object.position / 
@@ -70,12 +74,14 @@ float plane_get_distance(
 
 //	printf( "P_Normal: %f %f %f\n", p_normal.x, p_normal.y, p_normal.z );
 
-//	float numerator = dot( point - camera_position, p_normal );
+	float numerator = dot( point - camera_position, p_normal );
+	float denominator = dot( camera_direction, p_normal );
+
 //	float numerator = dot( point, p_normal) + dot( camera_position, p_normal );
 //	float denominator = dot( camera_direction, p_normal );
 
-	float numerator = dot( camera_position, p_normal );
-	float denominator = -dot( p_normal, camera_direction );
+//	float numerator = dot( camera_position, p_normal );
+//	float denominator = -dot( p_normal, camera_direction );
 
 	// If either numerator or denominator 0, then we either
 	//  never intersect or always intersect the plane, so

@@ -67,7 +67,7 @@ void run_kernel()
 	objects[0].colour.s[1] = 0;
 	objects[0].colour.s[2] = 0;
 	objects[0].type = SPHERE_TYPE;
-	objects[0].position.s[0] = 0;
+	objects[0].position.s[0] = 1;
 	objects[0].position.s[1] = 0;
 	objects[0].position.s[2] = 0;
 	objects[0].objects.sphere.radius = 0.5;
@@ -76,7 +76,7 @@ void run_kernel()
 	objects[2].colour.s[1] = 0;
 	objects[2].colour.s[2] = 0;
 	objects[2].type = SPHERE_TYPE;
-	objects[2].position.s[0] = 0;
+	objects[2].position.s[0] = -1;
 	objects[2].position.s[1] = 0;
 	objects[2].position.s[2] = 2;
 	objects[2].objects.sphere.radius = 0.5;
@@ -87,7 +87,7 @@ void run_kernel()
 	objects[1].type = PLANE_TYPE;
 	objects[1].position.s[0] = 0;
 	objects[1].position.s[1] = 0;
-	objects[1].position.s[2] = 0;
+	objects[1].position.s[2] = -1;
 	objects[1].objects.plane.normal.s[0] = 0;
 	objects[1].objects.plane.normal.s[1] = 0;
 	objects[1].objects.plane.normal.s[2] = 1;
