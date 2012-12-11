@@ -167,17 +167,17 @@ int closest_object(
 #define L_AMBIENT 0.5
 uchar3 compute_lighting( float3 position, float3 normal, uchar3 colour, float distance )
 {
-	float distance_factor = 0.1 * distance;
+	float distance_factor = 0.05 * distance;
 	if ( distance_factor > 1 )
 		distance_factor = 1;
 	float3 fog = (float3)( 128, 128, 128 ) * distance_factor;
 
 	float3 f_ambient;
-	f_ambient.x = L_AMBIENT * (float) colour.x * distance_factor;
-	f_ambient.y = L_AMBIENT * (float) colour.y * distance_factor;
-	f_ambient.z = L_AMBIENT * (float) colour.z * distance_factor;
+	f_ambient.x = L_AMBIENT * (float) colour.x;
+	f_ambient.y = L_AMBIENT * (float) colour.y;
+	f_ambient.z = L_AMBIENT * (float) colour.z;
 
-	f_ambient += fog;
+	f_ambient -= fog;
 
 	return (uchar3)( f_ambient.x, f_ambient.y, f_ambient.z );
 }
