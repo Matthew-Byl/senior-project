@@ -224,7 +224,7 @@ uchar3 compute_lighting(
 	}
 
 	// Fog
-	float distance_factor = 0.05 * object_distance;
+	float distance_factor = 0.01 * object_distance;
 	if ( distance_factor > 1 )
 		distance_factor = 1;
 	float3 fog = (float3)( 128, 128, 128 ) * distance_factor;
@@ -269,7 +269,7 @@ uchar3 compute_lighting(
 	}
 */
 	
-	float3 light = f_ambient + f_diffuse + f_specular;
+	float3 light = f_ambient + f_diffuse + f_specular - fog;
 //	float3 light = f_ambient + f_diffuse;
 
 	float3 clamped_light = fmin( light, (float3)( 255, 255, 255 ) );
