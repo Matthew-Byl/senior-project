@@ -183,15 +183,45 @@ uchar3 compute_lighting(
 	float3 camera_direction,
 	float3 position, 
 	float3 normal, 
-	uchar3 colour, 
+	uchar4 colour, 
 	float object_distance,
 	int num_objects,
 	__global Object *world)
 {
 	float3 f_colour;
-	f_colour.x = (float) colour.x;
-	f_colour.y = (float) colour.y;
-	f_colour.z = (float) colour.z;
+	// Mirror!
+	if ( colour.w == 1 )
+	{
+		// Shoot a ray from the surface normal to wherever it goes.
+		//  This is not recursive, because OpenCL can't handle recursion.
+		float d; float3 norm, inter;
+
+		int closest = closest_object( 
+			position,
+			normal,
+			num_objects,
+			&d,
+			&norm,
+			&inter,
+			world
+		);
+		
+		if ( closest == -1 )
+			return (uchar3)( 0, 0, 0 );
+		else
+		{
+			uchar4 oc = world[closest].colour;
+			f_colour.x = (float) oc.x;
+			f_colour.y = (float) oc.y;
+			f_colour.z = (float) oc.z;
+		}
+	}
+	else
+	{
+		f_colour.x = (float) colour.x;
+		f_colour.y = (float) colour.y;
+		f_colour.z = (float) colour.z;
+	}
 
 	// Fog
 	float distance_factor = 0.05 * object_distance;

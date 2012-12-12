@@ -65,7 +65,7 @@ void run_tests()
 Object objects[NUM_OBJECTS];
 void thousand_spheres()
 {
-	int num = 1;
+	int num = 2;
 	for ( int i = 0; i < 5; i++ )
 	{
 		for ( int j = 0; j < 5; j++ )
@@ -75,6 +75,12 @@ void thousand_spheres()
 				objects[num].colour.s[0] = 100 + i * 10;
 				objects[num].colour.s[1] = 100 + k * 10;
 				objects[num].colour.s[2] = 100 + j * 10;
+
+				if ( k == 3 )
+					objects[num].colour.s[3] = 1;
+				else
+					objects[num].colour.s[3] = 0;
+
 				objects[num].type = SPHERE_TYPE;
 				objects[num].position.s[0] = i;
 				objects[num].position.s[1] = j;
@@ -95,6 +101,7 @@ void run_kernel()
 	objects[0].colour.s[0] = 255;
 	objects[0].colour.s[1] = 255;
 	objects[0].colour.s[2] = 0;
+	objects[0].colour.s[3] = 0;
 	objects[0].type = SPHERE_TYPE;
 	objects[0].position.s[0] = gtk_range_get_value( GTK_RANGE( light_x ) );
 	objects[0].position.s[1] = gtk_range_get_value( GTK_RANGE( light_y ) );
@@ -105,16 +112,18 @@ void run_kernel()
 /*
 	if ( NUM_OBJECTS > 2 )
 	{
-		objects[2].colour.s[0] = 2;
-		objects[2].colour.s[1] = 2;
-		objects[2].colour.s[2] = 2;
-		objects[2].type = PLANE_TYPE;
-		objects[2].position.s[0] = 0;
-		objects[2].position.s[1] = 0;
-		objects[2].position.s[2] = -1;
-		objects[2].objects.plane.normal.s[0] = 0;
-		objects[2].objects.plane.normal.s[1] = 0;
-		objects[2].objects.plane.normal.s[2] = 1;	
+*/
+		objects[1].colour.s[0] = 0;
+		objects[1].colour.s[1] = 64;
+		objects[1].colour.s[2] = 255;
+		objects[1].type = PLANE_TYPE;
+		objects[1].position.s[0] = 0;
+		objects[1].position.s[1] = 0;
+		objects[1].position.s[2] = -1;
+		objects[1].objects.plane.normal.s[0] = 0;
+		objects[1].objects.plane.normal.s[1] = 0;
+		objects[1].objects.plane.normal.s[2] = 1;	
+/*
 	}
 */
 /*
