@@ -1,7 +1,30 @@
+/**
+ * OpenCL kernel for raytracer.
+ *
+ * @author John Kloosterman for CS352 at Calvin College
+ * @date Dec. 12, 2012
+ */
+
 #pragma OPENCL EXTENSION cl_amd_printf : enable
 #define NUM_CHANNELS 4
 #include "objects.h"
 
+/**
+ * For a given pixel in the image, compute the direction of
+ *  the ray shot from our eye.
+ *
+ * Based on code from
+ *   http://homepages.paradise.net.nz/nickamy/simpleraytracer/simpleraytracer.htm
+ *
+ * @param x, y
+ *  A pixel in the image
+ * @param num_x, num_y
+ *  The number of x and y pixels in the image
+ *
+ * @return
+ *  A normalized direction vector for the ray to shoot for
+ *   this pixel.
+ */
 float3 get_ray_direction( size_t x, size_t num_x, size_t y, size_t num_y )
 {
 	float xFrac = (float) x / (float) num_x;
@@ -11,6 +34,15 @@ float3 get_ray_direction( size_t x, size_t num_x, size_t y, size_t num_y )
 	return normalize( direction );
 }
 
+/**
+ * Set the pixel in the pixel buffer corresponding to this kernel's
+ *  position to a given value.
+ *
+ * @param pixbuf
+ *  The pixel buffer from the host
+ * @param r, g, b
+ *  8-bit values to set as the r,g,b values of the pixel.
+ */
 void set_pixel( __global uchar4 *pixbuf, uchar r, uchar g, uchar b )
 {
 	size_t x = get_global_id( 0 );
@@ -24,6 +56,28 @@ void set_pixel( __global uchar4 *pixbuf, uchar r, uchar g, uchar b )
 	(*pixel).w = 255;
 }
 
+/**
+ * Determine whether a ray intersects with a sphere, and if so,
+ *  compute properties of that intersection.
+ *
+ * Based on the equations from 
+ *   http://en.wikipedia.org/wiki/Raytracing#Example.
+ *
+ * @param camera_position, camera_direction
+ *  The ray shot from the camera.
+ * @param normal
+ *  A location to store the sphere's surface normal
+ *   at the intersection point
+ * @param intersect
+ *  A location to store the intersection point of 
+ *   the ray with the sphere.
+ * @param object
+ *  The sphere object in question.
+ * 
+ * @return
+ *  The distance from the camera to the intersection point
+ *   on the sphere, or -1 if there is no intersection.
+ */
 float sphere_get_distance(
 	float3 camera_position,
 	float3 camera_direction,
@@ -31,35 +85,25 @@ float sphere_get_distance(
 	float3 *intersect,
 	Object object )
 {
-	// v = camera_position - sphere_position;
 	float3 v = camera_position - object.position;
-	float v_dot_d = dot( v, camera_direction );
-	
+	float v_dot_d = dot( v, camera_direction );	
 	float r = object.objects.sphere.radius;
-
-	// I don't know if this is correct or not.
 	float v_len = length( v );
 	float discriminant = ( v_dot_d * v_dot_d ) - ( ( v_len * v_len ) - ( r * r ) );
 	
 	// No intersection.
 	if ( discriminant < 0 )
-	{
 		return -1;
-	}
 
 	float intersect_1 = -v_dot_d + sqrt( discriminant );
 	float intersect_2 = -v_dot_d - sqrt( discriminant );
 	float min_intersect = min( intersect_1, intersect_2 );
 
-	// It is behind us.
+	// It is behind the camera.
 	if ( min_intersect < 0 )
 		return -1;
 
 	float3 intersection_point = camera_position + ( min_intersect * camera_direction );
-
-/*	*normal = normalize( intersection_point - object.position /
-						 ( fabs( intersection_point - object.position )
-						 + (float3)(0.001,0.001,0.001)) ); // avoid divide-by-zero */
 
 	*normal = normalize( intersection_point - object.position );
 	*intersect = intersection_point;
@@ -67,6 +111,26 @@ float sphere_get_distance(
 	return distance( camera_position, intersection_point );
 }
 
+/**
+ * Determine whether a ray intersects with a plane, and if so,
+ *  compute properties of that intersection.
+ *
+ * @param camera_position, camera_direction
+ *  The ray shot from the camera.
+ * @param normal
+ *  A location to store the plane's surface normal
+ *   at the intersection point; note this is constant
+ *   everywhere on the plane.
+ * @param intersect
+ *  A location to store the intersection point of 
+ *   the ray with the plane.
+ * @param object
+ *  The plane object in question.
+ * 
+ * @return
+ *  The distance from the camera to the intersection point
+ *   on the plane, or -1 if there is no intersection.
+ */
 float plane_get_distance(
 	float3 camera_position,
 	float3 camera_direction,
@@ -99,6 +163,25 @@ float plane_get_distance(
 	return distance( camera_position, position );
 }
 
+/**
+ * Determine whether a ray intersects with a given object,
+ *   and if so, compute properties of that intersection.
+ *
+ * @param camera_position, camera_direction
+ *  The ray shot from the camera.
+ * @param normal
+ *  A location to store the objects's surface normal
+ *   at the intersection point
+ * @param intersect
+ *  A location to store the intersection point of 
+ *   the ray with the object.
+ * @param object
+ *  The object in question.
+ * 
+ * @return
+ *  The distance from the camera to the intersection point
+ *   on the object, or -1 if there is no intersection.
+ */
 float get_distance( 
 	float3 camera_position,
 	float3 camera_direction,
@@ -131,6 +214,32 @@ float get_distance(
 }
 
 // Returns index of closest object, or -1 if none;
+
+/**
+ * Find the first object in the world that a ray will
+ *  hit.
+ *
+ * @param camera_position, camera_direction
+ *  The start point and direction of the ray.
+ * @param num_objects
+ *  The number of objects in the world.
+ * @param distance
+ *  A location to store the distance from the start
+ *   point of the ray and the intersection point with
+ *   the first object.
+ * @param normal
+ *  A location to store the object's surface normal
+ *   at the intersection point.
+ * @param intersect
+ *  A location to store the intersection point with the
+ *   first object hit.
+ * @param world
+ *  An array of objects in the world.
+ *
+ * @return
+ *  The index in @c world of the first object hit by
+ *   the ray, or -1 if none.
+ */
 int closest_object( 
 	float3 camera_position,
 	float3 camera_direction,
@@ -174,8 +283,37 @@ int closest_object(
 }
 
 // Shadows, specular, ambient, diffuse, etc.
+#define FOGGINESS 0.01f
 #define L_AMBIENT 0.5f
 #define DIFFUSE_ATTENUATION 1.1f
+
+/**
+ * Compute lighting for a given point on an object
+ *  in the world.
+ *
+ * @param lights
+ *  An array of the light sources in the scene.
+ * @param num_lights
+ *  The number of lights in the scene.
+ * @param camera_position, camera_direction
+ *  The start and direction of the ray from the camera.
+ * @param position
+ *  The coordinate in the world we are computing lighting for.
+ * @param normal
+ *  The surface normal of the object at the point we are
+ *   computing lighting for.
+ * @param colour
+ *  The colour of the object the point is on.
+ * @param object_distance
+ *  How far away this position is from the camera.
+ * @param num_objects
+ *  The number of objects in the world.
+ * @param world
+ *  An array of the objects in the world.
+ * 
+ * @return
+ *  r,g,b values of the lighting at the given point.
+ */
 uchar3 compute_lighting( 
 	__global Light *lights, 
 	int num_lights,
@@ -189,12 +327,21 @@ uchar3 compute_lighting(
 	__global Object *world)
 {
 	float3 f_colour;
-	// Mirror!
+
+	/*
+	 * If the object is mirrored, find the colour by
+	 *  following the reflection ray to the first object.
+	 *
+	 * OpenCL cannot do recursion, so this will only reflect
+	 *  the colour of the mirrored object and will not reflect
+	 *  lighting on that object.
+	 */
 	if ( colour.w == 1 )
 	{
-		// Shoot a ray from the surface normal to wherever it goes.
 		//  This is not recursive, because OpenCL can't handle recursion.
 		float d; float3 norm, inter;
+
+		// This isn't correct: use reflection direction
 
 		int closest = closest_object( 
 			position,
@@ -224,7 +371,7 @@ uchar3 compute_lighting(
 	}
 
 	// Fog
-	float distance_factor = 0.01 * object_distance;
+	float distance_factor = FOGGINESS * object_distance;
 	if ( distance_factor > 1 )
 		distance_factor = 1;
 	float3 fog = (float3)( 128, 128, 128 ) * distance_factor;
@@ -250,41 +397,35 @@ uchar3 compute_lighting(
 		f_diffuse += f_colour * angle
 			* pow( 1 / light_distance, DIFFUSE_ATTENUATION );
 	}
-
-	// Specular
-	float3 f_specular = (float3)( 0, 0, 0 );
-/*
-	for ( int i = 0; i < num_lights; i++ )
-	{
-		float3 light_vector = lights[i].position - position;
-
-		// Reflection vector
-		float3 reflection = light_vector
-			- 2 * dot( light_vector, normal ) * normal;
-
-		f_specular += 
-			0.01 *
-			(float3)(255, 255, 255)
-			* pow( dot( reflection, camera_direction ), 0.4f );
-	}
-*/
 	
-	float3 light = f_ambient + f_diffuse + f_specular - fog;
-//	float3 light = f_ambient + f_diffuse;
+	float3 light = f_ambient + f_diffuse - fog;
 
+    // Make sure colour values can fit in 8 bits.
 	float3 clamped_light = fmin( light, (float3)( 255, 255, 255 ) );
 
 	return (uchar3)( clamped_light.x, clamped_light.y, clamped_light.z );
 }
 
+/**
+ * Raytracing kernel.
+ *
+ * @param pixbuf
+ *  Pixel buffer as a 2-d array in row-major order.
+ * @param objects
+ *  Array of objects in the world.
+ * @param lights
+ *  Array of lights in the scene.
+ * @param camera_position
+ *  The location of the camera.
+ * @param num_objects
+ *  The number of objects in the world.
+ */
 __kernel void raytrace( 
 	__global uchar4 *pixbuf,
 	__global Object *objects,
 	__global Light *lights,
 	__global float3 *camera_position,
 	__global int *num_objects )
-//	__global float3 *camera_position,
-//	__global int *num_objects,
 {
 	// Get information about our relative position.
 	size_t x = get_global_id( 0 );
@@ -292,6 +433,7 @@ __kernel void raytrace(
 	size_t num_x = get_global_size( 0 );
 	size_t num_y = get_global_size( 1 );	
 
+	// Compute the first object the camera ray hits.
 	float3 camera_direction = get_ray_direction( x, num_x, y, num_y );
 	float distance;
 	float3 normal;
@@ -306,12 +448,16 @@ __kernel void raytrace(
 		objects
 	);
 
+	// If it hit nothing, draw black.
 	if ( closest == -1 )
 	{
 		set_pixel( pixbuf, 0, 0, 0 );
 	}
 	else
 	{
+		// If it hit something, compute the lighting
+		//  at that point and set that as the value of our pixel.
+
 		uchar3 colour = compute_lighting(
 			lights,
 			1,
