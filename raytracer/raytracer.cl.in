@@ -213,8 +213,6 @@ float get_distance(
 	return -1;
 }
 
-// Returns index of closest object, or -1 if none;
-
 /**
  * Find the first object in the world that a ray will
  *  hit.
@@ -283,7 +281,7 @@ int closest_object(
 }
 
 // Shadows, specular, ambient, diffuse, etc.
-#define FOGGINESS 0.01f
+#define FOGGINESS 0.03f
 #define L_AMBIENT 0.5f
 #define DIFFUSE_ATTENUATION 1.1f
 

@@ -1,7 +1,13 @@
+/**
+ * OpenCL raytracer GTK+ UI code.
+ *
+ * @author John Kloosterman for CS352 at Calvin College
+ * @date Dec. 12, 2012
+ */
+
 #include "CLRenderer.h"
 
 #include <gtk/gtk.h>
-
 #include <png.h>
 
 #include <string>
@@ -10,11 +16,17 @@
 #include <fstream>
 using namespace std;
 
+// The size of the rendered scene. Right now, this has
+//  to be square or there will be distortion.
 #define SIZEX 1000
 #define SIZEY 1000
 #define PIXEL_BUFFER_SIZE SIZEX * SIZEY * 4
+
+// The pixel buffer that is drawn onto the screen
+//  and rendered into.
 GdkPixbuf *gdk_pixel_buffer;
-//unsigned char pixel_buffer[PIXEL_BUFFER_SIZE];
+
+// The current camera position
 cl_float3 camera_position;
 
 GtkWidget *light_x;
@@ -22,12 +34,35 @@ GtkWidget *light_y;
 GtkWidget *light_z;
 GtkWidget *image;
 
+// The renderer object that will render the scene
 CLRenderer *renderer;
 
+// The objects in the scene
 #define NUM_OBJECTS 1024
 Object objects[NUM_OBJECTS];
-void thousand_spheres()
+
+/**
+ * Initially prepare the scene.
+ */
+void setup_scene()
 {
+	// objects[0] is the sphere that follows
+	//  the light around, that will be filled
+	//  in when the scene is rendered.
+
+	// Plane
+	objects[1].colour.s[0] = 235;
+	objects[1].colour.s[1] = 206;
+	objects[1].colour.s[2] = 198;
+	objects[1].colour.s[3] = 0;
+	objects[1].type = PLANE_TYPE;
+	objects[1].position.s[0] = 0;
+	objects[1].position.s[1] = 0;
+	objects[1].position.s[2] = -1;
+	objects[1].objects.plane.normal.s[0] = 0;
+	objects[1].objects.plane.normal.s[1] = 1;
+	objects[1].objects.plane.normal.s[2] = 1;	
+
 	int num = 2;
 	for ( int i = 0; i < 5; i++ )
 	{
@@ -56,6 +91,9 @@ void thousand_spheres()
 	}	
 }
 
+/**
+ * Run the OpenCL renderer to redraw the scene.
+ */
 void run_kernel()
 {
 	Light light;
@@ -72,19 +110,6 @@ void run_kernel()
 	objects[0].position.s[2] = gtk_range_get_value( GTK_RANGE( light_z ) );
 	objects[0].objects.sphere.radius = 0.1;
 
-	// Plane
-	objects[1].colour.s[0] = 235;
-	objects[1].colour.s[1] = 206;
-	objects[1].colour.s[2] = 198;
-	objects[1].colour.s[3] = 0;
-	objects[1].type = PLANE_TYPE;
-	objects[1].position.s[0] = 0;
-	objects[1].position.s[1] = 0;
-	objects[1].position.s[2] = -1;
-	objects[1].objects.plane.normal.s[0] = 0;
-	objects[1].objects.plane.normal.s[1] = 1;
-	objects[1].objects.plane.normal.s[2] = 1;	
-
 	// The diffuse light
 	light.position.s[0] = gtk_range_get_value( GTK_RANGE( light_x ) );
 	light.position.s[1] = gtk_range_get_value( GTK_RANGE( light_y ) );
@@ -94,15 +119,19 @@ void run_kernel()
 	renderer->render( objects, num_objects, &light, 1, camera_position );
 }
 
-static void clicked( GtkWidget *widget, gpointer data )
+/**
+ * Save the current image as a PNG.
+ *
+ * Code based off of example at
+ *   http://zarb.org/~gc/html/libpng.html
+ */
+static void png_button_clicked( GtkWidget *widget, gpointer data )
 {
-    // from http://zarb.org/~gc/html/libpng.html
 	FILE *fp = fopen( "output.png", "wb" );
 	png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 	png_infop info_ptr = png_create_info_struct( png_ptr );
 
 	png_init_io(png_ptr, fp);
-
 
 	png_set_IHDR(png_ptr, info_ptr, SIZEX, SIZEY,
 				 8, PNG_COLOR_TYPE_RGBA, PNG_INTERLACE_NONE,
@@ -110,6 +139,9 @@ static void clicked( GtkWidget *widget, gpointer data )
 
 	png_write_info(png_ptr, info_ptr);
 
+	// libpng likes to have pointers to rows of pixels.
+	// Happily oblige, however silly because we have all our
+	//  pixels in a continuous buffer.
 	unsigned char *pixels = gdk_pixbuf_get_pixels( gdk_pixel_buffer );
 	png_byte *row_pointers[SIZEY];
 	for ( int i = 0; i < SIZEY; i++ )
@@ -122,19 +154,29 @@ static void clicked( GtkWidget *widget, gpointer data )
 	fclose(fp);
 }
 
+/**
+ * Exit the program when the window is closed.
+ */
 static void destroy( GtkWidget *widget,
                      gpointer   data )
 {
     gtk_main_quit ();
 }
 
-static void move_camera( GtkWidget *widget,
-						 gpointer   data )
+/**
+ * Redraw the scene when the sliders are moved.
+ */
+static void redraw_callback( GtkWidget *widget,
+							 gpointer   data )
 {
 	run_kernel();
 	gtk_image_set_from_pixbuf( GTK_IMAGE( image ), gdk_pixel_buffer );
 }
 
+/**
+ * Move the x and y position of the camera
+ *  based on mouse dragging.
+ */
 bool dragging = false;
 float drag_x, drag_y;
 float prev_x, prev_y;
@@ -155,6 +197,9 @@ static void motion_notify( GtkWidget *widget, GdkEvent *event, gpointer user_dat
 		}
 		else
 		{
+			// Only redraw every 5 mouse move events.
+			// Otherwise, GTK+ starts merging together
+			//  redraws of the image, and it isn't smooth.
 			drag_frame++;
 			if ( drag_frame % 5 != 0 )
 				return;
@@ -172,6 +217,10 @@ static void motion_notify( GtkWidget *widget, GdkEvent *event, gpointer user_dat
 	}
 }
 
+/**
+ * Move the z coordinate of the camera based
+ *  on mouse wheel scrolling.
+ */
 static void scroll( GtkWidget *widget, GdkEvent *event, gpointer user_data )
 {
 	GdkEventScroll *scroll = (GdkEventScroll *) event;
@@ -191,15 +240,19 @@ static void scroll( GtkWidget *widget, GdkEvent *event, gpointer user_data )
 
 int main( int argc, char *argv[] )
 {
-	thousand_spheres();
+	// Set up scene.
+	setup_scene();
 
+	// Initialize camera position
 	camera_position.s[0] = 0;
 	camera_position.s[1] = 0;
 	camera_position.s[2] = 0;
 
+	// Initialize GTK+ and the pixel buffer
 	gtk_init( &argc, &argv );
 	gdk_pixel_buffer = gdk_pixbuf_new( GDK_COLORSPACE_RGB, TRUE, 8, SIZEX, SIZEY );
 
+	// Initialize OpenCL renderer
 	renderer = new CLRenderer( gdk_pixbuf_get_pixels( gdk_pixel_buffer ), SIZEX, SIZEY );
 
 	// Initialize UI
@@ -212,56 +265,63 @@ int main( int argc, char *argv[] )
 	window = gtk_window_new( GTK_WINDOW_TOPLEVEL );
 	button = gtk_button_new_with_label( "Save as PNG" );
 
+	// Sliders for light position
 	light_x = gtk_hscale_new_with_range(
 		-30,
 		30,
-		0.01 );
+		0.001 );
 	gtk_range_set_value( GTK_RANGE( light_x ), 0 );
-	g_signal_connect( light_x, "value-changed", G_CALLBACK( move_camera ), NULL );
+	g_signal_connect( light_x, "value-changed", G_CALLBACK( redraw_callback ), NULL );
 
 	light_y = gtk_hscale_new_with_range(
 		-30,
 		30,
-		0.01 );
+		0.001 );
 	gtk_range_set_value( GTK_RANGE( light_y ), 0 );
-	g_signal_connect( light_y, "value-changed", G_CALLBACK( move_camera ), NULL );
+	g_signal_connect( light_y, "value-changed", G_CALLBACK( redraw_callback ), NULL );
 
 	light_z = gtk_hscale_new_with_range(
 		-30,
 		30,
-		0.01 );
+		0.001 );
 	gtk_range_set_value( GTK_RANGE( light_z ), 0 );
-	g_signal_connect( light_z, "value-changed", G_CALLBACK( move_camera ), NULL );
+	g_signal_connect( light_z, "value-changed", G_CALLBACK( redraw_callback ), NULL );
 
-
-	run_kernel();
-	image = gtk_image_new_from_pixbuf( gdk_pixel_buffer );
+	// Horizontal layout
 	vbox = gtk_vbox_new( FALSE, 10 );
-	gtk_widget_set_size_request( vbox, 200, -1 );
-
+	gtk_widget_set_size_request( vbox, 400, 200 );
 	hbox = gtk_hbox_new( FALSE, 10 );
 
-	g_signal_connect( button, "clicked", G_CALLBACK( clicked ), (gpointer) image );
-	g_signal_connect (window, "destroy", G_CALLBACK (destroy), NULL);
-
+	// Draw the initial image.
+	run_kernel();
+	image = gtk_image_new_from_pixbuf( gdk_pixel_buffer );
 	eventBox = gtk_event_box_new();
-	gtk_widget_set_events( eventBox, GDK_POINTER_MOTION_MASK | GDK_BUTTON_PRESS_MASK );
-	g_signal_connect (eventBox, "motion-notify-event", G_CALLBACK (motion_notify), NULL);
-	g_signal_connect (eventBox, "scroll-event", G_CALLBACK (scroll), NULL);
-
 	gtk_container_add( GTK_CONTAINER( eventBox ), image );
 	gtk_container_add( GTK_CONTAINER( hbox ), eventBox );
+
+	// Vertical layout inside right side.
 	gtk_container_add( GTK_CONTAINER( vbox ), button );
+	gtk_container_add( GTK_CONTAINER( vbox ),
+					   gtk_label_new( "Coordinates of light source:" ) );
 	gtk_container_add( GTK_CONTAINER( vbox ), light_x );
 	gtk_container_add( GTK_CONTAINER( vbox ), light_y );
 	gtk_container_add( GTK_CONTAINER( vbox ), light_z );
 	gtk_container_add( GTK_CONTAINER( hbox ), vbox );
+
+	// Save a PNG when the button clicked
+	g_signal_connect( button, "clicked", G_CALLBACK( png_button_clicked ), NULL );
+
+	// Exit when the window is destroyed
+	g_signal_connect( window, "destroy", G_CALLBACK( destroy ), NULL);
+
+	// Connect signals for mouse move and scroll events
+	gtk_widget_set_events( eventBox, GDK_POINTER_MOTION_MASK | GDK_BUTTON_PRESS_MASK );
+	g_signal_connect (eventBox, "motion-notify-event", G_CALLBACK (motion_notify), NULL);
+	g_signal_connect (eventBox, "scroll-event", G_CALLBACK (scroll), NULL);
+
+	// Add everything to the window, and show it all.
 	gtk_container_add( GTK_CONTAINER( window ), hbox );
-
-//	gtk_widget_set_double_buffered( image, FALSE );
-
 	gtk_widget_show_all( window );
-
 	gtk_main();
 
 	return 0;
