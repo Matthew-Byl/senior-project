@@ -338,14 +338,14 @@ uchar3 compute_lighting(
 	 */
 	if ( colour.w == 1 )
 	{
-		//  This is not recursive, because OpenCL can't handle recursion.
 		float d; float3 norm, inter;
 
-		// This isn't correct: use reflection direction
+		float3 reflection_direction = 
+			camera_direction - ( 2 * dot( camera_direction, normal ) * normal );
 
 		int closest = closest_object( 
 			position,
-			normal,
+			reflection_direction,
 			num_objects,
 			&d,
 			&norm,
