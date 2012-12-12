@@ -61,36 +61,53 @@ void run_tests()
 	printf( "Result: %f %f %f\n", result.s[0], result.s[1], result.s[2] );
 }
 
+#define NUM_OBJECTS 1024
+Object objects[NUM_OBJECTS];
+void thousand_spheres()
+{
+	int num = 1;
+	for ( int i = 0; i < 10; i++ )
+	{
+		for ( int j = 0; j < 10; j++ )
+		{
+			for ( int k = 0; k < 10; k++ )
+			{
+				objects[num].colour.s[0] = 100 + i * 10;
+				objects[num].colour.s[1] = 100 + k * 10;
+				objects[num].colour.s[2] = 100 + j * 10;
+				objects[num].type = SPHERE_TYPE;
+				objects[num].position.s[0] = i;
+				objects[num].position.s[1] = j;
+				objects[num].position.s[2] = k;
+				objects[num].objects.sphere.radius = 0.2;
+
+				num++;
+			}
+		}
+	}	
+}
+
 void run_kernel()
 {
-#define NUM_OBJECTS 3
-	Object objects[NUM_OBJECTS];
 	Light light;
 	cl_float3 camera;
 
 	objects[0].colour.s[0] = 255;
-	objects[0].colour.s[1] = 0;
+	objects[0].colour.s[1] = 255;
 	objects[0].colour.s[2] = 0;
 	objects[0].type = SPHERE_TYPE;
-	objects[0].position.s[0] = 0;
-	objects[0].position.s[1] = -1;
-	objects[0].position.s[2] = 0;
-	objects[0].objects.sphere.radius = 0.5;
+	objects[0].position.s[0] = gtk_range_get_value( GTK_RANGE( light_x ) );
+	objects[0].position.s[1] = gtk_range_get_value( GTK_RANGE( light_y ) );
+	objects[0].position.s[2] = gtk_range_get_value( GTK_RANGE( light_z ) );
+	objects[0].objects.sphere.radius = 0.1;
 
-	objects[1].colour.s[0] = 255;
-	objects[1].colour.s[1] = 255;
-	objects[1].colour.s[2] = 0;
-	objects[1].type = SPHERE_TYPE;
-	objects[1].position.s[0] = gtk_range_get_value( GTK_RANGE( light_x ) );
-	objects[1].position.s[1] = gtk_range_get_value( GTK_RANGE( light_y ) );
-	objects[1].position.s[2] = gtk_range_get_value( GTK_RANGE( light_z ) );
-	objects[1].objects.sphere.radius = 0.1;
-
+	const int num_objects = 1001;
+/*
 	if ( NUM_OBJECTS > 2 )
 	{
-		objects[2].colour.s[0] = 0;
-		objects[2].colour.s[1] = 255;
-		objects[2].colour.s[2] = 0;
+		objects[2].colour.s[0] = 2;
+		objects[2].colour.s[1] = 2;
+		objects[2].colour.s[2] = 2;
 		objects[2].type = PLANE_TYPE;
 		objects[2].position.s[0] = 0;
 		objects[2].position.s[1] = 0;
@@ -99,6 +116,29 @@ void run_kernel()
 		objects[2].objects.plane.normal.s[1] = 0;
 		objects[2].objects.plane.normal.s[2] = 1;	
 	}
+*/
+/*
+	int num = 3;
+	for ( int i = 0; i < 10; i++ )
+	{
+		for ( int j = 0; j < 10; j++ )
+		{
+			for ( int k = 0; k < 10; k++ )
+			{
+				objects[num].colour.s[0] = 100 + i * 10;
+				objects[num].colour.s[1] = 100 + k * 10;
+				objects[num].colour.s[2] = 100 + j * 10;
+				objects[num].type = SPHERE_TYPE;
+				objects[num].position.s[0] = i;
+				objects[num].position.s[1] = j;
+				objects[num].position.s[2] = k;
+				objects[num].objects.sphere.radius = 0.2;
+
+				num++;
+			}
+		}
+	}
+*/
 
 	light.position.s[0] = gtk_range_get_value( GTK_RANGE( light_x ) );
 	light.position.s[1] = gtk_range_get_value( GTK_RANGE( light_y ) );
@@ -107,14 +147,14 @@ void run_kernel()
 	cl::Buffer cl_objects(
 		context,
 		CL_MEM_READ_ONLY,
-		sizeof( Object ) * NUM_OBJECTS,
+		sizeof( Object ) * num_objects,
 		NULL
 	);
 	queue.enqueueWriteBuffer(
 		cl_objects,
 		CL_TRUE,
 		0,
-		sizeof( Object ) * NUM_OBJECTS,
+		sizeof( Object ) * num_objects,
 		objects,
 		NULL,
 		NULL
@@ -164,7 +204,6 @@ void run_kernel()
 		cl_camera
 	);	
 
-	int num_objects = NUM_OBJECTS;
 	cl::Buffer cl_num_objects(
 		context,
 		CL_MEM_READ_ONLY,
@@ -261,6 +300,8 @@ static void move_camera( GtkWidget *widget,
 
 int main( int argc, char *argv[] )
 {
+	thousand_spheres();
+
 	camera_position.s[0] = 0;
 	camera_position.s[1] = 0;
 	camera_position.s[2] = 0;

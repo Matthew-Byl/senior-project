@@ -173,7 +173,7 @@ int closest_object(
 
 // Shadows, specular, ambient, diffuse, etc.
 #define L_AMBIENT 0.5f
-#define DIFFUSE_ATTENUATION 3.0f
+#define DIFFUSE_ATTENUATION 1.0f
 uchar3 compute_lighting( 
 	__global Light *lights, 
 	int num_lights,
@@ -208,6 +208,10 @@ uchar3 compute_lighting(
 		float3 light_vector = lights[i].position - position;
 
 		float angle = fabs( dot( light_vector, normal ) );
+
+		if ( angle > 1 )
+			angle = 1;
+
 //		if ( angle < 0 )
 //			continue;
 
