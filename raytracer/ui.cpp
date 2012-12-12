@@ -15,8 +15,8 @@
 #include <fstream>
 using namespace std;
 
-#define SIZEX 500
-#define SIZEY 500
+#define SIZEX 1000
+#define SIZEY 1000
 #define PIXEL_BUFFER_SIZE SIZEX * SIZEY * 4
 GdkPixbuf *gdk_pixel_buffer;
 //unsigned char pixel_buffer[PIXEL_BUFFER_SIZE];
@@ -305,6 +305,7 @@ int main( int argc, char *argv[] )
 	GtkWidget *window;
 	GtkWidget *button;
 	GtkWidget *vbox;
+	GtkWidget *hbox;
 	
 	window = gtk_window_new( GTK_WINDOW_TOPLEVEL );
 	button = gtk_button_new_with_label( "Hello, world!" );
@@ -335,6 +336,9 @@ int main( int argc, char *argv[] )
 	run_kernel();
 	image = gtk_image_new_from_pixbuf( gdk_pixel_buffer );
 	vbox = gtk_vbox_new( FALSE, 10 );
+	gtk_widget_set_size_request( vbox, 200, -1 );
+
+	hbox = gtk_hbox_new( FALSE, 10 );
 
 	camera_x = gtk_hscale_new_with_range(
 		-30,
@@ -361,7 +365,7 @@ int main( int argc, char *argv[] )
 	g_signal_connect( button, "clicked", G_CALLBACK( clicked ), (gpointer) image );
 	g_signal_connect (window, "destroy", G_CALLBACK (destroy), NULL);
 
-	gtk_container_add( GTK_CONTAINER( vbox ), image );
+	gtk_container_add( GTK_CONTAINER( hbox ), image );
 	gtk_container_add( GTK_CONTAINER( vbox ), button );
 	gtk_container_add( GTK_CONTAINER( vbox ), camera_x );
 	gtk_container_add( GTK_CONTAINER( vbox ), camera_y );
@@ -369,7 +373,8 @@ int main( int argc, char *argv[] )
 	gtk_container_add( GTK_CONTAINER( vbox ), light_x );
 	gtk_container_add( GTK_CONTAINER( vbox ), light_y );
 	gtk_container_add( GTK_CONTAINER( vbox ), light_z );
-	gtk_container_add( GTK_CONTAINER( window ), vbox );
+	gtk_container_add( GTK_CONTAINER( hbox ), vbox );
+	gtk_container_add( GTK_CONTAINER( window ), hbox );
 
 	gtk_widget_show_all( window );
 
