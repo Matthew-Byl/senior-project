@@ -114,9 +114,9 @@ void run_kernel()
 	{
 */
 		objects[1].colour.s[0] = 0;
-		objects[1].colour.s[1] = 64;
-		objects[1].colour.s[2] = 255;
-		objects[1].colour.s[3] = 0;
+		objects[1].colour.s[1] = 0;
+		objects[1].colour.s[2] = 0;
+		objects[1].colour.s[3] = 1;
 		objects[1].type = PLANE_TYPE;
 		objects[1].position.s[0] = 0;
 		objects[1].position.s[1] = 0;
@@ -307,6 +307,45 @@ static void move_camera( GtkWidget *widget,
 	gtk_image_set_from_pixbuf( GTK_IMAGE( image ), gdk_pixel_buffer );
 }
 
+bool dragging = false;
+float drag_x, drag_y;
+float prev_x, prev_y;
+int drag_frame = -1;
+static void motion_notify( GtkWidget *widget, GdkEvent *event, gpointer user_data )
+{
+	GdkEventMotion *motion = (GdkEventMotion *) event;
+
+	if ( motion->state & GDK_BUTTON1_MASK )
+	{
+		if (!dragging )
+		{
+			prev_x = camera_position.s[1];
+			prev_y = camera_position.s[0];
+			drag_x = motion->x;
+			drag_y = motion->y;
+			dragging = true;
+		}
+		else
+		{
+			drag_frame++;
+			if ( drag_frame % 5 != 0 )
+				return;
+
+			camera_position.s[1] = prev_x + 0.01 * ( motion->x - drag_x );
+			camera_position.s[2] = prev_x + 0.01 * ( motion->y - drag_y );
+			run_kernel();
+			gtk_image_set_from_pixbuf( GTK_IMAGE( image ), gdk_pixel_buffer );
+			gtk_widget_queue_draw( image );
+
+			while ( gtk_events_pending )
+				gtk_main_iteration();
+		}
+	}
+	else
+	{
+		dragging = false;
+	}
+}
 
 int main( int argc, char *argv[] )
 {
@@ -377,6 +416,7 @@ int main( int argc, char *argv[] )
 	GtkWidget *button;
 	GtkWidget *vbox;
 	GtkWidget *hbox;
+	GtkWidget *eventBox;
 	
 	window = gtk_window_new( GTK_WINDOW_TOPLEVEL );
 	button = gtk_button_new_with_label( "Hello, world!" );
@@ -436,7 +476,12 @@ int main( int argc, char *argv[] )
 	g_signal_connect( button, "clicked", G_CALLBACK( clicked ), (gpointer) image );
 	g_signal_connect (window, "destroy", G_CALLBACK (destroy), NULL);
 
-	gtk_container_add( GTK_CONTAINER( hbox ), image );
+	eventBox = gtk_event_box_new();
+	gtk_widget_set_events( eventBox, GDK_POINTER_MOTION_MASK );
+	g_signal_connect (eventBox, "motion-notify-event", G_CALLBACK (motion_notify), NULL);
+
+	gtk_container_add( GTK_CONTAINER( eventBox ), image );
+	gtk_container_add( GTK_CONTAINER( hbox ), eventBox );
 	gtk_container_add( GTK_CONTAINER( vbox ), button );
 	gtk_container_add( GTK_CONTAINER( vbox ), camera_x );
 	gtk_container_add( GTK_CONTAINER( vbox ), camera_y );
@@ -446,6 +491,8 @@ int main( int argc, char *argv[] )
 	gtk_container_add( GTK_CONTAINER( vbox ), light_z );
 	gtk_container_add( GTK_CONTAINER( hbox ), vbox );
 	gtk_container_add( GTK_CONTAINER( window ), hbox );
+
+//	gtk_widget_set_double_buffered( image, FALSE );
 
 	gtk_widget_show_all( window );
 
