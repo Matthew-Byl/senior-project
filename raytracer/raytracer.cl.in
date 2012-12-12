@@ -425,7 +425,8 @@ __kernel void raytrace(
 	__global Object *objects,
 	__global Light *lights,
 	__global float3 *camera_position,
-	__global int *num_objects )
+	__global int *num_objects,
+	__global int *num_lights )
 {
 	// Get information about our relative position.
 	size_t x = get_global_id( 0 );
@@ -460,7 +461,7 @@ __kernel void raytrace(
 
 		uchar3 colour = compute_lighting(
 			lights,
-			1,
+			*num_lights,
 			*camera_position,
 			camera_direction,
 			intersect,

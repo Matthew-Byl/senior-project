@@ -58,9 +58,10 @@ void thousand_spheres()
 
 void run_kernel()
 {
-//	Light light;
-//	cl_float3 camera;
+	Light light;
+	const int num_objects = 126;
 
+	// Sphere that follows light
 	objects[0].colour.s[0] = 253;
 	objects[0].colour.s[1] = 204;
 	objects[0].colour.s[2] = 135;
@@ -71,163 +72,26 @@ void run_kernel()
 	objects[0].position.s[2] = gtk_range_get_value( GTK_RANGE( light_z ) );
 	objects[0].objects.sphere.radius = 0.1;
 
-	const int num_objects = 126;
-/*
-	if ( NUM_OBJECTS > 2 )
-	{
-*/
-		objects[1].colour.s[0] = 235;
-		objects[1].colour.s[1] = 206;
-		objects[1].colour.s[2] = 198;
-		objects[1].colour.s[3] = 0;
-		objects[1].type = PLANE_TYPE;
-		objects[1].position.s[0] = 0;
-		objects[1].position.s[1] = 0;
-		objects[1].position.s[2] = -1;
-		objects[1].objects.plane.normal.s[0] = 0;
-		objects[1].objects.plane.normal.s[1] = 1;
-		objects[1].objects.plane.normal.s[2] = 1;	
-/*
-	}
-*/
-/*
-	int num = 3;
-	for ( int i = 0; i < 10; i++ )
-	{
-		for ( int j = 0; j < 10; j++ )
-		{
-			for ( int k = 0; k < 10; k++ )
-			{
-				objects[num].colour.s[0] = 100 + i * 10;
-				objects[num].colour.s[1] = 100 + k * 10;
-				objects[num].colour.s[2] = 100 + j * 10;
-				objects[num].type = SPHERE_TYPE;
-				objects[num].position.s[0] = i;
-				objects[num].position.s[1] = j;
-				objects[num].position.s[2] = k;
-				objects[num].objects.sphere.radius = 0.2;
+	// Plane
+	objects[1].colour.s[0] = 235;
+	objects[1].colour.s[1] = 206;
+	objects[1].colour.s[2] = 198;
+	objects[1].colour.s[3] = 0;
+	objects[1].type = PLANE_TYPE;
+	objects[1].position.s[0] = 0;
+	objects[1].position.s[1] = 0;
+	objects[1].position.s[2] = -1;
+	objects[1].objects.plane.normal.s[0] = 0;
+	objects[1].objects.plane.normal.s[1] = 1;
+	objects[1].objects.plane.normal.s[2] = 1;	
 
-				num++;
-			}
-		}
-	}
-*/
-
-/*
+	// The diffuse light
 	light.position.s[0] = gtk_range_get_value( GTK_RANGE( light_x ) );
 	light.position.s[1] = gtk_range_get_value( GTK_RANGE( light_y ) );
 	light.position.s[2] = gtk_range_get_value( GTK_RANGE( light_z ) );
 
-	cl::Buffer cl_objects(
-		context,
-		CL_MEM_READ_ONLY,
-		sizeof( Object ) * num_objects,
-		NULL
-	);
-	queue.enqueueWriteBuffer(
-		cl_objects,
-		CL_TRUE,
-		0,
-		sizeof( Object ) * num_objects,
-		objects,
-		NULL,
-		NULL
-	);
-	kernel.setArg(
-		1,
-		cl_objects
-	);
-*/
-/*
-	cl::Buffer cl_lights(
-		context,
-		CL_MEM_READ_ONLY,
-		sizeof( light ),
-		NULL
-		);
-	queue.enqueueWriteBuffer(
-		cl_lights,
-		CL_TRUE,
-		0,
-		sizeof( light ),
-		&light,
-		NULL,
-		NULL
-	);
-	kernel.setArg(
-		2,
-		cl_lights
-	);	
-*/
-/*
-	cl::Buffer cl_camera(
-		context,
-		CL_MEM_READ_ONLY,
-		sizeof( cl_float3 ),
-		NULL
-		);
-	queue.enqueueWriteBuffer(
-		cl_camera,
-		CL_TRUE,
-		0,
-		sizeof( camera_position ),
-		&camera_position,
-		NULL,
-		NULL
-	);
-	kernel.setArg(
-		3,
-		cl_camera
-	);	
-*/
-/*
-	cl::Buffer cl_num_objects(
-		context,
-		CL_MEM_READ_ONLY,
-		sizeof( cl_int ),
-		NULL
-		);
-	queue.enqueueWriteBuffer(
-		cl_num_objects,
-		CL_TRUE,
-		0,
-		sizeof( num_objects ),
-		&num_objects,
-		NULL,
-		NULL
-	);
-	kernel.setArg(
-		4,
-		cl_num_objects
-	);	
-*/
-
-/*
-	cl::NDRange globalWorkSize( SIZEX, SIZEY );
-	queue.enqueueNDRangeKernel(
-		kernel,
-		cl::NullRange,
-		globalWorkSize,
-		cl::NullRange,
-		NULL,
-		NULL );
-
-	queue.enqueueReadBuffer(
-		cl_pixel_buffer,
-		CL_TRUE,
-		0,
-		sizeof(unsigned char) * PIXEL_BUFFER_SIZE,
-		gdk_pixbuf_get_pixels( gdk_pixel_buffer ),
-		NULL,
-		NULL );
-*/
-
-//	for ( int i = 0; i < PIXEL_BUFFER_SIZE; i++ )
-//		printf( "%d ", gdk_pixbuf_get_pixels( gdk_pixel_buffer)[i] );
-
-//	printf( "\n" );
-
-		renderer->render( objects, num_objects, camera_position );
+	// Render the scene.
+	renderer->render( objects, num_objects, &light, 1, camera_position );
 }
 
 static void clicked( GtkWidget *widget, gpointer data )
