@@ -116,12 +116,13 @@ void run_kernel()
 		objects[1].colour.s[0] = 0;
 		objects[1].colour.s[1] = 64;
 		objects[1].colour.s[2] = 255;
+		objects[1].colour.s[3] = 0;
 		objects[1].type = PLANE_TYPE;
 		objects[1].position.s[0] = 0;
 		objects[1].position.s[1] = 0;
 		objects[1].position.s[2] = -1;
 		objects[1].objects.plane.normal.s[0] = 0;
-		objects[1].objects.plane.normal.s[1] = 0;
+		objects[1].objects.plane.normal.s[1] = 1;
 		objects[1].objects.plane.normal.s[2] = 1;	
 /*
 	}
@@ -384,21 +385,21 @@ int main( int argc, char *argv[] )
 	light_x = gtk_hscale_new_with_range(
 		-30,
 		30,
-		0.1 );
+		0.01 );
 	gtk_range_set_value( GTK_RANGE( light_x ), 0 );
 	g_signal_connect( light_x, "value-changed", G_CALLBACK( move_camera ), NULL );
 
 	light_y = gtk_hscale_new_with_range(
 		-30,
 		30,
-		0.1 );
+		0.01 );
 	gtk_range_set_value( GTK_RANGE( light_y ), 0 );
 	g_signal_connect( light_y, "value-changed", G_CALLBACK( move_camera ), NULL );
 
 	light_z = gtk_hscale_new_with_range(
 		-30,
 		30,
-		0.1 );
+		0.01 );
 	gtk_range_set_value( GTK_RANGE( light_z ), 0 );
 	g_signal_connect( light_z, "value-changed", G_CALLBACK( move_camera ), NULL );
 
@@ -413,21 +414,21 @@ int main( int argc, char *argv[] )
 	camera_x = gtk_hscale_new_with_range(
 		-30,
 		30,
-		0.1 );
+		0.01 );
 	gtk_range_set_value( GTK_RANGE( camera_x ), 0 );
 	g_signal_connect( camera_x, "value-changed", G_CALLBACK( move_camera ), NULL );
 
 	camera_y = gtk_hscale_new_with_range(
 		-30,
 		30,
-		0.1 );
+		0.01 );
 	gtk_range_set_value( GTK_RANGE( camera_y ), 0 );
 	g_signal_connect( camera_y, "value-changed", G_CALLBACK( move_camera ), NULL );
 
 	camera_z = gtk_hscale_new_with_range(
 		-30,
 		30,
-		0.1 );
+		0.01 );
 	gtk_range_set_value( GTK_RANGE( camera_z ), 0 );
 	g_signal_connect( camera_z, "value-changed", G_CALLBACK( move_camera ), NULL );
 

@@ -175,7 +175,7 @@ int closest_object(
 
 // Shadows, specular, ambient, diffuse, etc.
 #define L_AMBIENT 0.5f
-#define DIFFUSE_ATTENUATION 1.5f
+#define DIFFUSE_ATTENUATION 1.1f
 uchar3 compute_lighting( 
 	__global Light *lights, 
 	int num_lights,
