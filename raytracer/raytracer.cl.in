@@ -57,10 +57,9 @@ float sphere_get_distance(
 
 	float3 intersection_point = camera_position + ( min_intersect * camera_direction );
 
-	// Is there a divide-by-zero?
 	*normal = normalize( intersection_point - object.position /
 						 ( fabs( intersection_point - object.position )
-						   + (float3)(0.001,0.001,0.001)) );
+						   + (float3)(0.001,0.001,0.001)) ); // avoid divide-by-zero
 	*intersect = intersection_point;
 
 	return distance( camera_position, intersection_point );
@@ -183,7 +182,9 @@ uchar3 compute_lighting(
 	float3 position, 
 	float3 normal, 
 	uchar3 colour, 
-	float object_distance )
+	float object_distance,
+	int num_objects,
+	__global Object *world)
 {
 	float3 f_colour;
 	f_colour.x = (float) colour.x;
@@ -203,8 +204,6 @@ uchar3 compute_lighting(
 	float3 f_diffuse = (float3)(0,0,0);
 	for ( int i = 0; i < num_lights; i++ )
 	{
-		// TODO: See whether light blocked.
-
 		float light_distance = distance( position, lights[i].position );
 		float3 light_vector = lights[i].position - position;
 
@@ -215,8 +214,26 @@ uchar3 compute_lighting(
 		f_diffuse += f_colour * angle
 			* pow( 1 / light_distance, DIFFUSE_ATTENUATION );
 	}
+
+	// Specular
+	float3 f_specular = (float3)( 0, 0, 0 );
+/*
+	for ( int i = 0; i < num_lights; i++ )
+	{
+		float3 light_vector = lights[i].position - position;
+
+		// Reflection vector
+		float3 reflection = light_vector
+			- 2 * dot( light_vector, normal ) * normal;
+
+		f_specular += 
+			0.01 *
+			(float3)(255, 255, 255)
+			* pow( dot( reflection, camera_direction ), 0.4f );
+	}
+*/
 	
-	float3 light = f_ambient + f_diffuse - fog;
+	float3 light = f_ambient + f_diffuse + f_specular - fog;
 //	float3 light = f_ambient + f_diffuse;
 
 	float3 clamped_light = fmin( light, (float3)( 255, 255, 255 ) );
@@ -267,7 +284,9 @@ __kernel void raytrace(
 			intersect,
 			normal,
 			objects[closest].colour,
-			distance
+			distance,
+			*num_objects,
+			objects
 		);
 
 		set_pixel( pixbuf, colour.x, colour.y, colour.z );
