@@ -57,9 +57,11 @@ float sphere_get_distance(
 
 	float3 intersection_point = camera_position + ( min_intersect * camera_direction );
 
-	*normal = normalize( intersection_point - object.position /
+/*	*normal = normalize( intersection_point - object.position /
 						 ( fabs( intersection_point - object.position )
-						   + (float3)(0.001,0.001,0.001)) ); // avoid divide-by-zero
+						 + (float3)(0.001,0.001,0.001)) ); // avoid divide-by-zero */
+
+	*normal = normalize( intersection_point - object.position );
 	*intersect = intersection_point;
 
 	return distance( camera_position, intersection_point );
@@ -207,13 +209,13 @@ uchar3 compute_lighting(
 		float light_distance = distance( position, lights[i].position );
 		float3 light_vector = lights[i].position - position;
 
-		float angle = fabs( dot( light_vector, normal ) );
+		float angle = dot( light_vector, normal );
 
-		if ( angle > 1 )
-			angle = 1;
+//		if ( angle > 1 )
+//			angle = 1;
 
-//		if ( angle < 0 )
-//			continue;
+		if ( angle < 0 )
+			continue;
 
 		f_diffuse += f_colour * angle
 			* pow( 1 / light_distance, DIFFUSE_ATTENUATION );
