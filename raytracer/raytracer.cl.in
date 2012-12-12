@@ -175,7 +175,7 @@ int closest_object(
 
 // Shadows, specular, ambient, diffuse, etc.
 #define L_AMBIENT 0.5f
-#define DIFFUSE_ATTENUATION 1.0f
+#define DIFFUSE_ATTENUATION 1.5f
 uchar3 compute_lighting( 
 	__global Light *lights, 
 	int num_lights,
@@ -239,7 +239,7 @@ uchar3 compute_lighting(
 	}
 */
 	
-	float3 light = f_ambient + f_diffuse + f_specular - fog;
+	float3 light = f_ambient + f_diffuse + f_specular;
 //	float3 light = f_ambient + f_diffuse;
 
 	float3 clamped_light = fmin( light, (float3)( 255, 255, 255 ) );
@@ -278,7 +278,7 @@ __kernel void raytrace(
 
 	if ( closest == -1 )
 	{
-		set_pixel( pixbuf, 0x08, 0x6C, 0xA2 );
+		set_pixel( pixbuf, 0, 0, 0 );
 	}
 	else
 	{

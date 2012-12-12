@@ -66,11 +66,11 @@ Object objects[NUM_OBJECTS];
 void thousand_spheres()
 {
 	int num = 1;
-	for ( int i = 0; i < 10; i++ )
+	for ( int i = 0; i < 5; i++ )
 	{
-		for ( int j = 0; j < 10; j++ )
+		for ( int j = 0; j < 5; j++ )
 		{
-			for ( int k = 0; k < 10; k++ )
+			for ( int k = 0; k < 5; k++ )
 			{
 				objects[num].colour.s[0] = 100 + i * 10;
 				objects[num].colour.s[1] = 100 + k * 10;
@@ -101,7 +101,7 @@ void run_kernel()
 	objects[0].position.s[2] = gtk_range_get_value( GTK_RANGE( light_z ) );
 	objects[0].objects.sphere.radius = 0.1;
 
-	const int num_objects = 1001;
+	const int num_objects = 126;
 /*
 	if ( NUM_OBJECTS > 2 )
 	{
