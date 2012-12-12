@@ -9,6 +9,8 @@
 #include <CLFunction.h>
 #include <CLUnitIntArgument.h>
 
+#include <png.h>
+
 #include <string>
 #include <iostream>
 #include <vector>
@@ -209,12 +211,30 @@ void run_kernel()
 
 static void clicked( GtkWidget *widget, gpointer data )
 {
-	for ( int i = 0; i < 10; i++ )
+    // from http://zarb.org/~gc/html/libpng.html
+	FILE *fp = fopen( "output.png", "wb" );
+	png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+	png_infop info_ptr = png_create_info_struct( png_ptr );
+
+	png_init_io(png_ptr, fp);
+
+
+	png_set_IHDR(png_ptr, info_ptr, SIZEX, SIZEY,
+				 8, PNG_COLOR_TYPE_RGBA, PNG_INTERLACE_NONE,
+				 PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
+
+	png_write_info(png_ptr, info_ptr);
+
+	unsigned char *pixels = gdk_pixbuf_get_pixels( gdk_pixel_buffer );
+	png_byte *row_pointers[SIZEY];
+	for ( int i = 0; i < SIZEY; i++ )
 	{
-		run_kernel();
-		gtk_image_set_from_pixbuf( GTK_IMAGE( image ), gdk_pixel_buffer );
-		usleep( 1000 );
+		row_pointers[i] = pixels + ( SIZEX * 4 * i );
 	}
+
+	png_write_image(png_ptr, row_pointers);
+	png_write_end(png_ptr, NULL);
+	fclose(fp);
 }
 
 static void destroy( GtkWidget *widget,
@@ -245,7 +265,7 @@ int main( int argc, char *argv[] )
 	camera_position.s[1] = 0;
 	camera_position.s[2] = 0;
 
-	run_tests();
+//	run_tests();
 
 	gtk_init( &argc, &argv );
 	gdk_pixel_buffer = gdk_pixbuf_new( GDK_COLORSPACE_RGB, TRUE, 8, SIZEX, SIZEY );
