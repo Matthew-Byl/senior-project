@@ -1,13 +1,6 @@
+#include "CLRenderer.h"
+
 #include <gtk/gtk.h>
-
-#define __CL_ENABLE_EXCEPTIONS
-#include <CL/cl.hpp>
-
-#define _HOST_
-#include "objects.h"
-
-#include <CLFunction.h>
-#include <CLUnitIntArgument.h>
 
 #include <png.h>
 
@@ -22,11 +15,6 @@ using namespace std;
 #define PIXEL_BUFFER_SIZE SIZEX * SIZEY * 4
 GdkPixbuf *gdk_pixel_buffer;
 //unsigned char pixel_buffer[PIXEL_BUFFER_SIZE];
-cl::Context context;
-cl::CommandQueue queue;
-cl::Kernel kernel;
-cl::Buffer cl_pixel_buffer;
-vector<cl::Device> devices;
 cl_float3 camera_position;
 
 GtkWidget *light_x;
@@ -34,29 +22,7 @@ GtkWidget *light_y;
 GtkWidget *light_z;
 GtkWidget *image;
 
-void run_tests()
-{
-	CLContext context( 0, 0 );
-    ifstream t("raytracer.cl");
-    string src((std::istreambuf_iterator<char>(t)),
-			   std::istreambuf_iterator<char>());
-
-	CLFunction ray_direction( "get_ray_direction", src, context );
-	CLUnitIntArgument x( context, 0 );
-	CLUnitIntArgument num_x( context, 10 );
-	CLUnitIntArgument y( context, 15 );
-	CLUnitIntArgument num_y( context, 15 );
-	cl_float3 result;
-	
-	ray_direction.addArgument( x );
-	ray_direction.addArgument( num_x );
-	ray_direction.addArgument( y );
-	ray_direction.addArgument( num_y );
-
-	result = ray_direction.run<cl_float3>( "float3" );
-
-	printf( "Result: %f %f %f\n", result.s[0], result.s[1], result.s[2] );
-}
+CLRenderer *renderer;
 
 #define NUM_OBJECTS 1024
 Object objects[NUM_OBJECTS];
@@ -92,8 +58,8 @@ void thousand_spheres()
 
 void run_kernel()
 {
-	Light light;
-	cl_float3 camera;
+//	Light light;
+//	cl_float3 camera;
 
 	objects[0].colour.s[0] = 253;
 	objects[0].colour.s[1] = 204;
@@ -147,6 +113,7 @@ void run_kernel()
 	}
 */
 
+/*
 	light.position.s[0] = gtk_range_get_value( GTK_RANGE( light_x ) );
 	light.position.s[1] = gtk_range_get_value( GTK_RANGE( light_y ) );
 	light.position.s[2] = gtk_range_get_value( GTK_RANGE( light_z ) );
@@ -170,7 +137,8 @@ void run_kernel()
 		1,
 		cl_objects
 	);
-
+*/
+/*
 	cl::Buffer cl_lights(
 		context,
 		CL_MEM_READ_ONLY,
@@ -190,7 +158,8 @@ void run_kernel()
 		2,
 		cl_lights
 	);	
-
+*/
+/*
 	cl::Buffer cl_camera(
 		context,
 		CL_MEM_READ_ONLY,
@@ -210,7 +179,8 @@ void run_kernel()
 		3,
 		cl_camera
 	);	
-
+*/
+/*
 	cl::Buffer cl_num_objects(
 		context,
 		CL_MEM_READ_ONLY,
@@ -230,7 +200,9 @@ void run_kernel()
 		4,
 		cl_num_objects
 	);	
+*/
 
+/*
 	cl::NDRange globalWorkSize( SIZEX, SIZEY );
 	queue.enqueueNDRangeKernel(
 		kernel,
@@ -248,11 +220,14 @@ void run_kernel()
 		gdk_pixbuf_get_pixels( gdk_pixel_buffer ),
 		NULL,
 		NULL );
+*/
 
 //	for ( int i = 0; i < PIXEL_BUFFER_SIZE; i++ )
 //		printf( "%d ", gdk_pixbuf_get_pixels( gdk_pixel_buffer)[i] );
 
 //	printf( "\n" );
+
+		renderer->render( objects, num_objects, camera_position );
 }
 
 static void clicked( GtkWidget *widget, gpointer data )
@@ -358,61 +333,10 @@ int main( int argc, char *argv[] )
 	camera_position.s[1] = 0;
 	camera_position.s[2] = 0;
 
-//	run_tests();
-
 	gtk_init( &argc, &argv );
 	gdk_pixel_buffer = gdk_pixbuf_new( GDK_COLORSPACE_RGB, TRUE, 8, SIZEX, SIZEY );
 
-	// Initialize OpenCL
-	vector<cl::Platform> platforms;
-	cl::Platform::get( &platforms );
-
-    platforms[0].getDevices( CL_DEVICE_TYPE_GPU, &devices );
-
-    context = cl::Context( devices, NULL, NULL, NULL );
-    queue = cl::CommandQueue( context, devices[0], 0 );
-
-	ifstream t("raytracer.cl");
-	string src((std::istreambuf_iterator<char>(t)),
-					   std::istreambuf_iterator<char>());
-
-	cl::Program::Sources sources(
-        1,
-        std::pair<const char *, int>( src.c_str(), src.length() + 1 )
-        );	
-	
-	cl::Program program(
-		context,
-		sources );
-
-	try {
-		program.build( devices );
-	} catch ( cl::Error err ) {
-		std::cout << "Build Status: " << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(devices[0]) << std::endl;
-		std::cout << "Build Options:\t" << program.getBuildInfo<CL_PROGRAM_BUILD_OPTIONS>(devices[0]) << std::endl;
-		std::cout << "Build Log:\t " << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(devices[0]) << std::endl;
-		return 1;
-	}
-
-		std::cout << "Build Status: " << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(devices[0]) << std::endl;
-		std::cout << "Build Options:\t" << program.getBuildInfo<CL_PROGRAM_BUILD_OPTIONS>(devices[0]) << std::endl;
-		std::cout << "Build Log:\t " << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(devices[0]) << std::endl;
-
-
-	kernel = cl::Kernel(
-		program,
-		"raytrace" );
-
-	cl_pixel_buffer = cl::Buffer(
-		context,
-		CL_MEM_READ_WRITE,
-		sizeof( unsigned char ) * PIXEL_BUFFER_SIZE,
-		NULL
-	);
-
-	kernel.setArg(
-		0,
-		cl_pixel_buffer );
+	renderer = new CLRenderer( gdk_pixbuf_get_pixels( gdk_pixel_buffer ), SIZEX, SIZEY );
 
 	// Initialize UI
 	GtkWidget *window;
@@ -423,7 +347,6 @@ int main( int argc, char *argv[] )
 	
 	window = gtk_window_new( GTK_WINDOW_TOPLEVEL );
 	button = gtk_button_new_with_label( "Save as PNG" );
-
 
 	light_x = gtk_hscale_new_with_range(
 		-30,
