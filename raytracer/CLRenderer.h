@@ -19,7 +19,7 @@
 class CLRenderer
 {
 public:
-	CLRenderer( unsigned char *pixel_buffer, size_t width, size_t height );
+	CLRenderer( unsigned char *pixel_buffer, size_t width, size_t height, bool use_cpu );
 	void render( Object *world, int num_objects, Light *lights, int num_lights, cl_float3 camera_position );
 
 private:

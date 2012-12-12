@@ -1,5 +1,8 @@
 /**
  * Define objects for raytracer.
+ *
+ * @author John Kloosterman for CS352 at Calvin College
+ * @date Dec. 12, 2012
  */
 
 #ifdef _HOST_
@@ -15,13 +18,12 @@
 #endif
 
 typedef struct {
-	float radius;
-} Sphere;
+	FLOAT3_T position;
+} Light;
 
 typedef struct {
-	FLOAT3_T position;
-//	float intensity;
-} Light;
+	float radius;
+} Sphere;
 
 typedef struct {
 	FLOAT3_T normal;
@@ -33,7 +35,9 @@ typedef struct {
 #define CUBE_TYPE 2
 
 typedef struct {
-	UCHAR4_T colour; // if 4th component is 1, then mirrored.
+    // if 4th component is 1, then the object is mirrored.
+	UCHAR4_T colour;
+
 	int type;
 	FLOAT3_T position;
 	union {

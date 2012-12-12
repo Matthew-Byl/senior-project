@@ -253,7 +253,10 @@ int main( int argc, char *argv[] )
 	gdk_pixel_buffer = gdk_pixbuf_new( GDK_COLORSPACE_RGB, TRUE, 8, SIZEX, SIZEY );
 
 	// Initialize OpenCL renderer
-	renderer = new CLRenderer( gdk_pixbuf_get_pixels( gdk_pixel_buffer ), SIZEX, SIZEY );
+	bool use_cpu = false;
+	if( argc == 2 && strcmp( argv[1], "-cpu" ) == 0 )
+		use_cpu = true;
+	renderer = new CLRenderer( gdk_pixbuf_get_pixels( gdk_pixel_buffer ), SIZEX, SIZEY, use_cpu );
 
 	// Initialize UI
 	GtkWidget *window;

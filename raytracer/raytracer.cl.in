@@ -400,6 +400,7 @@ uchar3 compute_lighting(
 
     // Make sure colour values can fit in 8 bits.
 	float3 clamped_light = fmin( light, (float3)( 255, 255, 255 ) );
+	clamped_light = fmax( clamped_light, (float3)( 0, 0, 0 ) );
 
 	return (uchar3)( clamped_light.x, clamped_light.y, clamped_light.z );
 }

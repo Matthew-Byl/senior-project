@@ -4,7 +4,7 @@
 #include <string>
 using namespace std;
 
-CLRenderer::CLRenderer( unsigned char *pixel_buffer, size_t width, size_t height )
+CLRenderer::CLRenderer( unsigned char *pixel_buffer, size_t width, size_t height, bool use_cpu )
 	: myPixelBuffer( pixel_buffer ), myWidth( width ), myHeight( height )
 {
 	size_t pixel_buffer_size = width * height * 4;
@@ -13,7 +13,11 @@ CLRenderer::CLRenderer( unsigned char *pixel_buffer, size_t width, size_t height
 	// We choose the first platform, and its first GPU device.
     vector<cl::Platform> platforms;
 	cl::Platform::get( &platforms );
-    platforms[0].getDevices( CL_DEVICE_TYPE_GPU, &devices );
+
+	if ( use_cpu )
+		platforms[0].getDevices( CL_DEVICE_TYPE_CPU, &devices );
+	else
+		platforms[0].getDevices( CL_DEVICE_TYPE_GPU, &devices );
 
     context = cl::Context( devices, NULL, NULL, NULL );
     queue = cl::CommandQueue( context, devices[0], 0 );
