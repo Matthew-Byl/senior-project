@@ -320,7 +320,7 @@ static void motion_notify( GtkWidget *widget, GdkEvent *event, gpointer user_dat
 		if (!dragging )
 		{
 			prev_x = camera_position.s[1];
-			prev_y = camera_position.s[0];
+			prev_y = camera_position.s[2];
 			drag_x = motion->x;
 			drag_y = motion->y;
 			dragging = true;
@@ -332,19 +332,36 @@ static void motion_notify( GtkWidget *widget, GdkEvent *event, gpointer user_dat
 				return;
 
 			camera_position.s[1] = prev_x + 0.01 * ( motion->x - drag_x );
-			camera_position.s[2] = prev_x + 0.01 * ( motion->y - drag_y );
+			camera_position.s[2] = prev_y + 0.01 * ( motion->y - drag_y );
 			run_kernel();
 			gtk_image_set_from_pixbuf( GTK_IMAGE( image ), gdk_pixel_buffer );
 			gtk_widget_queue_draw( image );
 
-			while ( gtk_events_pending )
-				gtk_main_iteration();
+//			while ( gtk_events_pending )
+//				gtk_main_iteration();
 		}
 	}
 	else
 	{
 		dragging = false;
 	}
+}
+
+static void scroll( GtkWidget *widget, GdkEvent *event, gpointer user_data )
+{
+	GdkEventScroll *scroll = (GdkEventScroll *) event;
+
+	if ( scroll->direction == GDK_SCROLL_UP )
+	{
+		camera_position.s[0] += 0.1;
+	}
+	else if ( scroll->direction == GDK_SCROLL_DOWN )
+	{
+		camera_position.s[0] -= 0.1;
+	}
+
+	run_kernel();
+	gtk_image_set_from_pixbuf( GTK_IMAGE( image ), gdk_pixel_buffer );
 }
 
 int main( int argc, char *argv[] )
@@ -477,8 +494,9 @@ int main( int argc, char *argv[] )
 	g_signal_connect (window, "destroy", G_CALLBACK (destroy), NULL);
 
 	eventBox = gtk_event_box_new();
-	gtk_widget_set_events( eventBox, GDK_POINTER_MOTION_MASK );
+	gtk_widget_set_events( eventBox, GDK_POINTER_MOTION_MASK | GDK_BUTTON_PRESS_MASK );
 	g_signal_connect (eventBox, "motion-notify-event", G_CALLBACK (motion_notify), NULL);
+	g_signal_connect (eventBox, "scroll-event", G_CALLBACK (scroll), NULL);
 
 	gtk_container_add( GTK_CONTAINER( eventBox ), image );
 	gtk_container_add( GTK_CONTAINER( hbox ), eventBox );
