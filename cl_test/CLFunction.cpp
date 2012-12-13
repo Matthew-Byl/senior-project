@@ -1,3 +1,4 @@
+/*
 #include "CLFunction.h"
 #include "KernelGenerator.h"
 using namespace std;
@@ -12,3 +13,4 @@ void CLFunction::addArgument( CLUnitArgument argument )
 {
 	myArguments.push_back( argument );
 }
+*/

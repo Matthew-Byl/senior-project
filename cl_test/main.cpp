@@ -12,21 +12,16 @@ const char *src =
 	"   return i + j.x;" \
 	"}";
 
-#define c_vec( ... ) \
-	CLUnitArgument args[] = { ... };
-	
-
 int main( void )
 {
 	CLContext context( 0, 0 );
-	CLFunction add_one( "add_one", src, context );
+	CLFunction<int> add_one( "add_one", src, context );
 	cl_int3 intr;
 	intr.s[0] = 2;
-//	CLUnitArgument arg( intr );
 	cl_int result;
 
 	add_one.setArguments( 1, intr );
-	result = add_one.run<cl_int>( "int" );
+	result = add_one.run( "int" );
 
 	printf( "Result: %d\n", result );
 }

@@ -7,21 +7,28 @@
 #include <iostream>
 
 /* Encapsulates an OpenCL function that can be called like normal code. */
+template<class T>
 class CLFunction
 {
 public:
-	CLFunction( std::string function, std::string kernel, CLContext &context );
-	void addArgument( CLUnitArgument argument );
+	CLFunction( std::string function, std::string kernel, CLContext &context )
+		: myContext( context ), myFunction( function), myKernel( kernel ) 
+		{
+		}
+//	void addArgument( CLUnitArgument argument );
 
 	template<class ...Arguments>
 	void setArguments( Arguments... params )
 		{
+			// This has to be done with an array, instead of
+			//  the more elegant creating the array with an
+			//  initializer list, in order to be compatible with
+			//  my compiler.
 			CLUnitArgument args[] = { params... };
 			size_t size = sizeof( args ) / sizeof( CLUnitArgument );
 			myArguments = std::vector<CLUnitArgument>( args, args + size );
 		}
 
-	template<class T>
 	T run( std::string type );
 private:
 	CLContext &myContext;
@@ -30,8 +37,9 @@ private:
 	std::string myKernel;
 };
 
+
 template<class T>
-T CLFunction::run( std::string type )
+T CLFunction<T>::run( std::string type )
 {
     KernelGenerator generator( myFunction, myArguments, type );
 	std::string src( myKernel + "\n\n" + generator.generate() );
