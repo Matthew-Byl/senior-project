@@ -287,7 +287,7 @@ int closest_object(
 // Shadows, specular, ambient, diffuse, etc.
 #define FOGGINESS 0.03f
 #define L_AMBIENT 0.5f
-#define DIFFUSE_ATTENUATION 2.0f
+#define DIFFUSE_ATTENUATION 1.5f
 
 /**
  * Compute lighting for a given point on an object
@@ -417,7 +417,8 @@ uchar3 compute_lighting(
 			continue;
 
 		f_diffuse += f_colour * angle
-			* pow( 1 / light_distance, DIFFUSE_ATTENUATION );
+			* pow( 1 / light_distance, DIFFUSE_ATTENUATION )
+			* ( 1 / (float) num_lights );
 	}
 	
 	float3 light = f_ambient + f_diffuse - fog;
