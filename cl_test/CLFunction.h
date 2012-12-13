@@ -11,10 +11,19 @@ template<class T>
 class CLFunction
 {
 public:
-	CLFunction( std::string function, std::string kernel, CLContext &context )
+	CLFunction( std::string function, 
+				std::string kernel, 
+				const CLContext context = CLContext(0, 0 ) )
 		: myContext( context ), myFunction( function), myKernel( kernel ) 
 		{
 		}
+/*
+	CLFunction( std::string function, std::string kernel )
+		: myFunction( function), myKernel( kernel ) 
+		{
+			myContext = CLContext( 0, 0 );
+		}
+*/
 //	void addArgument( CLUnitArgument argument );
 
 	template<class ...Arguments>
@@ -29,8 +38,8 @@ public:
 			myArguments = std::vector<CLUnitArgument>( args, args + size );
 		}
 
-	T run();
-	T run( std::string type );
+	const T run();
+	const T run( std::string type );
 
 	template<class ...Arguments>
 	T operator()( Arguments... params )
@@ -39,7 +48,7 @@ public:
 			return run();
 		}
 private:
-	CLContext &myContext;
+	const CLContext myContext;
 	std::vector<CLUnitArgument> myArguments;
 	std::string myFunction;
 	std::string myKernel;
@@ -47,13 +56,13 @@ private:
 
 
 template<>
-int CLFunction<int>::run()
+const int CLFunction<int>::run()
 {
 	return run( "int" );
 }
 
 template<class T>
-T CLFunction<T>::run( std::string type )
+const T CLFunction<T>::run( std::string type )
 {
     KernelGenerator generator( myFunction, myArguments, type );
 	std::string src( myKernel + "\n\n" + generator.generate() );

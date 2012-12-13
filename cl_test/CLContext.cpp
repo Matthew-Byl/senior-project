@@ -13,17 +13,17 @@ CLContext::CLContext( int platform, int device )
 	myCommandQueue = cl::CommandQueue( myContext, myDevices[0], 0 );
 }
 
-cl::Context CLContext::getContext()
+cl::Context CLContext::getContext() const
 {
 	return myContext;
 }
 
-cl::CommandQueue CLContext::getCommandQueue()
+cl::CommandQueue CLContext::getCommandQueue() const
 {
 	return myCommandQueue;
 }
 
-cl::Program CLContext::buildProgram( string &src )
+cl::Program CLContext::buildProgram( string &src ) const
 {
 	cl::Program::Sources sources(
         1,

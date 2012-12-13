@@ -49,7 +49,7 @@ CLUnitArgument::~CLUnitArgument() {
 	free( myPtr );
 }
 
-cl::Buffer &CLUnitArgument::getBuffer( CLContext &context )
+cl::Buffer &CLUnitArgument::getBuffer( const CLContext &context )
 {
 	if ( !myBufferInitialized )
 	{

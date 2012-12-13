@@ -14,8 +14,8 @@ const char *src =
 
 int main( void )
 {
-	CLContext context( 0, 0 );
-	CLFunction<int> add_one( "add_one", src, context );
+//	CLContext context( 0, 0 );
+	CLFunction<int> add_one( "add_one", src );
 	cl_int3 intr;
 	intr.s[0] = 2;
 	cl_int result;

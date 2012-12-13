@@ -19,7 +19,7 @@ public:
 
 	~CLUnitArgument();
 
-	cl::Buffer &getBuffer( CLContext &context );
+	cl::Buffer &getBuffer( const CLContext &context );
 	std::string getType();
 	void enqueue( cl::CommandQueue &queue );
 	
