@@ -36,6 +36,8 @@ private:
 // Allows us to make copies of arguments with their data
 //  without copying the memory buffer and still not
 //  leaking huge chunks of memory.
+//
+// We don't use this yet, and it probably doesn't work.
 class CLReferenceBuffer
 {
 public:

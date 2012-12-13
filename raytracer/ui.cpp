@@ -54,13 +54,13 @@ void setup_scene()
 	objects[1].colour.s[0] = 235;
 	objects[1].colour.s[1] = 206;
 	objects[1].colour.s[2] = 198;
-	objects[1].colour.s[3] = 1;
+	objects[1].colour.s[3] = 0;
 	objects[1].type = PLANE_TYPE;
 	objects[1].position.s[0] = 0;
 	objects[1].position.s[1] = 0;
 	objects[1].position.s[2] = -1;
 	objects[1].objects.plane.normal.s[0] = 0;
-	objects[1].objects.plane.normal.s[1] = 1;
+	objects[1].objects.plane.normal.s[1] = 0;
 	objects[1].objects.plane.normal.s[2] = 1;	
 
 	int num = 2;
@@ -97,7 +97,7 @@ void setup_scene()
 void run_kernel()
 {
 	Light light;
-	const int num_objects = 126;
+	const int num_objects = 127;
 
 	// Sphere that follows light
 	objects[0].colour.s[0] = 253;
