@@ -11,13 +11,13 @@ class CLFunction
 {
 public:
 	CLFunction( std::string function, std::string kernel, CLContext &context );
-	void addArgument( CLUnitArgument &argument );
+	void addArgument( CLUnitArgument argument );
 
 	template<class T>
 	T run( std::string type );
 private:
 	CLContext &myContext;
-	std::vector<CLUnitArgument*> myArguments;
+	std::vector<CLUnitArgument> myArguments;
 	std::string myFunction;
 	std::string myKernel;
 };
@@ -43,13 +43,13 @@ T CLFunction::run( std::string type )
 	std::vector<cl::Buffer> buffers;
 	for ( auto it : myArguments )
 	{
-		buffers.push_back( it->getBuffer( myContext ) );
+		buffers.push_back( it.getBuffer( myContext ) );
 	}
 
 	// Make those buffers arguments for the kernel.
 	for ( int i = 0; i < buffers.size(); i++ )
 	{
-		std::cout << "Setting argument " << i << std::endl;
+		std::cout << "Setting argument " << i << " of type " << myArguments[i].getType() << std::endl;
 //		printf( "%x\n", buffers[i] );
 		kernel.setArg( i, buffers[i] );
 	}
@@ -58,7 +58,7 @@ T CLFunction::run( std::string type )
 	auto queue = myContext.getCommandQueue();
 	for ( auto it : myArguments )
 	{
-		it->enqueue( queue );
+		it.enqueue( queue );
 	}
 
 	// Create the buffer for the result.

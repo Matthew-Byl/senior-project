@@ -8,7 +8,7 @@ CLFunction::CLFunction( std::string function, std::string kernel, CLContext &con
 
 }
 
-void CLFunction::addArgument( CLUnitArgument &argument )
+void CLFunction::addArgument( CLUnitArgument argument )
 {
-	myArguments.push_back( &argument );
+	myArguments.push_back( argument );
 }

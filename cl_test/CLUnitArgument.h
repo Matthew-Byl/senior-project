@@ -1,7 +1,6 @@
 #ifndef _CL_UNIT_ARGUMENT
 #define _CL_UNIT_ARGUMENT
 
-// TODO: make a big header file.
 #include "CLIncludes.h"
 #include "CLContext.h"
 #include <string>
@@ -12,11 +11,11 @@ class CLUnitArgument
 {
 public:
 	CLUnitArgument( std::string name, size_t size, void *ptr );
+	CLUnitArgument( const CLUnitArgument &other );
 	CTR( cl_int );
 	CTR( cl_uchar );
 	CTR( cl_float3 );
 	CTR( cl_int3 );
-
 
 	~CLUnitArgument();
 

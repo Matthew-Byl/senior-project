@@ -5,7 +5,7 @@ using namespace std;
 
 KernelGenerator::KernelGenerator( 
 	std::string function, 
-	std::vector<CLUnitArgument*> &arguments,
+	std::vector<CLUnitArgument> &arguments,
 	std::string returnType )
 	: myFunction(function), myReturnType( returnType ), myArguments( arguments )
 {
@@ -24,7 +24,7 @@ string KernelGenerator::generate()
 	for ( auto &it : myArguments )
 	{
 		// global *someType arg3,
-		ret += "__global " + it->getType() + " *arg" + to_string( i ) + ", ";
+		ret += "__global " + it.getType() + " *arg" + to_string( i ) + ", ";
 		i++;
 	}
 

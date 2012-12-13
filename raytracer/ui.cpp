@@ -54,7 +54,7 @@ void setup_scene()
 	objects[1].colour.s[0] = 235;
 	objects[1].colour.s[1] = 206;
 	objects[1].colour.s[2] = 198;
-	objects[1].colour.s[3] = 0;
+	objects[1].colour.s[3] = 1;
 	objects[1].type = PLANE_TYPE;
 	objects[1].position.s[0] = 0;
 	objects[1].position.s[1] = 0;

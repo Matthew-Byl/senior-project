@@ -12,12 +12,13 @@ int main( void )
 {
 	CLContext context( 0, 0 );
 	CLFunction add_one( "add_one", src, context );
-	cl_int3 intr;
+	cl_float3 intr;
 	intr.s[0] = 1;
-	CLUnitArgument arg( intr );
+//	CLUnitArgument arg( intr );
 	cl_int result;
 
-	add_one.addArgument( arg );
+	add_one.addArgument( intr );
+
 	result = add_one.run<cl_int>( "int" );
 
 	printf( "Result: %d\n", result );
