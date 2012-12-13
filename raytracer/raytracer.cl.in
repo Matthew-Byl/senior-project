@@ -287,7 +287,7 @@ int closest_object(
 // Shadows, specular, ambient, diffuse, etc.
 #define FOGGINESS 0.03f
 #define L_AMBIENT 0.5f
-#define DIFFUSE_ATTENUATION 1.5f
+#define DIFFUSE_ATTENUATION 1.2f
 
 /**
  * Compute lighting for a given point on an object
@@ -388,14 +388,13 @@ uchar3 compute_lighting(
 	for ( int i = 0; i < num_lights; i++ )
 	{
 		float light_distance = distance( position, lights[i].position );
-		float3 light_vector = lights[i].position - position;
+		float3 light_vector = normalize( lights[i].position - position );
 
 		// See if we are in shadow.
 		float d; float3 norm, inter;
 		int closest = closest_object( 
 			lights[i].position,
-			normalize( -light_vector ),
-//			normalize( light_vector ),
+			-light_vector,
 			num_objects,
 			&d,
 			&norm,
