@@ -29,7 +29,15 @@ public:
 			myArguments = std::vector<CLUnitArgument>( args, args + size );
 		}
 
+	T run();
 	T run( std::string type );
+
+	template<class ...Arguments>
+	T operator()( Arguments... params )
+		{
+			setArguments( params... );
+			return run();
+		}
 private:
 	CLContext &myContext;
 	std::vector<CLUnitArgument> myArguments;
@@ -37,6 +45,12 @@ private:
 	std::string myKernel;
 };
 
+
+template<>
+int CLFunction<int>::run()
+{
+	return run( "int" );
+}
 
 template<class T>
 T CLFunction<T>::run( std::string type )

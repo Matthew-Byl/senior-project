@@ -20,8 +20,10 @@ int main( void )
 	intr.s[0] = 2;
 	cl_int result;
 
-	add_one.setArguments( 1, intr );
-	result = add_one.run( "int" );
+//	add_one.setArguments( 1, intr );
+//	result = add_one.run();
+
+	result = add_one( 1, intr );
 
 	printf( "Result: %d\n", result );
 }
