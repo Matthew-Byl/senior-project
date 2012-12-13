@@ -1,18 +1,20 @@
 #include "CLFunction.h"
-#include "CLUnitIntArgument.h"
+#include "CLUnitArgument.h"
 
 const char *src = 
-	"int add_one( int i ) " \
+	"int add_one( int3 i ) " \
 	"{" \
-	"   printf(\"From OpenCL: %d\\n\", i ); " \
-	"   return i + 1;" \
+	"   printf(\"From OpenCL: %d\\n\", i.x ); " \
+	"   return i.x + 1;" \
 	"}";
 
 int main( void )
 {
 	CLContext context( 0, 0 );
 	CLFunction add_one( "add_one", src, context );
-	CLUnitIntArgument arg( context, 1 );
+	cl_int3 intr;
+	intr.s[0] = 1;
+	CLUnitArgument arg( intr );
 	cl_int result;
 
 	add_one.addArgument( arg );

@@ -43,7 +43,7 @@ T CLFunction::run( std::string type )
 	std::vector<cl::Buffer> buffers;
 	for ( auto it : myArguments )
 	{
-		buffers.push_back( it->getBuffer() );
+		buffers.push_back( it->getBuffer( myContext ) );
 	}
 
 	// Make those buffers arguments for the kernel.
