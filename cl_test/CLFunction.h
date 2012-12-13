@@ -11,7 +11,17 @@ class CLFunction
 {
 public:
 	CLFunction( std::string function, std::string kernel, CLContext &context );
+	void setArguments( const std::vector<CLUnitArgument> arguments );
 	void addArgument( CLUnitArgument argument );
+
+
+	template<class ...Arguments>
+	void setArgs( Arguments... params )
+		{
+			CLUnitArgument args[] = { params... };
+			size_t size = sizeof( args ) / sizeof( CLUnitArgument );
+			setArguments( std::vector<CLUnitArgument>( args, args + size ) );
+		}
 
 	template<class T>
 	T run( std::string type );
@@ -41,13 +51,13 @@ T CLFunction::run( std::string type )
 
 	// Assemble a vector of buffers.
 	std::vector<cl::Buffer> buffers;
-	for ( auto it : myArguments )
+	for ( auto &it : myArguments )
 	{
 		buffers.push_back( it.getBuffer( myContext ) );
 	}
 
 	// Make those buffers arguments for the kernel.
-	for ( int i = 0; i < buffers.size(); i++ )
+	for ( unsigned i = 0; i < buffers.size(); i++ )
 	{
 		std::cout << "Setting argument " << i << " of type " << myArguments[i].getType() << std::endl;
 //		printf( "%x\n", buffers[i] );
@@ -56,7 +66,7 @@ T CLFunction::run( std::string type )
 
 	// Queue up copying those buffers.
 	auto queue = myContext.getCommandQueue();
-	for ( auto it : myArguments )
+	for ( auto &it : myArguments )
 	{
 		it.enqueue( queue );
 	}

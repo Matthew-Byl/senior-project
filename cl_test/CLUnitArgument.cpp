@@ -1,5 +1,6 @@
 #include "CLUnitArgument.h"
 #include <iostream>
+#include <cassert>
 using namespace std;
 
 CLUnitArgument::CLUnitArgument( 
@@ -9,8 +10,14 @@ CLUnitArgument::CLUnitArgument(
 	)
 	: mySize( size ), myName( name )
 {
-	cout << "Constructor running with type " << name << endl;
+	_construct( size, ptr );
+}
 
+void CLUnitArgument::_construct(
+	size_t size,
+	void *ptr
+	)
+{
 	myPtr = malloc( size );
 	memcpy( myPtr, ptr, size );
 	myBufferInitialized = false;
@@ -29,8 +36,9 @@ CLUnitArgument::CLUnitArgument( const CLUnitArgument &other )
 #define C_CTR( host, kernel )											\
 	CLUnitArgument::CLUnitArgument(										\
 		host val														\
-		) : CLUnitArgument( #kernel, sizeof( host ), &val )				\
-	{ cout << "Constructor for " << #host << " running." << endl; }
+		) : mySize( sizeof( host ) ), myName( #kernel )					\
+	{ _construct( sizeof( host ), &val );								\
+cout << "Constructor for " << #host << " running." << endl; }
 
 C_CTR( cl_int, int );
 C_CTR( cl_uchar, uchar );
@@ -51,6 +59,7 @@ cl::Buffer &CLUnitArgument::getBuffer( CLContext &context )
 			mySize,
 			myPtr
 			);
+
 		myBufferInitialized = true;
 	}
 
@@ -65,6 +74,8 @@ std::string CLUnitArgument::getType()
 void CLUnitArgument::enqueue( cl::CommandQueue &queue )
 {
 //	cout << "Enqueuing " << myValue << "... " << endl;
+
+	assert( myBufferInitialized );
 
 	queue.enqueueWriteBuffer(
 		myBuffer,

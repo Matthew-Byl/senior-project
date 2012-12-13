@@ -34,7 +34,7 @@ string KernelGenerator::generate()
 	ret += "\n";	
 
 	ret += "\t*ret = " + myFunction + "( ";
-	for ( int i = 0; i < myArguments.size(); i++  )
+	for ( unsigned i = 0; i < myArguments.size(); i++  )
 	{
 		ret += "*arg" + to_string( i ) + ", ";
 	}	
