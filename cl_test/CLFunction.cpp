@@ -12,9 +12,3 @@ void CLFunction::addArgument( CLUnitArgument argument )
 {
 	myArguments.push_back( argument );
 }
-
-void CLFunction::setArguments( const std::vector<CLUnitArgument> arguments )
-{
-	myArguments = arguments;
-	cout << "Num arguments: " << arguments.size() << endl;
-}

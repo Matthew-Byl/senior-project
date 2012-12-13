@@ -25,17 +25,7 @@ int main( void )
 //	CLUnitArgument arg( intr );
 	cl_int result;
 
-//	add_one.addArgument( 1 );
-//	add_one.addArgument( intr );
-
-//	vector<CLUnitArgument> args( { 1, intr } );
-//	args.push_back( 1 );
-//	args.push_back( intr );
-
-//	CLUnitArgument args[] = { 1, intr };
-//	cout << "Size: " << ( sizeof( args ) / sizeof( CLUnitArgument ) ) << endl;
-
-	add_one.setArgs( 1, intr );
+	add_one.setArguments( 1, intr );
 	result = add_one.run<cl_int>( "int" );
 
 	printf( "Result: %d\n", result );

@@ -11,16 +11,14 @@ class CLFunction
 {
 public:
 	CLFunction( std::string function, std::string kernel, CLContext &context );
-	void setArguments( const std::vector<CLUnitArgument> arguments );
 	void addArgument( CLUnitArgument argument );
 
-
 	template<class ...Arguments>
-	void setArgs( Arguments... params )
+	void setArguments( Arguments... params )
 		{
 			CLUnitArgument args[] = { params... };
 			size_t size = sizeof( args ) / sizeof( CLUnitArgument );
-			setArguments( std::vector<CLUnitArgument>( args, args + size ) );
+			myArguments = std::vector<CLUnitArgument>( args, args + size );
 		}
 
 	template<class T>
