@@ -10,7 +10,8 @@ public:
 			  std::string kernel,
 			  const CLContext context = CLContext() )
 		: CLFunction( function, kernel, context ), dimensionsSet( false )
-		{ }
+		{ };
+	virtual ~CLKernel() { };
 
 	void setDimensions( int dim1 );
 	void setDimensions( int dim1, int dim2 );
@@ -25,32 +26,28 @@ private:
 
 void CLKernel::setDimensions( int dim1 )
 {
-	std::vector<int> dim;
-	dim.push_back( dim1 );
-	dimensions = dim;
+	dimensions.clear();
+	dimensions.push_back( dim1 );
 	dimensionsSet = true;
 }
 
 void CLKernel::setDimensions( int dim1, int dim2 )
 {
-	std::vector<int> dim;
-	dim.push_back( dim1 );
-	dim.push_back( dim2 );
-	dimensions = dim;
+	dimensions.clear();
+	dimensions.push_back( dim1 );
+	dimensions.push_back( dim2 );
 	dimensionsSet = true;
 }
 
 void CLKernel::setDimensions( int dim1, int dim2, int dim3 )
 {
-	std::vector<int> dim;
-	dim.push_back( dim1 );
-	dim.push_back( dim2 );
-	dim.push_back( dim3 );
-	dimensions = dim;
+	dimensions.clear();
+	dimensions.push_back( dim1 );
+	dimensions.push_back( dim2 );
+	dimensions.push_back( dim3 );
 	dimensionsSet = true;
 }
 
-// For running pre-existing kernels in 1-3 dimensions.
 void CLKernel::run()
 {
 	// Be nicer, later.

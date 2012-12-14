@@ -24,7 +24,7 @@ public:
 
 	~CLUnitArgument();
 
-	cl::Buffer &getBuffer( const CLContext &context );
+	cl::Buffer getBuffer( const CLContext &context );
 	std::string getType();
 	void copyToDevice( cl::CommandQueue &queue );
 	void copyFromDevice( cl::CommandQueue &queue );

@@ -37,7 +37,7 @@ CLUnitArgument::CLUnitArgument( const CLUnitArgument &other )
 	  myCopy( other.myCopy ),
 	  myIsArray( other.myIsArray )
 {
-	if ( myCopy )
+	if ( other.myCopy )
 		copy_data( other.mySize, other.myPtr );
 
 	myBufferInitialized = false;
@@ -62,22 +62,24 @@ C_CTR( cl_uchar, uchar );
 C_CTR( cl_float3, float3 );
 C_CTR( cl_int3, int3 );
 
-CLUnitArgument::~CLUnitArgument() {
+CLUnitArgument::~CLUnitArgument()
+{
 	if ( myCopy )
 	{
+		cout << "Freeing!" << endl << flush;
 		free( myPtr );
 	}
 }
 
-cl::Buffer &CLUnitArgument::getBuffer( const CLContext &context )
+cl::Buffer CLUnitArgument::getBuffer( const CLContext &context )
 {
 	if ( !myBufferInitialized )
 	{
 		myBuffer = cl::Buffer(
 			context.getContext(),
-			CL_MEM_READ_WRITE,
+			CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
 			mySize,
-			NULL
+			myPtr
 			);
 
 		myBufferInitialized = true;

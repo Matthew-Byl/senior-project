@@ -20,6 +20,7 @@ public:
 		  myKernel( kernel )
 		{
 		}
+	virtual ~CLFunction() { }
 
 	template<class ...Arguments>
 	void setArguments( Arguments... params )

@@ -5,9 +5,9 @@
 #include <iostream>
 using namespace std;
 
-
+/*
 const char *src = 
-	" __kernel void some_kernel( __global int *i, __global int3 *j ) { printf( \"From kernel: %d\", *i + (*j).x ); } \n" \
+	" __kernel void some_kernel( __global int *i, __global int3 *j ) { printf( \"From kernel: %d\\n\", *i + (*j).x ); } \n" \
 	"int add_one( int i, int3 j ) " \
 	"{" \
 	"   printf(\"From OpenCL: %d %d\\n\", i, j.x ); " \
@@ -26,33 +26,33 @@ int main( void )
 	result = add_one( 1, intr );
 	printf( "Result: %d\n", result );
 
-//	some_kernel( 1, intr );
+	some_kernel.setDimensions( 10 );
+	some_kernel( 1, intr );
 }
+*/
 
-/*
+
 const char *src = 
-	"void fill_numbers( __global int *i ) "			 \
+	"void fill_numbers( __global int *i ) " \
 	"{"												 \
 	"   int idx = get_global_id( 0 ); "				 \
-	"   i[0] = 42; "								 \
+	"   i[idx] = idx; "								 \
 	"}";
 
 int main( void )
 {
 	CLFunction<void> fill_numbers( "fill_numbers", src );
 	int numbers[100];
-	CLUnitArgument numbers_arg( "int", sizeof( numbers ), numbers, false, true );
+	CLUnitArgument numbers_arg( "int", sizeof( int ) * 100, numbers, false, true );
 
+//	fill_numbers.setDimensions( 100 );
 	fill_numbers( numbers_arg );
 
+	for ( int i = 0; i < 100; i++ )
+	{
+		cout << numbers[i] << " ";
+	}
 
-//	for ( int i = 0; i < 100; i++ )
-//	{
-//		cout << i << " ";
-//	}
-
-
-	cout << numbers[0] << endl;
+	cout << endl;
 }
-	
-*/
+
