@@ -324,11 +324,12 @@ int main( int argc, char *argv[] )
 	hbox = gtk_hbox_new( FALSE, 10 );
 
 	// Draw the initial image.
-	run_kernel();
 	image = gtk_image_new_from_pixbuf( gdk_pixel_buffer );
 	eventBox = gtk_event_box_new();
 	gtk_container_add( GTK_CONTAINER( eventBox ), image );
 	gtk_container_add( GTK_CONTAINER( hbox ), eventBox );
+
+	run_kernel();
 
 	// Vertical layout inside right side.
 	gtk_container_add( GTK_CONTAINER( vbox ), button );
