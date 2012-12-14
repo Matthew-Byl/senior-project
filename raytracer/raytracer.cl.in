@@ -246,7 +246,7 @@ int closest_object(
 	float3 *normal,
 	float3 *intersect,
 	int ignore_index,
-	Object *world )
+	__global Object *world )
 {
 	float min_distance = 1000000000;
 	int min_object = -1;
@@ -317,7 +317,7 @@ int closest_object(
  *  r,g,b values of the lighting at the given point.
  */
 uchar3 compute_lighting( 
-	Light *lights, 
+	__global Light *lights, 
 	int num_lights,
 	float3 camera_position,
 	float3 camera_direction,
@@ -327,7 +327,7 @@ uchar3 compute_lighting(
 	float object_distance,
 	int num_objects,
 	int index,
-	Object *world)
+	__global Object *world)
 {
 	float3 f_colour;
 
@@ -445,8 +445,8 @@ uchar3 compute_lighting(
  */
 __kernel void raytrace( 
 	__global uchar4 *pixbuf,
-	__global Object *host_objects,
-	__global Light *host_lights,
+	__global Object *objects,
+	__global Light *lights,
 	__global float3 *host_camera_position,
 	__global int *host_num_objects,
 	__global int *host_num_lights )
@@ -455,12 +455,6 @@ __kernel void raytrace(
 	float3 camera_position = *host_camera_position;
 	int num_objects = *host_num_objects;
 	int num_lights = *host_num_lights;
-
-	Object objects[500];
-	for ( int i = 0; i < num_objects; i++ )
-		objects[i] = host_objects[i];
-	Light lights[1];
-	lights[0] = *host_lights;
 
 	// Get information about our relative position.
 	size_t x = get_global_id( 0 );

@@ -205,16 +205,6 @@ static void motion_notify( GtkWidget *widget, GdkEvent *event, gpointer user_dat
 		}
 		else
 		{
-			// Only redraw every 5 mouse move events.
-			// Otherwise, GTK+ starts merging together
-			//  redraws of the image, and it isn't smooth.
-			drag_frame++;
-			if ( drag_frame % 12 != 0 )
-			{
-				in_handler = false;
-				return;
-			}
-
 			camera_position.s[1] = prev_x + 0.01 * ( motion->x - drag_x );
 			camera_position.s[2] = prev_y + 0.01 * ( motion->y - drag_y );
 
