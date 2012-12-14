@@ -66,11 +66,11 @@ void setup_scene()
 	objects[1].objects.plane.normal.s[2] = 1;	
 
 	int num = 2;
-	for ( int i = 0; i < 5; i++ )
+	for ( int i = 0; i < 4; i++ )
 	{
-		for ( int j = 0; j < 5; j++ )
+		for ( int j = 0; j < 4; j++ )
 		{
-			for ( int k = 0; k < 5; k++ )
+			for ( int k = 0; k < 4; k++ )
 			{
 				objects[num].colour.s[0] = 100 + i * 10;
 				objects[num].colour.s[1] = 100 + k * 10;
@@ -99,7 +99,7 @@ void setup_scene()
 void run_kernel()
 {
 	Light light;
-	const int num_objects = 127;
+	const int num_objects = 66;
 
 	// Sphere that follows light
 	objects[0].colour.s[0] = 253;
@@ -163,7 +163,7 @@ static void png_button_clicked( GtkWidget *widget, gpointer data )
 static void destroy( GtkWidget *widget,
                      gpointer   data )
 {
-	ProfilerStop();
+//	ProfilerStop();
     gtk_main_quit ();
 }
 
@@ -184,8 +184,13 @@ bool dragging = false;
 float drag_x, drag_y;
 float prev_x, prev_y;
 int drag_frame = -1;
+bool in_handler = false;
 static void motion_notify( GtkWidget *widget, GdkEvent *event, gpointer user_data )
 {
+	if ( in_handler )
+		return;
+	in_handler = true;
+
 	GdkEventMotion *motion = (GdkEventMotion *) event;
 
 	if ( motion->state & GDK_BUTTON1_MASK )
@@ -204,19 +209,27 @@ static void motion_notify( GtkWidget *widget, GdkEvent *event, gpointer user_dat
 			// Otherwise, GTK+ starts merging together
 			//  redraws of the image, and it isn't smooth.
 			drag_frame++;
-			if ( drag_frame % 5 != 0 )
+			if ( drag_frame % 12 != 0 )
+			{
+				in_handler = false;
 				return;
+			}
 
 			camera_position.s[1] = prev_x + 0.01 * ( motion->x - drag_x );
 			camera_position.s[2] = prev_y + 0.01 * ( motion->y - drag_y );
 
 			run_kernel();
+
+			while ( gtk_events_pending() )
+				gtk_main_iteration();
 		}
 	}
 	else
 	{
 		dragging = false;
 	}
+
+	in_handler = false;
 }
 
 /**
@@ -225,6 +238,10 @@ static void motion_notify( GtkWidget *widget, GdkEvent *event, gpointer user_dat
  */
 static void scroll( GtkWidget *widget, GdkEvent *event, gpointer user_data )
 {
+	if ( in_handler )
+		return;
+	in_handler = true;
+
 	GdkEventScroll *scroll = (GdkEventScroll *) event;
 
 	if ( scroll->direction == GDK_SCROLL_UP )
@@ -237,11 +254,22 @@ static void scroll( GtkWidget *widget, GdkEvent *event, gpointer user_data )
 	}
 
 	run_kernel();
+	
+	// This, along with in_handler is a trick to get rid of
+	//  any mouse move or scroll events that are on GTK+s
+	//  event queue. If we don't purge them, then we will
+	//  render frames that we have no intent of displaying,
+	//  and the GPU gets behind.
+	while ( gtk_events_pending() )
+		gtk_main_iteration();
+
+
+	in_handler = false;
 }
 
 int main( int argc, char *argv[] )
 {
-	ProfilerStart( "raytracer.prof" );
+//	ProfilerStart( "raytracer.prof" );
 
 	// Set up scene.
 	setup_scene();

@@ -26,6 +26,7 @@ public:
 private:
 	CLKernel rayTrace;
 	CLUnitArgument pixbuf_arg;
+	int frames = 0;
 	
 	size_t myWidth, myHeight;
 	cl_uchar *myPixelBuffer;
