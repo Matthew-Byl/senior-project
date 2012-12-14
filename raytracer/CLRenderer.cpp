@@ -28,8 +28,8 @@ void CLRenderer::render(
 {
 	size_t pixel_buffer_size = myWidth * myHeight * 4;
 
-	CLUnitArgument world_arg( "Object", world, num_objects );
-	CLUnitArgument lights_arg( "Light", lights, num_lights );
+	CLUnitArgument world_arg( "Object", world, num_objects, false );
+	CLUnitArgument lights_arg( "Light", lights, num_lights, false );
 
 	rayTrace( 
 		pixbuf_arg,

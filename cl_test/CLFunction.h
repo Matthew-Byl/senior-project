@@ -52,6 +52,8 @@ protected:
 	std::vector<cl::Buffer> myBuffers;
 	std::string myFunction;
 	std::string myKernel;
+	cl::Kernel myCLKernel;
+	bool kernelBuilt = false;
 
 	virtual void generateKernelSource( const std::string type, std::string &source, std::string &kernel_name );
 	void generateBuffers();
@@ -95,20 +97,25 @@ void CLFunction<T>::copyBuffersToDevice()
 template<class T>
 cl::Kernel CLFunction<T>::generateKernel( std::string src, std::string kernel_name )
 {
-	cl::Program program = myContext.buildProgram( src );
-	cl::Kernel kernel(
-        program,
-        kernel_name.c_str()
-	);
+	if ( !kernelBuilt )
+	{
+		cl::Program program = myContext.buildProgram( src );
+		myCLKernel = cl::Kernel(
+			program,
+			kernel_name.c_str()
+		);
+
+		kernelBuilt = true;
+	}
 
 	// Make those buffers arguments for the kernel.
 	for ( unsigned i = 0; i < myBuffers.size(); i++ )
 	{
 //		std::cout << "Setting argument " << i << " of type " << myArguments[i].getType() << std::endl;
-		kernel.setArg( i, myBuffers[i] );
+		myCLKernel.setArg( i, myBuffers[i] );
 	}
 
-	return kernel;
+	return myCLKernel;
 }
 
 template<class T>

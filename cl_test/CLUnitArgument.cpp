@@ -8,9 +8,10 @@ CLUnitArgument::CLUnitArgument(
 	size_t size,
 	void *ptr,
 	bool copy,
-	bool isArray
+	bool isArray,
+	bool copyBack
 	)
-	: mySize( size ), myName( name ), myCopy( copy ), myIsArray( isArray )
+	: mySize( size ), myName( name ), myCopy( copy ), myIsArray( isArray ), myCopyBack( copyBack )
 {
 	if ( copy )
 		copy_data( size, ptr );
@@ -35,7 +36,8 @@ CLUnitArgument::CLUnitArgument( const CLUnitArgument &other )
 	: mySize( other.mySize ), 
 	  myName( other.myName ), 
 	  myCopy( other.myCopy ),
-	  myIsArray( other.myIsArray )
+	  myIsArray( other.myIsArray ),
+	  myCopyBack( other.myCopyBack )
 {
 	if ( other.myCopy )
 		copy_data( other.mySize, other.myPtr );
@@ -44,46 +46,6 @@ CLUnitArgument::CLUnitArgument( const CLUnitArgument &other )
 
 	myBufferInitialized = false;
 }
-
-// Automatically generate some constructors.
-/*
-#define C_CTR( host, kernel )											\
-	CLUnitArgument::CLUnitArgument(										\
-		host val														\
-		) : mySize( sizeof( host ) ),									\
-			myName( #kernel ),											\
-			myCopy( true ),												\
-			myIsArray( false )											\
-	{																	\
-		copy_data( sizeof( host ), &val );								\
-		myBufferInitialized = false;									\
-		cout << "Constructor for " << #host << " running." << endl;		\
-	}
-
-
-C_CTR( cl_int, int );
-C_CTR( cl_uchar, uchar );
-C_CTR( cl_float3, float3 );
-C_CTR( cl_int3, int3 );
-*/
-
-/*
-#define C_PTR_CTR( host_ptr, host, kernel )								\
-	CLUnitArgument::CLUnitArgument(										\
-		host_ptr array,													\
-		size_t elements													\
-		) : myPtr( array ),												\
-			mySize( sizeof( host ) * elements ),						\
-			myName( #kernel ),											\
-			myCopy( false ),											\
-			myIsArray( true )											\
-	{																	\
-		myBufferInitialized = false;									\
-		cout << "Constructor for " << #host << " array running." << endl; \
-	}
-
-C_PTR_CTR( cl_int*, cl_int, int );
-*/
 
 CLUnitArgument::~CLUnitArgument()
 {
@@ -135,6 +97,8 @@ void CLUnitArgument::copyFromDevice( cl::CommandQueue &queue )
 
 	// If we own the memory, nobody else can read it anyways.
 	if ( myCopy )
+		return;
+	if ( !myCopyBack )
 		return;
 
 	queue.enqueueReadBuffer(

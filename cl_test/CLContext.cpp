@@ -17,6 +17,8 @@ CLContext::CLContext( int platform, int device )
 	
 	myContext = cl::Context( myDevices, NULL, NULL, NULL );
 	myCommandQueue = cl::CommandQueue( myContext, myDevices[0], 0 );
+
+	cout << "New Context!" << endl;
 }
 
 cl::Context CLContext::getContext() const

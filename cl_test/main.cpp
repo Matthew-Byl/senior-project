@@ -1,5 +1,7 @@
 #include "CLKernel.h"
 
+#include <google/profiler.h>
+
 #include <vector>
 #include <iostream>
 using namespace std;
@@ -40,6 +42,8 @@ const char *src =
 
 int main( void )
 {
+	ProfilerStart( "/tmp/main.prof" );
+
 	CLKernel fill_numbers( "fill_numbers", src );
 	int numbers[100];
 	CLUnitArgument numbers_arg( numbers, 100 );
@@ -53,5 +57,7 @@ int main( void )
 	}
 
 	cout << endl;
+
+	ProfilerStop();
 }
 

@@ -96,6 +96,8 @@ void setup_scene()
  */
 void run_kernel()
 {
+//	ProfilerStart( "/tmp/raytracer.prof" );
+
 	Light light;
 	const int num_objects = 127;
 
@@ -117,6 +119,8 @@ void run_kernel()
 
 	// Render the scene.
 	renderer->render( objects, num_objects, &light, 1, camera_position );
+
+//	ProfilerStop();
 }
 
 /**
