@@ -15,6 +15,8 @@ CLUnitArgument::CLUnitArgument(
 		copy_data( size, ptr );
 	else
 		myPtr = ptr;
+
+	myBufferInitialized = false;
 }
 
 void CLUnitArgument::copy_data(
@@ -24,8 +26,6 @@ void CLUnitArgument::copy_data(
 {
 	myPtr = malloc( size );
 	memcpy( myPtr, ptr, size );
-
-	myBufferInitialized = false;
 }
 
 CLUnitArgument::CLUnitArgument( const CLUnitArgument &other )
@@ -34,6 +34,7 @@ CLUnitArgument::CLUnitArgument( const CLUnitArgument &other )
 	if ( myCopy )
 		copy_data( other.mySize, other.myPtr );
 
+	myBufferInitialized = false;
 	cout << "Copy constructor running." << endl;
 }
 
@@ -44,6 +45,7 @@ CLUnitArgument::CLUnitArgument( const CLUnitArgument &other )
 		) : mySize( sizeof( host ) ), myName( #kernel ), myCopy( true )	\
 	{																	\
 		copy_data( sizeof( host ), &val );								\
+		myBufferInitialized = false;									\
 		cout << "Constructor for " << #host << " running." << endl;		\
 	}
 
@@ -65,7 +67,7 @@ cl::Buffer &CLUnitArgument::getBuffer( const CLContext &context )
 	{
 		myBuffer = cl::Buffer(
 			context.getContext(),
-			CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
+			CL_MEM_READ_WRITE,
 			mySize,
 			myPtr
 			);
