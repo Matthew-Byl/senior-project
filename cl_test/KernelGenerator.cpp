@@ -12,7 +12,6 @@ KernelGenerator::KernelGenerator(
 
 }
 
-
 string KernelGenerator::generate()
 {
 	string ret = 
@@ -28,15 +27,30 @@ string KernelGenerator::generate()
 		i++;
 	}
 
-	ret += "__global " + myReturnType + " *ret )";
-	ret += "\n";
+	if ( myReturnType != "void" )
+		ret += "__global " + myReturnType + " *ret ";
+	else
+	{
+		// Take off the comma
+		ret.erase( ret.end() - 2 );
+	}
+
+	ret +=")\n";
+
 	ret += "{";
 	ret += "\n";	
 
-	ret += "\t*ret = " + myFunction + "( ";
+	ret += "\t";
+	if ( myReturnType != "void" )
+		ret += "*ret = ";
+	
+	ret += myFunction + "( ";
 	for ( unsigned i = 0; i < myArguments.size(); i++  )
 	{
-		ret += "*arg" + to_string( i ) + ", ";
+		if ( !myArguments[i].isArray() )
+			ret += "*";
+		
+		ret += "arg" + to_string( i ) + ", ";
 	}	
 
 	// take off last comma.

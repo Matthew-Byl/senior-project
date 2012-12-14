@@ -7,9 +7,10 @@ CLUnitArgument::CLUnitArgument(
 	string name,
 	size_t size,
 	void *ptr,
-	bool copy
+	bool copy,
+	bool isArray
 	)
-	: mySize( size ), myName( name ), myCopy( copy )
+	: mySize( size ), myName( name ), myCopy( copy ), myIsArray( isArray )
 {
 	if ( copy )
 		copy_data( size, ptr );
@@ -24,25 +25,32 @@ void CLUnitArgument::copy_data(
 	void *ptr
 	)
 {
+	cout << "** COPYING " << size << " ***" << endl;
+
 	myPtr = malloc( size );
 	memcpy( myPtr, ptr, size );
 }
 
 CLUnitArgument::CLUnitArgument( const CLUnitArgument &other )
-	: mySize( other.mySize ), myName( other.myName ), myCopy( other.myCopy )
+	: mySize( other.mySize ), 
+	  myName( other.myName ), 
+	  myCopy( other.myCopy ),
+	  myIsArray( other.myIsArray )
 {
 	if ( myCopy )
 		copy_data( other.mySize, other.myPtr );
 
 	myBufferInitialized = false;
-	cout << "Copy constructor running." << endl;
 }
 
 // Automatically generate some constructors.
 #define C_CTR( host, kernel )											\
 	CLUnitArgument::CLUnitArgument(										\
 		host val														\
-		) : mySize( sizeof( host ) ), myName( #kernel ), myCopy( true )	\
+		) : mySize( sizeof( host ) ),									\
+			myName( #kernel ),											\
+			myCopy( true ),												\
+			myIsArray( false )											\
 	{																	\
 		copy_data( sizeof( host ), &val );								\
 		myBufferInitialized = false;									\
@@ -69,7 +77,7 @@ cl::Buffer &CLUnitArgument::getBuffer( const CLContext &context )
 			context.getContext(),
 			CL_MEM_READ_WRITE,
 			mySize,
-			myPtr
+			NULL
 			);
 
 		myBufferInitialized = true;
@@ -100,6 +108,10 @@ void CLUnitArgument::copyFromDevice( cl::CommandQueue &queue )
 {
 	assert( myBufferInitialized );
 
+	// If we own the memory, nobody else can read it anyways.
+	if ( myCopy )
+		return;
+
 	queue.enqueueReadBuffer(
 		myBuffer,
 		CL_TRUE,
@@ -107,4 +119,9 @@ void CLUnitArgument::copyFromDevice( cl::CommandQueue &queue )
 		mySize,
 		myPtr
 	);
+}
+
+bool CLUnitArgument::isArray()
+{
+	return myIsArray;
 }
