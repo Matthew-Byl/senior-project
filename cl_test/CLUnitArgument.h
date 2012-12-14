@@ -5,8 +5,13 @@
 #include "CLContext.h"
 #include <string>
 
-#define CTR( type ) CLUnitArgument( type val );
-#define PTR_CTR( type ) CLUnitArgument( type array, size_t elements );
+#define CTR( host, kernel )									\
+	CLUnitArgument( host val )								\
+		: CLUnitArgument( #kernel, val ) { }
+
+#define PTR_CTR( host, kernel )							\
+	CLUnitArgument( host array, size_t elements )		\
+		: CLUnitArgument( #kernel, array, elements ) { }
 
 class CLUnitArgument
 {
@@ -18,11 +23,27 @@ public:
 		bool copy = true,
 		bool isArray = false );
 	CLUnitArgument( const CLUnitArgument &other );
-	CTR( cl_int );
-	CTR( cl_uchar );
-	CTR( cl_float3 );
-	CTR( cl_int3 );
-	PTR_CTR( cl_int* );
+
+	// These have to be macros because the host-side names
+	//  are different from the GPU names. Maybe templates
+	//  would be more elegant?
+	CTR( cl_int, int );
+	CTR( cl_uchar, uchar );
+	CTR( cl_float3, float3 );
+	CTR( cl_int3, int3 );
+	PTR_CTR( cl_int*, int );
+
+	// Make some template constructors for objects
+	//  like the raytracer lights and world? Maybe that
+	//  could simplify this macro stuff too.
+
+	// Value constructor
+	template<class T>
+	CLUnitArgument( std::string name, T value );
+
+	// Array constructor
+	template<class T>
+	CLUnitArgument( std::string name, T *array, size_t elements );
 
 	~CLUnitArgument();
 
@@ -44,6 +65,20 @@ private:
 	bool myCopy;
 	bool myIsArray;
 };
+
+template<class T>
+CLUnitArgument::CLUnitArgument( std::string name, T value )
+	: CLUnitArgument( name, sizeof( T ), &value )
+{
+
+}
+
+template<class T>
+CLUnitArgument::CLUnitArgument( std::string name, T *array, size_t elements )
+	: CLUnitArgument( name, sizeof( T ) * elements, array, false, true )
+{
+	
+}
 
 // Allows us to make copies of arguments with their data
 //  without copying the memory buffer and still not

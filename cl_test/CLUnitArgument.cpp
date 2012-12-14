@@ -46,6 +46,7 @@ CLUnitArgument::CLUnitArgument( const CLUnitArgument &other )
 }
 
 // Automatically generate some constructors.
+/*
 #define C_CTR( host, kernel )											\
 	CLUnitArgument::CLUnitArgument(										\
 		host val														\
@@ -59,11 +60,14 @@ CLUnitArgument::CLUnitArgument( const CLUnitArgument &other )
 		cout << "Constructor for " << #host << " running." << endl;		\
 	}
 
+
 C_CTR( cl_int, int );
 C_CTR( cl_uchar, uchar );
 C_CTR( cl_float3, float3 );
 C_CTR( cl_int3, int3 );
+*/
 
+/*
 #define C_PTR_CTR( host_ptr, host, kernel )								\
 	CLUnitArgument::CLUnitArgument(										\
 		host_ptr array,													\
@@ -79,6 +83,7 @@ C_CTR( cl_int3, int3 );
 	}
 
 C_PTR_CTR( cl_int*, cl_int, int );
+*/
 
 CLUnitArgument::~CLUnitArgument()
 {
