@@ -42,6 +42,4 @@ void CLRenderer::render(
 		num_objects,
 		num_lights
 		);
-
-	cout << "Frame " << frames++ << endl;
 }

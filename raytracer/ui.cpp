@@ -43,6 +43,8 @@ CLRenderer *renderer;
 #define NUM_OBJECTS 1024
 Object objects[NUM_OBJECTS];
 
+#define NUM_SPHERES 5
+
 /**
  * Initially prepare the scene.
  */
@@ -66,11 +68,11 @@ void setup_scene()
 	objects[1].objects.plane.normal.s[2] = 1;	
 
 	int num = 2;
-	for ( int i = 0; i < 4; i++ )
+	for ( int i = 0; i < NUM_SPHERES; i++ )
 	{
-		for ( int j = 0; j < 4; j++ )
+		for ( int j = 0; j < NUM_SPHERES; j++ )
 		{
-			for ( int k = 0; k < 4; k++ )
+			for ( int k = 0; k < NUM_SPHERES; k++ )
 			{
 				objects[num].colour.s[0] = 100 + i * 10;
 				objects[num].colour.s[1] = 100 + k * 10;
@@ -99,7 +101,7 @@ void setup_scene()
 void run_kernel()
 {
 	Light light;
-	const int num_objects = 66;
+	const int num_objects = ( NUM_SPHERES * NUM_SPHERES * NUM_SPHERES ) + 2;
 
 	// Sphere that follows light
 	objects[0].colour.s[0] = 253;
