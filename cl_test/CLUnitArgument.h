@@ -5,6 +5,21 @@
 #include "CLContext.h"
 #include <string>
 
+// Don't worry about ___3 types for the time being.
+//  and half* types, which are also typedefed with something
+//  else that makes it impossible for C++ to tell their types apart.
+#define CONSTRUCTORS( type )					\
+  CTR( cl_##type, type );						\
+  PTR_CTR( cl_##type *, type );					\
+  CTR( cl_##type##2, type##2 );					\
+  PTR_CTR( cl_##type##2 *, type##2 );			\
+  CTR( cl_##type##4, type##4 );					\
+  PTR_CTR( cl_##type##4 *, type##4 );			\
+  CTR( cl_##type##8, type##8 );					\
+  PTR_CTR( cl_##type##8 *, type##8 );			\
+  CTR( cl_##type##16, type##16 );				\
+  PTR_CTR( cl_##type##16 *, type##16 );			
+
 #define CTR( host, kernel )									\
 	CLUnitArgument( host val )								\
 		: CLUnitArgument( #kernel, val ) { }
@@ -24,18 +39,20 @@ public:
 		bool isArray = false );
 	CLUnitArgument( const CLUnitArgument &other );
 
-	// These have to be macros because the host-side names
-	//  are different from the GPU names. Maybe templates
-	//  would be more elegant?
-	CTR( cl_int, int );
-	CTR( cl_uchar, uchar );
-	CTR( cl_float3, float3 );
-	CTR( cl_int3, int3 );
-	PTR_CTR( cl_int*, int );
+	// Add constructors for the value types and
+	//  arrays for all the OpenCL types.
+	CONSTRUCTORS( int );
+	CONSTRUCTORS( uint );
+	CONSTRUCTORS( long );
+	CONSTRUCTORS( ulong );
+	CONSTRUCTORS( short );
+	CONSTRUCTORS( ushort );
+	CONSTRUCTORS( char );
+	CONSTRUCTORS( uchar );
+	CONSTRUCTORS( float );
+	CONSTRUCTORS( double );
 
-	// Make some template constructors for objects
-	//  like the raytracer lights and world? Maybe that
-	//  could simplify this macro stuff too.
+	// Templates for user-defined types.
 
 	// Value constructor
 	template<class T>
