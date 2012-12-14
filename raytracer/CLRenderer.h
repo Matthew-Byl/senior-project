@@ -15,21 +15,21 @@
 #include "objects.h"
 
 #include <vector>
+#include <CLKernel.h>
 
 class CLRenderer
 {
 public:
-	CLRenderer( unsigned char *pixel_buffer, size_t width, size_t height, bool use_cpu );
+	CLRenderer( std::string src, unsigned char *pixel_buffer, size_t width, size_t height, bool use_cpu );
 	void render( Object *world, int num_objects, Light *lights, int num_lights, cl_float3 camera_position );
 
 private:
+	CLKernel rayTrace;
+	CLUnitArgument pixbuf_arg;
+	
 	size_t myWidth, myHeight;
-	unsigned char *myPixelBuffer;
-	cl::Context context;
-	cl::CommandQueue queue;
-	cl::Kernel kernel;
-	cl::Buffer cl_pixel_buffer;
-	std::vector<cl::Device> devices;
+	cl_uchar *myPixelBuffer;
+	std::string src;
 };
 
 #endif

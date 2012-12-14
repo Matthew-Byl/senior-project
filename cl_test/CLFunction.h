@@ -62,20 +62,6 @@ protected:
 };
 
 
-/*
- * Generate run() methods for every standard type.
- */
-#define _GEN_CL_FUNCTION_RUN( host, kernel ) \
-	template<>								 \
-	host CLFunction<host>::run()			 \
-	{									   \
-		return run( #kernel );			   \
-	}
-
-_GEN_CL_FUNCTION_RUN( cl_int, int )
-_GEN_CL_FUNCTION_RUN( cl_float, float )
-_GEN_CL_FUNCTION_RUN( cl_float3, float3 )
-
 template<class T>
 void CLFunction<T>::generateKernelSource( const std::string type, std::string &source, std::string &kernel_name )
 {
@@ -87,6 +73,8 @@ void CLFunction<T>::generateKernelSource( const std::string type, std::string &s
 template<class T>
 void CLFunction<T>::generateBuffers()
 {
+	myBuffers.clear();
+
 	for ( auto &it : myArguments )
 	{
 		myBuffers.push_back( it.getBuffer( myContext ) );
@@ -116,7 +104,7 @@ cl::Kernel CLFunction<T>::generateKernel( std::string src, std::string kernel_na
 	// Make those buffers arguments for the kernel.
 	for ( unsigned i = 0; i < myBuffers.size(); i++ )
 	{
-		std::cout << "Setting argument " << i << " of type " << myArguments[i].getType() << std::endl;
+//		std::cout << "Setting argument " << i << " of type " << myArguments[i].getType() << std::endl;
 		kernel.setArg( i, myBuffers[i] );
 	}
 
@@ -226,26 +214,17 @@ T CLFunction<T>::run( std::string type )
 }
 
 template<>
-void CLFunction<void>::run()
-{
-	std::string src;
-	std::string kernelFunction;
+void CLFunction<void>::run();
 
-	generateKernelSource( "void", src, kernelFunction );
+/*
+ * Generate run() methods for every standard type.
+ */
+#define _GEN_CL_FUNCTION_RUN_P( host, kernel ) \
+	template<>								 \
+	host CLFunction<host>::run();
 
-	std::cout << "FULL SOURCE" << std::endl;
-	std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
-	std::cout << src << std::endl;
-	std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
-
-	copyBuffersToDevice();
-	cl::Kernel kernel = generateKernel( src, kernelFunction );
-
-	std::vector<int> dimensions;
-	dimensions.push_back( 1 );
-	enqueueKernel( kernel, dimensions );
-
-	copyBuffersFromDevice();
-}
+_GEN_CL_FUNCTION_RUN_P( cl_int, int )
+_GEN_CL_FUNCTION_RUN_P( cl_float, float )
+_GEN_CL_FUNCTION_RUN_P( cl_float3, float3 )
 
 #endif

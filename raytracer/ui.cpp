@@ -256,7 +256,12 @@ int main( int argc, char *argv[] )
 	bool use_cpu = false;
 	if( argc == 2 && strcmp( argv[1], "-cpu" ) == 0 )
 		use_cpu = true;
-	renderer = new CLRenderer( gdk_pixbuf_get_pixels( gdk_pixel_buffer ), SIZEX, SIZEY, use_cpu );
+
+	ifstream t("raytracer.cl");
+    string src((std::istreambuf_iterator<char>(t)),
+			   std::istreambuf_iterator<char>());
+
+	renderer = new CLRenderer( src, gdk_pixbuf_get_pixels( gdk_pixel_buffer ), SIZEX, SIZEY, use_cpu );
 
 	// Initialize UI
 	GtkWidget *window;

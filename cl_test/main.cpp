@@ -1,4 +1,3 @@
-#include "CLFunction.h"
 #include "CLKernel.h"
 
 #include <vector>

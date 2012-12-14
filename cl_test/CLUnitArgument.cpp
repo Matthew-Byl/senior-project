@@ -25,7 +25,7 @@ void CLUnitArgument::copy_data(
 	void *ptr
 	)
 {
-	cout << "** COPYING " << size << " ***" << endl;
+//	cout << "** COPYING " << size << " ***" << endl;
 
 	myPtr = malloc( size );
 	memcpy( myPtr, ptr, size );
@@ -89,7 +89,7 @@ CLUnitArgument::~CLUnitArgument()
 {
 	if ( myCopy )
 	{
-		cout << "Freeing!" << endl << flush;
+//		cout << "Freeing!" << endl << flush;
 		free( myPtr );
 	}
 }
@@ -134,8 +134,8 @@ void CLUnitArgument::copyFromDevice( cl::CommandQueue &queue )
 	assert( myBufferInitialized );
 
 	// If we own the memory, nobody else can read it anyways.
-//	if ( myCopy )
-//		return;
+	if ( myCopy )
+		return;
 
 	queue.enqueueReadBuffer(
 		myBuffer,
@@ -145,7 +145,7 @@ void CLUnitArgument::copyFromDevice( cl::CommandQueue &queue )
 		myPtr
 	);
 
-	cout << "Copying back!" << endl;
+//	cout << "Copying back!" << endl;
 }
 
 bool CLUnitArgument::isArray()

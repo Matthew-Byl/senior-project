@@ -102,6 +102,7 @@ CLUnitArgument::CLUnitArgument( std::string name, T *array, size_t elements )
 //  leaking huge chunks of memory.
 //
 // We don't use this yet, and it probably doesn't work.
+/*
 class CLReferenceBuffer
 {
 public:
@@ -133,5 +134,6 @@ private:
 	size_t mySize;
 	void *myBuffer;
 };
+*/
 
 #endif
