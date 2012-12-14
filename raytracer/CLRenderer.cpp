@@ -2,6 +2,9 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+
+#include <google/profiler.h>
+
 using namespace std;
 
 CLRenderer::CLRenderer( 
@@ -14,7 +17,7 @@ CLRenderer::CLRenderer(
 	  myWidth( width ), 
 	  myHeight( height ),
 	  rayTrace( "raytrace", src ),
-	  pixbuf_arg( "uchar", pixel_buffer, width * height * 4 )
+	  pixbuf_arg( "uchar", pixel_buffer, width * height * 4, false, true )
 {
 	rayTrace.setDimensions( myWidth, myHeight );
 }
@@ -28,8 +31,8 @@ void CLRenderer::render(
 {
 	size_t pixel_buffer_size = myWidth * myHeight * 4;
 
-	CLUnitArgument world_arg( "Object", world, num_objects, false );
-	CLUnitArgument lights_arg( "Light", lights, num_lights, false );
+	CLUnitArgument world_arg( "Object", world, num_objects, true, false );
+	CLUnitArgument lights_arg( "Light", lights, num_lights, true, false );
 
 	rayTrace( 
 		pixbuf_arg,

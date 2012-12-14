@@ -25,8 +25,8 @@
 		: CLUnitArgument( #kernel, val ) { }
 
 #define PTR_CTR( host, kernel )										\
-	CLUnitArgument( host array, size_t elements, bool copyBack = true )	\
-		: CLUnitArgument( #kernel, array, elements, copyBack ) { }
+	CLUnitArgument( host array, size_t elements, bool copyTo = true, bool copyBack = true ) \
+		: CLUnitArgument( #kernel, array, elements, copyTo, copyBack ) { }
 
 class CLUnitArgument
 {
@@ -37,6 +37,7 @@ public:
 		void *ptr, 
 		bool copy = true,
 		bool isArray = false,
+		bool copyTo = true,
 		bool copyBack = true );
 	CLUnitArgument( const CLUnitArgument &other );
 
@@ -61,11 +62,11 @@ public:
 
 	// Array constructor
 	template<class T>
-	CLUnitArgument( std::string name, T *array, size_t elements, bool copyBack = true );
+	CLUnitArgument( std::string name, T *array, size_t elements, bool copyTo = true, bool copyBack = true );
 
 	~CLUnitArgument();
 
-	cl::Buffer getBuffer( const CLContext &context );
+	cl::Buffer getBuffer( CLContext &context );
 	std::string getType();
 	void copyToDevice( cl::CommandQueue &queue );
 	void copyFromDevice( cl::CommandQueue &queue );
@@ -82,6 +83,7 @@ private:
 	cl::Buffer myBuffer;
 	bool myCopy;
 	bool myIsArray;
+	bool myCopyTo;
 	bool myCopyBack;
 };
 
@@ -93,8 +95,8 @@ CLUnitArgument::CLUnitArgument( std::string name, T value )
 }
 
 template<class T>
-CLUnitArgument::CLUnitArgument( std::string name, T *array, size_t elements, bool copyBack )
-	: CLUnitArgument( name, sizeof( T ) * elements, array, false, true, copyBack )
+CLUnitArgument::CLUnitArgument( std::string name, T *array, size_t elements, bool copyTo, bool copyBack )
+	: CLUnitArgument( name, sizeof( T ) * elements, array, false, true, copyTo, copyBack )
 {
 	
 }

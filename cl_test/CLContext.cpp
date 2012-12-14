@@ -13,26 +13,26 @@ CLContext::CLContext( int platform, int device )
 	vector<cl::Platform> platforms;
 	cl::Platform::get( &platforms );
 
-    platforms[0].getDevices( CL_DEVICE_TYPE_GPU, &myDevices );
+    platforms[0].getDevices( CL_DEVICE_TYPE_ALL, &myDevices );
 	
 	myContext = cl::Context( myDevices, NULL, NULL, NULL );
 	myCommandQueue = cl::CommandQueue( myContext, myDevices[0], 0 );
-
-	cout << "New Context!" << endl;
 }
 
-cl::Context CLContext::getContext() const
+cl::Context &CLContext::getContext()
 {
 	return myContext;
 }
 
-cl::CommandQueue CLContext::getCommandQueue() const
+cl::CommandQueue &CLContext::getCommandQueue()
 {
 	return myCommandQueue;
 }
 
 cl::Program CLContext::buildProgram( string &src ) const
 {
+//	cout << "*** rebuilding! ***" << endl;
+
 	cl::Program::Sources sources(
         1,
         std::pair<const char *, int>( src.c_str(), src.length() + 1 )

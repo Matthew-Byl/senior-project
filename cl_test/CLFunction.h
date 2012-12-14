@@ -14,7 +14,7 @@ class CLFunction
 public:
 	CLFunction( std::string function, 
 				std::string kernel, 
-				const CLContext context = CLContext() )
+				CLContext context = CLContext() )
 		: myContext( context ), 
 		  myFunction( function), 
 		  myKernel( kernel )
@@ -47,7 +47,7 @@ public:
 		}
 	
 protected:
-	const CLContext myContext;
+	CLContext myContext;
 	std::vector<CLUnitArgument> myArguments;
 	std::vector<cl::Buffer> myBuffers;
 	std::string myFunction;
@@ -99,6 +99,8 @@ cl::Kernel CLFunction<T>::generateKernel( std::string src, std::string kernel_na
 {
 	if ( !kernelBuilt )
 	{
+//		std::cout << "Rebuilding kernel: " << kernelBuilt << std::endl;
+
 		cl::Program program = myContext.buildProgram( src );
 		myCLKernel = cl::Kernel(
 			program,
@@ -158,7 +160,7 @@ void CLFunction<T>::enqueueKernel( cl::Kernel &kernel, std::vector<int> &dimensi
 	}
 
 	// Queue up the kernel.
-	auto queue = myContext.getCommandQueue();
+	auto &queue = myContext.getCommandQueue();
 	queue.enqueueNDRangeKernel(
 		kernel,
 		cl::NullRange,

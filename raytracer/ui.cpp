@@ -10,6 +10,8 @@
 #include <gtk/gtk.h>
 #include <png.h>
 
+#include <google/profiler.h>
+
 #include <string>
 #include <iostream>
 #include <vector>
@@ -96,8 +98,6 @@ void setup_scene()
  */
 void run_kernel()
 {
-//	ProfilerStart( "/tmp/raytracer.prof" );
-
 	Light light;
 	const int num_objects = 127;
 
@@ -119,8 +119,7 @@ void run_kernel()
 
 	// Render the scene.
 	renderer->render( objects, num_objects, &light, 1, camera_position );
-
-//	ProfilerStop();
+	gtk_image_set_from_pixbuf( GTK_IMAGE( image ), gdk_pixel_buffer );
 }
 
 /**
@@ -164,6 +163,7 @@ static void png_button_clicked( GtkWidget *widget, gpointer data )
 static void destroy( GtkWidget *widget,
                      gpointer   data )
 {
+	ProfilerStop();
     gtk_main_quit ();
 }
 
@@ -174,7 +174,6 @@ static void redraw_callback( GtkWidget *widget,
 							 gpointer   data )
 {
 	run_kernel();
-	gtk_image_set_from_pixbuf( GTK_IMAGE( image ), gdk_pixel_buffer );
 }
 
 /**
@@ -212,7 +211,6 @@ static void motion_notify( GtkWidget *widget, GdkEvent *event, gpointer user_dat
 			camera_position.s[2] = prev_y + 0.01 * ( motion->y - drag_y );
 
 			run_kernel();
-			gtk_image_set_from_pixbuf( GTK_IMAGE( image ), gdk_pixel_buffer );
 		}
 	}
 	else
@@ -239,11 +237,12 @@ static void scroll( GtkWidget *widget, GdkEvent *event, gpointer user_data )
 	}
 
 	run_kernel();
-	gtk_image_set_from_pixbuf( GTK_IMAGE( image ), gdk_pixel_buffer );
 }
 
 int main( int argc, char *argv[] )
 {
+	ProfilerStart( "raytracer.prof" );
+
 	// Set up scene.
 	setup_scene();
 

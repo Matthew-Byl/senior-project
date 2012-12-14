@@ -9,9 +9,15 @@ CLUnitArgument::CLUnitArgument(
 	void *ptr,
 	bool copy,
 	bool isArray,
+	bool copyTo,
 	bool copyBack
 	)
-	: mySize( size ), myName( name ), myCopy( copy ), myIsArray( isArray ), myCopyBack( copyBack )
+	: mySize( size ), 
+	  myName( name ), 
+	  myCopy( copy ), 
+	  myIsArray( isArray ), 
+	  myCopyTo( copyTo ),
+	  myCopyBack( copyBack )
 {
 	if ( copy )
 		copy_data( size, ptr );
@@ -37,6 +43,7 @@ CLUnitArgument::CLUnitArgument( const CLUnitArgument &other )
 	  myName( other.myName ), 
 	  myCopy( other.myCopy ),
 	  myIsArray( other.myIsArray ),
+	  myCopyTo( other.myCopyTo ),
 	  myCopyBack( other.myCopyBack )
 {
 	if ( other.myCopy )
@@ -56,7 +63,7 @@ CLUnitArgument::~CLUnitArgument()
 	}
 }
 
-cl::Buffer CLUnitArgument::getBuffer( const CLContext &context )
+cl::Buffer CLUnitArgument::getBuffer( CLContext &context )
 {
 	if ( !myBufferInitialized )
 	{
@@ -82,6 +89,11 @@ void CLUnitArgument::copyToDevice( cl::CommandQueue &queue )
 {
 	assert( myBufferInitialized );
 
+	if ( !myCopyTo )
+		return;
+
+//	cout << "Coyping " << mySize << " bytes to device." << endl;
+
 	queue.enqueueWriteBuffer(
 		myBuffer,
 		CL_TRUE,
@@ -100,6 +112,8 @@ void CLUnitArgument::copyFromDevice( cl::CommandQueue &queue )
 		return;
 	if ( !myCopyBack )
 		return;
+
+//	cout << "Coyping " << mySize << " bytes back from device." << endl;
 
 	queue.enqueueReadBuffer(
 		myBuffer,

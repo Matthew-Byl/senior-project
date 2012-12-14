@@ -13,8 +13,8 @@ class CLContext
 public:
 	CLContext();
 	CLContext( int platform, int device );
-	cl::Context getContext() const;
-	cl::CommandQueue getCommandQueue() const;
+	cl::Context &getContext();
+	cl::CommandQueue &getCommandQueue();
 	cl::Program buildProgram( std::string &src ) const;
 private:
 	cl::Context myContext;
