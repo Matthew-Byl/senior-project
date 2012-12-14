@@ -39,6 +39,8 @@ CLUnitArgument::CLUnitArgument( const CLUnitArgument &other )
 {
 	if ( other.myCopy )
 		copy_data( other.mySize, other.myPtr );
+	else
+		myPtr = other.myPtr;
 
 	myBufferInitialized = false;
 }
@@ -77,7 +79,7 @@ cl::Buffer CLUnitArgument::getBuffer( const CLContext &context )
 	{
 		myBuffer = cl::Buffer(
 			context.getContext(),
-			CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
+			CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
 			mySize,
 			myPtr
 			);
@@ -111,8 +113,8 @@ void CLUnitArgument::copyFromDevice( cl::CommandQueue &queue )
 	assert( myBufferInitialized );
 
 	// If we own the memory, nobody else can read it anyways.
-	if ( myCopy )
-		return;
+//	if ( myCopy )
+//		return;
 
 	queue.enqueueReadBuffer(
 		myBuffer,
@@ -121,6 +123,8 @@ void CLUnitArgument::copyFromDevice( cl::CommandQueue &queue )
 		mySize,
 		myPtr
 	);
+
+	cout << "Copying back!" << endl;
 }
 
 bool CLUnitArgument::isArray()

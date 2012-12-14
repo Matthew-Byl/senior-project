@@ -33,7 +33,7 @@ int main( void )
 
 
 const char *src = 
-	"void fill_numbers( __global int *i ) " \
+	"__kernel void fill_numbers( __global int *i ) " \
 	"{"												 \
 	"   int idx = get_global_id( 0 ); "				 \
 	"   i[idx] = idx; "								 \
@@ -41,11 +41,11 @@ const char *src =
 
 int main( void )
 {
-	CLFunction<void> fill_numbers( "fill_numbers", src );
+	CLKernel fill_numbers( "fill_numbers", src );
 	int numbers[100];
 	CLUnitArgument numbers_arg( "int", sizeof( int ) * 100, numbers, false, true );
 
-//	fill_numbers.setDimensions( 100 );
+	fill_numbers.setDimensions( 100 );
 	fill_numbers( numbers_arg );
 
 	for ( int i = 0; i < 100; i++ )
