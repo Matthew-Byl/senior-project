@@ -5,6 +5,7 @@
 #include "CLUnitArgument.h"
 #include "KernelGenerator.h"
 #include <iostream>
+#include <cassert>
 
 /* Encapsulates an OpenCL function that can be called like normal code. */
 template<class T>
@@ -32,10 +33,12 @@ public:
 			CLUnitArgument args[] = { params... };
 			size_t size = sizeof( args ) / sizeof( CLUnitArgument );
 			myArguments = std::vector<CLUnitArgument>( args, args + size );
+
+			generateBuffers();
 		}
 
-	const T run();
-	const T run( std::string type );
+	T run();
+	T run( std::string type );
 
 	template<class ...Arguments>
 	T operator()( Arguments... params )
@@ -47,9 +50,17 @@ public:
 private:
 	const CLContext myContext;
 	std::vector<CLUnitArgument> myArguments;
+	std::vector<cl::Buffer> myBuffers;
 	std::string myFunction;
 	std::string myKernel;
 	bool myIsKernel;
+
+	void generateKernelSource( const std::string type, std::string &source, std::string &kernel_name );
+	void generateBuffers();
+	void copyBuffersToDevice();
+	void copyBuffersFromDevice();
+	cl::Kernel generateKernel( std::string src, std::string kernel_name );
+	void enqueueKernel( cl::Kernel &kernel, std::vector<int> &dimensions );
 };
 
 
@@ -58,83 +69,82 @@ private:
  */
 #define _GEN_CL_FUNCTION_RUN( host, kernel ) \
 	template<>								 \
-	const host CLFunction<host>::run() \
+	host CLFunction<host>::run()			 \
 	{									   \
 		return run( #kernel );			   \
 	}
 
 _GEN_CL_FUNCTION_RUN( cl_int, int )
 _GEN_CL_FUNCTION_RUN( cl_float, float )
+_GEN_CL_FUNCTION_RUN( cl_float3, float3 )
 
-
-/// @todo: specialize for void, when we return nothing; i.e. run a kernel.
 template<class T>
-const T CLFunction<T>::run( std::string type )
+void CLFunction<T>::generateKernelSource( const std::string type, std::string &source, std::string &kernel_name )
 {
-	std::string src;
-	std::string kernelFunction;
 	if ( myIsKernel )
 	{
-		src = myKernel;
-		kernelFunction = myFunction;
+		source = myKernel;
+		kernel_name = myFunction;
 	}
 	else
 	{	
 		KernelGenerator generator( myFunction, myArguments, type );
-		src = myKernel + "\n\n" + generator.generate();
-		kernelFunction = generator.getKernelFunction();
-	}
+		source = myKernel + "\n\n" + generator.generate();
+		kernel_name = generator.getKernelFunction();
+	}	
+}
 
-	std::cout << "FULL SOURCE" << std::endl;
-	std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
-	std::cout << src << std::endl;
-	std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
-
-	cl::Program program = myContext.buildProgram( src );
-	cl::Kernel kernel(
-        program,
-        kernelFunction.c_str()
-	);
-
-	// Assemble a vector of buffers.
-	std::vector<cl::Buffer> buffers;
+template<class T>
+void CLFunction<T>::generateBuffers()
+{
 	for ( auto &it : myArguments )
 	{
-		buffers.push_back( it.getBuffer( myContext ) );
+		myBuffers.push_back( it.getBuffer( myContext ) );
 	}
+}
 
-	// Make those buffers arguments for the kernel.
-	for ( unsigned i = 0; i < buffers.size(); i++ )
-	{
-		std::cout << "Setting argument " << i << " of type " << myArguments[i].getType() << std::endl;
-//		printf( "%x\n", buffers[i] );
-		kernel.setArg( i, buffers[i] );
-	}
-
+template<class T>
+void CLFunction<T>::copyBuffersToDevice()
+{
 	// Queue up copying those buffers.
 	auto queue = myContext.getCommandQueue();
 	for ( auto &it : myArguments )
 	{
 		it.enqueue( queue );
 	}
+}
 
-	T result;
-	cl::Buffer resultBuffer;
-	if ( !myIsKernel )
+template<class T>
+cl::Kernel CLFunction<T>::generateKernel( std::string src, std::string kernel_name )
+{
+	cl::Program program = myContext.buildProgram( src );
+	cl::Kernel kernel(
+        program,
+        kernel_name.c_str()
+	);
+
+	// Make those buffers arguments for the kernel.
+	for ( unsigned i = 0; i < myBuffers.size(); i++ )
 	{
-		// Create the buffer for the result.
-		resultBuffer = cl::Buffer(
-			myContext.getContext(),
-			CL_MEM_WRITE_ONLY,
-			sizeof( T ),
-			NULL
-			);
-		// Make it the next kernel argument.
-		kernel.setArg( myArguments.size(), resultBuffer );
+		std::cout << "Setting argument " << i << " of type " << myArguments[i].getType() << std::endl;
+		kernel.setArg( i, myBuffers[i] );
 	}
 
+	return kernel;
+}
+
+template<class T>
+void CLFunction<T>::copyBuffersFromDevice()
+{
+
+}
+
+template<class T>
+void CLFunction<T>::enqueueKernel( cl::Kernel &kernel, std::vector<int> &dimensions )
+{
 	// Queue up the kernel.
 	cl::NDRange globalWorkSize( 1 );
+	auto queue = myContext.getCommandQueue();
 	queue.enqueueNDRangeKernel(
 		kernel,
 		cl::NullRange,
@@ -143,23 +153,80 @@ const T CLFunction<T>::run( std::string type )
 		NULL,
 		NULL
 	);
+}
 
-	if ( !myIsKernel )
-	{
-		// Enqueue reading the result.
-		queue.enqueueReadBuffer(
-			resultBuffer,
-			CL_TRUE,
-			0,
-			sizeof( T ),
-			&result,
-			NULL,
-			NULL );
-	}
+/// @todo: specialize for void, when we return nothing; i.e. run a kernel.
+template<class T>
+T CLFunction<T>::run( std::string type )
+{
+	// Be kinder. But kernels can never return a type, so don't allow
+	//  the non-void version of this function to be called when we
+	//  are calling a kernel.
+	assert( !myIsKernel );
+
+	std::string src;
+	std::string kernelFunction;
+	auto queue = myContext.getCommandQueue();
+
+	generateKernelSource( type, src, kernelFunction );
+
+	std::cout << "FULL SOURCE" << std::endl;
+	std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
+	std::cout << src << std::endl;
+	std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
+
+
+	copyBuffersToDevice();
+	cl::Kernel kernel = generateKernel( src, kernelFunction );
+
+	T result;
+	cl::Buffer resultBuffer;
+	// Create the buffer for the result.
+	resultBuffer = cl::Buffer(
+		myContext.getContext(),
+		CL_MEM_WRITE_ONLY,
+		sizeof( T ),
+		NULL
+		);
+	
+	// Make it the next kernel argument.
+	kernel.setArg( myArguments.size(), resultBuffer );
+
+	std::vector<int> dimensions;
+	dimensions.push_back( 1 );
+	enqueueKernel( kernel, dimensions );
+
+	// Enqueue reading the result.
+	queue.enqueueReadBuffer(
+		resultBuffer,
+		CL_TRUE,
+		0,
+		sizeof( T ),
+		&result,
+		NULL,
+		NULL );
 
 	// Enqueue reading all the results back.
-
+	copyBuffersFromDevice();
+	
 	return result;
+}
+
+template<>
+void CLFunction<void>::run()
+{
+	std::string src;
+	std::string kernelFunction;
+
+	generateKernelSource( "void", src, kernelFunction );
+	copyBuffersToDevice();
+	cl::Kernel kernel = generateKernel( src, kernelFunction );
+
+	std::vector<int> dimensions;
+	dimensions.push_back( 1 );
+	enqueueKernel( kernel, dimensions );
+
+	copyBuffersFromDevice();
 }
 
 #endif
