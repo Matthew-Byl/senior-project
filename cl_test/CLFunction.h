@@ -99,7 +99,7 @@ void CLFunction<T>::copyBuffersToDevice()
 	auto queue = myContext.getCommandQueue();
 	for ( auto &it : myArguments )
 	{
-		it.enqueue( queue );
+		it.copyToDevice( queue );
 	}
 }
 
@@ -125,7 +125,11 @@ cl::Kernel CLFunction<T>::generateKernel( std::string src, std::string kernel_na
 template<class T>
 void CLFunction<T>::copyBuffersFromDevice()
 {
-
+    auto queue = myContext.getCommandQueue();
+    for ( auto &it : myArguments )
+    {
+		it.copyFromDevice( queue );
+    }
 }
 
 template<class T>

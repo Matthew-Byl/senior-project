@@ -10,7 +10,7 @@
 class CLUnitArgument
 {
 public:
-	CLUnitArgument( std::string name, size_t size, void *ptr );
+	CLUnitArgument( std::string name, size_t size, void *ptr, bool copy = true );
 	CLUnitArgument( const CLUnitArgument &other );
 	CTR( cl_int );
 	CTR( cl_uchar );
@@ -21,16 +21,18 @@ public:
 
 	cl::Buffer &getBuffer( const CLContext &context );
 	std::string getType();
-	void enqueue( cl::CommandQueue &queue );
+	void copyToDevice( cl::CommandQueue &queue );
+	void copyFromDevice( cl::CommandQueue &queue );
 	
 private:
-	void _construct( size_t size, void *ptr );
+	void copy_data( size_t size, void *ptr );
 
 	bool myBufferInitialized;
 	void *myPtr;
 	size_t mySize;
     std::string myName;
 	cl::Buffer myBuffer;
+	bool myCopy;
 };
 
 // Allows us to make copies of arguments with their data

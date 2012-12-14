@@ -6,29 +6,34 @@ using namespace std;
 CLUnitArgument::CLUnitArgument( 
 	string name,
 	size_t size,
-	void *ptr
+	void *ptr,
+	bool copy
 	)
-	: mySize( size ), myName( name )
+	: mySize( size ), myName( name ), myCopy( copy )
 {
-	_construct( size, ptr );
+	if ( copy )
+		copy_data( size, ptr );
+	else
+		myPtr = ptr;
 }
 
-void CLUnitArgument::_construct(
+void CLUnitArgument::copy_data(
 	size_t size,
 	void *ptr
 	)
 {
 	myPtr = malloc( size );
 	memcpy( myPtr, ptr, size );
+
 	myBufferInitialized = false;
 }
 
 CLUnitArgument::CLUnitArgument( const CLUnitArgument &other )
-	: mySize( other.mySize ), myName( other.myName )
+	: mySize( other.mySize ), myName( other.myName ), myCopy( other.myCopy )
 {
-	myBufferInitialized = false;
-	myPtr = malloc( other.mySize );
-	memcpy( myPtr, other.myPtr, other.mySize );
+	if ( myCopy )
+		copy_data( other.mySize, other.myPtr );
+
 	cout << "Copy constructor running." << endl;
 }
 
@@ -36,9 +41,11 @@ CLUnitArgument::CLUnitArgument( const CLUnitArgument &other )
 #define C_CTR( host, kernel )											\
 	CLUnitArgument::CLUnitArgument(										\
 		host val														\
-		) : mySize( sizeof( host ) ), myName( #kernel )					\
-	{ _construct( sizeof( host ), &val );								\
-cout << "Constructor for " << #host << " running." << endl; }
+		) : mySize( sizeof( host ) ), myName( #kernel ), myCopy( true )	\
+	{																	\
+		copy_data( sizeof( host ), &val );								\
+		cout << "Constructor for " << #host << " running." << endl;		\
+	}
 
 C_CTR( cl_int, int );
 C_CTR( cl_uchar, uchar );
@@ -46,7 +53,10 @@ C_CTR( cl_float3, float3 );
 C_CTR( cl_int3, int3 );
 
 CLUnitArgument::~CLUnitArgument() {
-	free( myPtr );
+	if ( myCopy )
+	{
+		free( myPtr );
+	}
 }
 
 cl::Buffer &CLUnitArgument::getBuffer( const CLContext &context )
@@ -71,13 +81,24 @@ std::string CLUnitArgument::getType()
 	return myName;
 }
 
-void CLUnitArgument::enqueue( cl::CommandQueue &queue )
+void CLUnitArgument::copyToDevice( cl::CommandQueue &queue )
 {
-//	cout << "Enqueuing " << myValue << "... " << endl;
-
 	assert( myBufferInitialized );
 
 	queue.enqueueWriteBuffer(
+		myBuffer,
+		CL_TRUE,
+		0,
+		mySize,
+		myPtr
+	);
+}
+
+void CLUnitArgument::copyFromDevice( cl::CommandQueue &queue )
+{
+	assert( myBufferInitialized );
+
+	queue.enqueueReadBuffer(
 		myBuffer,
 		CL_TRUE,
 		0,
