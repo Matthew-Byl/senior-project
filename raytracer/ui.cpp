@@ -169,13 +169,23 @@ static void destroy( GtkWidget *widget,
     gtk_main_quit ();
 }
 
+bool in_handler = false;
 /**
  * Redraw the scene when the sliders are moved.
  */
 static void redraw_callback( GtkWidget *widget,
 							 gpointer   data )
 {
+	if ( in_handler )
+		return;
+	in_handler = true;
+
 	run_kernel();
+
+	while ( gtk_events_pending() )
+		gtk_main_iteration();
+
+	in_handler = false;
 }
 
 /**
@@ -186,7 +196,6 @@ bool dragging = false;
 float drag_x, drag_y;
 float prev_x, prev_y;
 int drag_frame = -1;
-bool in_handler = false;
 static void motion_notify( GtkWidget *widget, GdkEvent *event, gpointer user_data )
 {
 	if ( in_handler )
@@ -238,11 +247,11 @@ static void scroll( GtkWidget *widget, GdkEvent *event, gpointer user_data )
 
 	if ( scroll->direction == GDK_SCROLL_UP )
 	{
-		camera_position.s[0] += 0.1;
+		camera_position.s[0] += 0.3;
 	}
 	else if ( scroll->direction == GDK_SCROLL_DOWN )
 	{
-		camera_position.s[0] -= 0.1;
+		camera_position.s[0] -= 0.3;
 	}
 
 	run_kernel();
