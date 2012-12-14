@@ -64,6 +64,22 @@ C_CTR( cl_uchar, uchar );
 C_CTR( cl_float3, float3 );
 C_CTR( cl_int3, int3 );
 
+#define C_PTR_CTR( host_ptr, host, kernel )								\
+	CLUnitArgument::CLUnitArgument(										\
+		host_ptr array,													\
+		size_t elements													\
+		) : myPtr( array ),												\
+			mySize( sizeof( host ) * elements ),						\
+			myName( #kernel ),											\
+			myCopy( false ),											\
+			myIsArray( true )											\
+	{																	\
+		myBufferInitialized = false;									\
+		cout << "Constructor for " << #host << " array running." << endl; \
+	}
+
+C_PTR_CTR( cl_int*, cl_int, int );
+
 CLUnitArgument::~CLUnitArgument()
 {
 	if ( myCopy )

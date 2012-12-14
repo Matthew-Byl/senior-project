@@ -6,6 +6,7 @@
 #include <string>
 
 #define CTR( type ) CLUnitArgument( type val );
+#define PTR_CTR( type ) CLUnitArgument( type array, size_t elements );
 
 class CLUnitArgument
 {
@@ -21,6 +22,7 @@ public:
 	CTR( cl_uchar );
 	CTR( cl_float3 );
 	CTR( cl_int3 );
+	PTR_CTR( cl_int* );
 
 	~CLUnitArgument();
 

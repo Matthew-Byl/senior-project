@@ -43,7 +43,7 @@ int main( void )
 {
 	CLKernel fill_numbers( "fill_numbers", src );
 	int numbers[100];
-	CLUnitArgument numbers_arg( "int", sizeof( int ) * 100, numbers, false, true );
+	CLUnitArgument numbers_arg( numbers, 100 );
 
 	fill_numbers.setDimensions( 100 );
 	fill_numbers( numbers_arg );
