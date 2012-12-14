@@ -1,5 +1,5 @@
 #include "CLFunction.h"
-#include "CLUnitArgument.h"
+#include "CLKernel.h"
 
 #include <vector>
 #include <initializer_list>
@@ -16,7 +16,7 @@ const char *src =
 int main( void )
 {
 	CLFunction<int> add_one( "add_one", src );
-	CLFunction<void> some_kernel( "some_kernel", src, true );
+	CLKernel some_kernel( "some_kernel", src );
 
 	cl_int3 intr;
 	intr.s[0] = 2;

@@ -14,12 +14,10 @@ class CLFunction
 public:
 	CLFunction( std::string function, 
 				std::string kernel, 
-				bool isKernel = false,
-				const CLContext context = CLContext( 0, 0 ) )
+				const CLContext context = CLContext() )
 		: myContext( context ), 
 		  myFunction( function), 
-		  myKernel( kernel ), 
-		  myIsKernel( isKernel)
+		  myKernel( kernel )
 		{
 		}
 
@@ -37,7 +35,7 @@ public:
 			generateBuffers();
 		}
 
-	T run();
+	virtual T run();
 	T run( std::string type );
 
 	template<class ...Arguments>
@@ -47,15 +45,14 @@ public:
 			return run();
 		}
 	
-private:
+protected:
 	const CLContext myContext;
 	std::vector<CLUnitArgument> myArguments;
 	std::vector<cl::Buffer> myBuffers;
 	std::string myFunction;
 	std::string myKernel;
-	bool myIsKernel;
 
-	void generateKernelSource( const std::string type, std::string &source, std::string &kernel_name );
+	virtual void generateKernelSource( const std::string type, std::string &source, std::string &kernel_name );
 	void generateBuffers();
 	void copyBuffersToDevice();
 	void copyBuffersFromDevice();
@@ -81,17 +78,9 @@ _GEN_CL_FUNCTION_RUN( cl_float3, float3 )
 template<class T>
 void CLFunction<T>::generateKernelSource( const std::string type, std::string &source, std::string &kernel_name )
 {
-	if ( myIsKernel )
-	{
-		source = myKernel;
-		kernel_name = myFunction;
-	}
-	else
-	{	
-		KernelGenerator generator( myFunction, myArguments, type );
-		source = myKernel + "\n\n" + generator.generate();
-		kernel_name = generator.getKernelFunction();
-	}	
+	KernelGenerator generator( myFunction, myArguments, type );
+	source = myKernel + "\n\n" + generator.generate();
+	kernel_name = generator.getKernelFunction();
 }
 
 template<class T>
@@ -142,8 +131,33 @@ void CLFunction<T>::copyBuffersFromDevice()
 template<class T>
 void CLFunction<T>::enqueueKernel( cl::Kernel &kernel, std::vector<int> &dimensions )
 {
+	// OpenCL only allows up to 3 dimensions.
+	cl::NDRange globalWorkSize;
+	if ( dimensions.size() == 1 )
+	{
+		globalWorkSize = cl::NDRange( dimensions[0] );
+	}
+	else if ( dimensions.size() == 2 )
+	{
+		globalWorkSize = cl::NDRange( 
+			dimensions[0],
+			dimensions[1]
+		);
+	}
+	else if ( dimensions.size() == 3 )
+	{
+		globalWorkSize = cl::NDRange( 
+			dimensions[0],
+			dimensions[1],
+			dimensions[2]
+		);
+	}
+	else
+	{
+		assert( false );
+	}
+
 	// Queue up the kernel.
-	cl::NDRange globalWorkSize( 1 );
 	auto queue = myContext.getCommandQueue();
 	queue.enqueueNDRangeKernel(
 		kernel,
@@ -159,11 +173,6 @@ void CLFunction<T>::enqueueKernel( cl::Kernel &kernel, std::vector<int> &dimensi
 template<class T>
 T CLFunction<T>::run( std::string type )
 {
-	// Be kinder. But kernels can never return a type, so don't allow
-	//  the non-void version of this function to be called when we
-	//  are calling a kernel.
-	assert( !myIsKernel );
-
 	std::string src;
 	std::string kernelFunction;
 	auto queue = myContext.getCommandQueue();

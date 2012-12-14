@@ -11,6 +11,7 @@
 class CLContext
 {
 public:
+	CLContext();
 	CLContext( int platform, int device );
 	cl::Context getContext() const;
 	cl::CommandQueue getCommandQueue() const;

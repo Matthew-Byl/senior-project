@@ -2,6 +2,12 @@
 #include <iostream>
 using namespace std;
 
+CLContext::CLContext()
+	: CLContext( 0, 0 )
+{
+
+}
+
 CLContext::CLContext( int platform, int device )
 {
 	vector<cl::Platform> platforms;
