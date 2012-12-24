@@ -1,2 +1,2 @@
 kalah:
-	clang board.c -Wall -o kalah
+	clang main.c board.c -Wall -o kalah

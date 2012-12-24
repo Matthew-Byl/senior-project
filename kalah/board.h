@@ -16,7 +16,8 @@
 
 typedef enum {
 	TOP,
-	BOTTOM
+	BOTTOM,
+	NOBODY
 } PlayerPosition;
 
 typedef struct {
@@ -28,6 +29,9 @@ void board_initialize( Board *b, PlayerPosition to_move );
 int board_legal_move( Board *b, int move );
 int board_game_over( Board *b );
 int board_make_move( Board *b, int move );
+PlayerPosition board_winner( Board *b );
+int board_top_score( Board *b );
+int board_bottom_score( Board *b );
 void board_print( Board *b );
 
 #endif

@@ -86,6 +86,37 @@ int board_game_over( Board *b )
 	}
 }
 
+PlayerPosition board_winner( Board *b )
+{
+	int top = board_top_score( b );
+	int bottom = board_bottom_score( b );
+
+	if ( top > bottom )
+		return TOP;
+	else if ( bottom > top )
+		return BOTTOM;
+	else
+		return NOBODY;
+}
+
+int board_top_score( Board *b )
+{
+	int score = 0;
+	for ( int i = 7; i <= 13; i++ )
+		score += b->board[i];
+
+	return score;
+}
+
+int board_bottom_score( Board *b )
+{
+	int score = 0;
+	for ( int i = 0; i <= 6; i++ )
+		score += b->board[i];
+
+	return score;
+}
+
 int board_make_move( Board *b, int move )
 {
 	const int MAKE_MOVE_DEBUG = 1;
