@@ -10,7 +10,7 @@
 #include <gtk/gtk.h>
 #include <png.h>
 
-#include <google/profiler.h>
+//#include <google/profiler.h>
 
 #include <string>
 #include <iostream>
@@ -20,8 +20,8 @@ using namespace std;
 
 // The size of the rendered scene. Right now, this has
 //  to be square or there will be distortion.
-#define SIZEX 1000
-#define SIZEY 1000
+#define SIZEX 500
+#define SIZEY 500
 #define PIXEL_BUFFER_SIZE SIZEX * SIZEY * 4
 
 // The pixel buffer that is drawn onto the screen
@@ -43,7 +43,7 @@ CLRenderer *renderer;
 #define NUM_OBJECTS 1024
 Object objects[NUM_OBJECTS];
 
-#define NUM_SPHERES 6
+#define NUM_SPHERES 2
 
 /**
  * Initially prepare the scene.

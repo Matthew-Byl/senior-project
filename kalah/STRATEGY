@@ -1,0 +1,37 @@
+-We can't do recursion in the GPU, and control flow isn't efficient.
+-We need a way to just evaluate a whole bunch of boards in a row.
+-Why not solve Mankalah, going from end positions backwards?
+	 -This doesn't require control flow.
+	 -It does require a complex "is this a possible board position?" evaluation.
+	 -Or just evaluate all boards, legal or not. (there are too many)
+	 -This was only done 2 years ago, which makes me think it will take too long.
+
+====
+-It's slow to move between CPU and GPU. Ideally, the GPU would schedule itself.
+-We could store the minimax tree in an array (with the 2k + 1 rule).
+  -But we have to compute what the board would be at each level.
+  -given (n*k + m), how can we tell what the previous position was.
+    -k has to be an integer, the # of moves.
+  -This way, we can use a loop to determine what the moves would be from a
+   starting position.
+     m = (n*k + m) % n, iteratively
+  -Problem: the game might have ended at some previous step.
+    -we can tell: if the previous board has no legal moves, then this
+     board doesn't work. But this doesn't save us time.
+    -maybe solve it in the minimax step. If that board isn't valid, then
+     use the eval() answer.
+  -Go down 2-4 levels until there are more trees to start with than compute
+    units on the GPU. This way, all compute units are used.
+    -We need to store the "trees" in local memory (global would probably become
+	  our bottleneck).
+    -Use a workgroup and local memory to do as large of a tree as possible, then
+      stuff it into global memory. There will be 6 times as many, so that will
+      end up saving a lot of time.
+-We can go down as many levels as we need, solve that half of the array.
+-Then a different kernel does minimax on the buffer. We can do lots in parallel.
+
+-Paper (Parallel Minimax Tree Searching on GPU, Rocki, Sudra):
+  -did 7 minimax levels sequentially, 4 in parallel, for a 10-35x (depending on tuning)
+   speedup.
+  -This makes sense, because most of the work takes place at lower levels.
+  -We need to produce enough treads to keep the GPU busy.
