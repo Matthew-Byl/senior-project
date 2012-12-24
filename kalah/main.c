@@ -1,7 +1,10 @@
 #include "board.h"
 #include "kalah_player.h"
+#include "simple_players.h"
 
 #include <stdio.h>
+
+#define MAX_SCORE 96
 
 int play_game( KalahPlayer top, KalahPlayer bottom, PlayerPosition first_player )
 {
@@ -15,11 +18,12 @@ int play_game( KalahPlayer top, KalahPlayer bottom, PlayerPosition first_player 
 	else
 		printf( "Player %s begins.\n", bottom.get_name() );
 
-	board_print( b );
-
 	while ( !board_game_over( b ) )
 	{
 		int move;
+
+		board_print( b );		
+
 		printf( "\n" );
 
 		if ( b->player_to_move == TOP )
@@ -70,14 +74,24 @@ int play_game( KalahPlayer top, KalahPlayer bottom, PlayerPosition first_player 
 
 int main ( void )
 {
-	KalahPlayer top;
-	KalahPlayer bottom;
+	KalahPlayer top = bonzo_player();
+	KalahPlayer bottom = bonzo_player();
 
 	printf( "============ Game 1 ============\n" );
-	play_game( top, bottom, TOP );
+	int game1 = play_game( top, bottom, TOP );
 
 	printf( "============ Game 2 ============\n" );
-	play_game( top, bottom, BOTTOM );
+	int game2 = play_game( top, bottom, BOTTOM );
+
+	printf( "================================\n\n" );
+
+	int top_score = game1 + game2;
+	if ( top_score > ( MAX_SCORE / 2 ) )
+		printf( "TOP (%s) wins, %d to %d.\n", top.get_name(), top_score, MAX_SCORE - top_score );
+	else if ( top_score < ( MAX_SCORE / 2 ) )
+		printf( "BOTTOM (%s) wins, %d to %d.\n", bottom.get_name(), MAX_SCORE - top_score, top_score );
+	else
+		printf( "TIE!\n" );
 
 	return 0;
 }

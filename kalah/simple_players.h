@@ -3,7 +3,7 @@
 
 #include "kalah_player.h"
 
-KalahPlayer human_player();
-KalahPlayer bonzo_player();
+KalahPlayer human_player( void );
+KalahPlayer bonzo_player( void );
 
 #endif

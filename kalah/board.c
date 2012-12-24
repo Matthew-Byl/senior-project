@@ -196,7 +196,7 @@ void board_print( Board *b )
 	for (int i=12; i>=7; i--)
 		printf("%d  ", b->board[i] );
 	printf("\n");
-	printf("%d                     %d", b->board[13], b->board[6]);
+	printf("%d                     %d\n", b->board[13], b->board[6]);
 	printf("    ");
 	for (int i=0; i<=5; i++)
 		printf("%d  ", b->board[i]);
