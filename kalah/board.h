@@ -28,5 +28,6 @@ void board_initialize( Board *b, PlayerPosition to_move );
 int board_legal_move( Board *b, int move );
 int board_game_over( Board *b );
 int board_make_move( Board *b, int move );
+void board_print( Board *b );
 
 #endif
