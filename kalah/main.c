@@ -12,29 +12,31 @@ int play_game( KalahPlayer top, KalahPlayer bottom, PlayerPosition first_player 
 	Board *b = &b_data;  // as shorthand
 
 	board_initialize( b, first_player );
-	
+
+/*	
 	if ( first_player == TOP )
 		printf( "Player %s begins.\n", top.get_name() );
 	else
 		printf( "Player %s begins.\n", bottom.get_name() );
+*/
 
 	while ( !board_game_over( b ) )
 	{
 		int move;
 
-		board_print( b );		
+//		board_print( b );		
 
-		printf( "\n" );
+//		printf( "\n" );
 
 		if ( b->player_to_move == TOP )
 		{
 			move = top.make_move( b );
-			printf( "TOP (%s) chooses move %d.\n", top.get_name(), move );
+//			printf( "TOP (%s) chooses move %d.\n", top.get_name(), move );
 		}
 		else
 		{
 			move = bottom.make_move( b );
-			printf( "BOTTOM (%s) chooses move %d.\n", bottom.get_name(), move );
+//			printf( "BOTTOM (%s) chooses move %d.\n", bottom.get_name(), move );
 		}
 
 		board_make_move( b, move );
@@ -62,21 +64,18 @@ int play_game( KalahPlayer top, KalahPlayer bottom, PlayerPosition first_player 
 		}
 		else
 		{
-			if ( b->player_to_move == TOP )
+/*			if ( b->player_to_move == TOP )
 				printf( "TOP (%s) to move.\n", top.get_name() );
 			else
-				printf( "BOTTOM (%s) to move.\n", top.get_name() );
-		}
+			printf( "BOTTOM (%s) to move.\n", bottom.get_name() ); */
+				}
 	}
 
 	return board_top_score( b );
 }
 
-int main ( void )
+void match ( KalahPlayer top, KalahPlayer bottom )
 {
-	KalahPlayer top = stackless_minimax_player();
-	KalahPlayer bottom = bonzo_player();
-
 	printf( "============ Game 1 ============\n" );
 	int game1 = play_game( top, bottom, TOP );
 
@@ -92,6 +91,16 @@ int main ( void )
 		printf( "BOTTOM (%s) wins, %d to %d.\n", bottom.get_name(), MAX_SCORE - top_score, top_score );
 	else
 		printf( "TIE!\n" );
+}
+
+int main ( void )
+{
+	KalahPlayer top = bonzo_player();
+	KalahPlayer bottom = stackless_minimax_player();
+	match( top, bottom );
+
+	bottom = minimax_player();
+	match( top, bottom );
 
 	return 0;
 }

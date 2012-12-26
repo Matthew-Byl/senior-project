@@ -83,13 +83,15 @@ int minimax_eval( Board *b )
 {
 	// Kalah counts double, but stones count too.
 
-	int score = 2 * ( b->board[13] - b->board[6] );
-	
+	int score = 5 * ( b->board[13] - b->board[6] );
+
+/*	
 	for ( int i = 0; i <= 5; i++ )
 		score -= b->board[i];
 
 	for ( int i = 7; i <= 12; i++ )
 		score += b->board[i];
+*/
 
 	return score;
 }
@@ -168,7 +170,7 @@ MinimaxResult minimax_move( Board *b, int depth )
 
 int minimax_make_move( Board *b )
 {
-	MinimaxResult res = minimax_move( b, 3 );
+	MinimaxResult res = minimax_move( b, 6 );
 
 	return res.move;
 }
@@ -185,7 +187,7 @@ KalahPlayer minimax_player( void )
 
 /*********** Stackless Minimax player ****************/
 
-#define DEPTH 9
+#define DEPTH 7
 #define TREE_SIZE 60466176  // 6^1 + 6^2 + 6^3 + 6^4
 
 // Having the b param makes the first one not a special case.
@@ -201,11 +203,21 @@ void populate_children( Board *boards, Board *b, int n )
 	for ( int k = 0; k < 6; k++ )
 	{
 		board_copy( b, &boards[6*(n+1) + k] );
-			
+	}
+
+	// If the game is over, a copy is enough.
+	if ( board_game_over( b ) )
+	{
+		return;
+	}
+
+	for ( int k = 0; k < 6; k++ )
+	{
 		if ( board_legal_move( &boards[6*(n+1) + k], k + move_offset )
 			 && !board_game_over( b ) )
+		{
 			board_make_move( &boards[6*(n+1) + k], k + move_offset );
-
+		}
 		// Just leave end of games, etc. be.
 	}
 }

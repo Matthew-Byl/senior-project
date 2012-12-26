@@ -183,10 +183,6 @@ int board_make_move( Board *b, int move )
 	}
 
 	// who gets the next move?
-
-/*
-  XXX: disabling go-agains for now.
-
 	if ( b->player_to_move == TOP )
 	{
 		if ( pos != 13 )
@@ -197,12 +193,6 @@ int board_make_move( Board *b, int move )
 		if ( pos != 6 )
 			b->player_to_move = TOP;
 	}
-*/
-
-	if ( b->player_to_move == TOP )
-		b->player_to_move = BOTTOM;
-	else
-		b->player_to_move = TOP;
 
 	return capture;
 }
