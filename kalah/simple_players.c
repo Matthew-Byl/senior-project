@@ -123,7 +123,7 @@ MinimaxResult minimax_move( Board *b, int depth )
 		// MAX
 		best_result.score = INT_MIN;
 
-		for ( int i = 7; i <= 12; i++ )
+		for ( int i = 7; i < 13; i++ )
 		{
 			if ( board_legal_move( b, i ) )
 			{
@@ -146,7 +146,7 @@ MinimaxResult minimax_move( Board *b, int depth )
 		// MIN
 		best_result.score = INT_MAX;
 
-		for ( int i = 0; i <= 5; i++ )
+		for ( int i = 0; i < 7; i++ )
 		{
 			if ( board_legal_move( b, i ) )
 			{
