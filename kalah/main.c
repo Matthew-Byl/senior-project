@@ -23,11 +23,10 @@ int play_game( KalahPlayer top, KalahPlayer bottom, PlayerPosition first_player 
 		int move;
 
 		board_print( b );		
-
 		printf( "\n" );
 
 		if ( b->player_to_move == TOP )
-		{
+		{			
 			move = top.make_move( b );
 			printf( "TOP (%s) chooses move %d.\n", top.get_name(), move );
 		}

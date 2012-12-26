@@ -83,15 +83,13 @@ int minimax_eval( Board *b )
 {
 	// Kalah counts double, but stones count too.
 
-	int score = ( b->board[13] - b->board[6] );
-
-/*	
+	int score = 10 * ( b->board[13] - b->board[6] );
+	
 	for ( int i = 0; i <= 5; i++ )
 		score -= b->board[i];
 
 	for ( int i = 7; i <= 12; i++ )
 		score += b->board[i];
-*/
 
 	return score;
 }
@@ -111,7 +109,7 @@ MinimaxResult minimax_move( Board *b, int depth )
 		ret.move = -1;
 		ret.score = minimax_eval( b );
 
-		printf( "%d ", ret.score );
+//		printf( "%d ", ret.score );
 
 		return ret;
 	}
@@ -172,7 +170,7 @@ MinimaxResult minimax_move( Board *b, int depth )
 
 int minimax_make_move( Board *b )
 {
-	MinimaxResult res = minimax_move( b, 1 );
+	MinimaxResult res = minimax_move( b, 8 );
 
 	printf( "Best move has score %d\n", res.score );
 
@@ -191,8 +189,8 @@ KalahPlayer minimax_player( void )
 
 /*********** Stackless Minimax player ****************/
 
-#define DEPTH 2
-#define TREE_SIZE 42  // 6^1 + 6^2 + 6^3 + 6^4
+#define DEPTH 7
+#define TREE_SIZE 1679616  // 6^1 + 6^2 + 6^3 + 6^4
 
 // Having the b param makes the first one not a special case.
 void populate_children( Board *boards, Board *b, int n )
@@ -271,7 +269,7 @@ int stackless_minimax_move( Board *b )
 		if ( board_game_over( &boards[i] ) )
 		{
 			tree[i] = minimax_eval( &boards[i] );
-			printf( "E " );
+//			printf( "E " );
 			continue;
 		}
 
@@ -285,7 +283,7 @@ int stackless_minimax_move( Board *b )
 					tree[i] = tree[6*(i+1) + j];
 			}
 
-			printf( "X " );
+//			printf( "X " );
 		}
 		else
 		{
@@ -297,11 +295,13 @@ int stackless_minimax_move( Board *b )
 					tree[i] = tree[6*(i+1) + j];
 			}
 
-			printf( "N " );
+//			printf( "N " );
 		}
 	}
 
-	printf( "\n" );
+//	printf( "\n" );
+
+	printf( "Player to move: %d\n", b->player_to_move );
 
 	int best_move;
 	int best_score;
@@ -332,12 +332,14 @@ int stackless_minimax_move( Board *b )
 		}
 	}
 
+/*
 	printf( "Score tree:\n" );
 	for ( int i = 0; i < TREE_SIZE; i++ )
 	{
 		printf( "%d ", tree[i] );
 	}
 	printf( "\n" );
+*/
 
 	free( boards );
 	free( tree );
