@@ -83,7 +83,7 @@ int minimax_eval( Board *b )
 {
 	// Kalah counts double, but stones count too.
 
-	int score = 5 * ( b->board[13] - b->board[6] );
+	int score = ( b->board[13] - b->board[6] );
 
 /*	
 	for ( int i = 0; i <= 5; i++ )
@@ -170,7 +170,7 @@ MinimaxResult minimax_move( Board *b, int depth )
 
 int minimax_make_move( Board *b )
 {
-	MinimaxResult res = minimax_move( b, 6 );
+	MinimaxResult res = minimax_move( b, 1 );
 
 	return res.move;
 }
@@ -187,8 +187,8 @@ KalahPlayer minimax_player( void )
 
 /*********** Stackless Minimax player ****************/
 
-#define DEPTH 7
-#define TREE_SIZE 60466176  // 6^1 + 6^2 + 6^3 + 6^4
+#define DEPTH 2
+#define TREE_SIZE 42  // 6^1 + 6^2 + 6^3 + 6^4
 
 // Having the b param makes the first one not a special case.
 void populate_children( Board *boards, Board *b, int n )
@@ -213,8 +213,7 @@ void populate_children( Board *boards, Board *b, int n )
 
 	for ( int k = 0; k < 6; k++ )
 	{
-		if ( board_legal_move( &boards[6*(n+1) + k], k + move_offset )
-			 && !board_game_over( b ) )
+		if ( board_legal_move( &boards[6*(n+1) + k], k + move_offset ) )
 		{
 			board_make_move( &boards[6*(n+1) + k], k + move_offset );
 		}
@@ -265,10 +264,16 @@ int stackless_minimax_move( Board *b )
 
 	for ( int i = leaf_start - 1; i > 0; i-- )
 	{
+		if ( board_game_over( &boards[i] ) )
+		{
+			tree[i] = minimax_eval( &boards[i] );
+			continue;
+		}
+
 		if ( boards[i].player_to_move == TOP )
 		{
 			tree[i] = INT_MIN;
-			for ( int j = 0; j < 6; j++ )
+			for ( int j = 0; j < 7; j++ )
 			{
 				if ( tree[6*(i+1) + j] > tree[i] )
 					tree[i] = tree[6*(i+1) + j];
@@ -277,7 +282,7 @@ int stackless_minimax_move( Board *b )
 		else
 		{
 			tree[i] = INT_MAX;
-			for ( int j = 0; j < 6; j++ )
+			for ( int j = 0; j < 7; j++ )
 			{
 				if ( tree[6*(i+1) + j] < tree[i] )
 					tree[i] = tree[6*(i+1) + j];
