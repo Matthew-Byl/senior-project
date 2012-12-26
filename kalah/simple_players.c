@@ -184,41 +184,65 @@ KalahPlayer minimax_player( void )
 
 /*********** Stackless Minimax player ****************/
 
-#define DEPTH 3
-#define TREE_SIZE 216  // 6 ^ DEPTH
+#define DEPTH 2
+#define TREE_SIZE 42  // 6 ^ DEPTH ( or something like that )
+
+// Having the b param makes the first one not a special case.
+void populate_children( Board *boards, Board *b, int n )
+{
+	// Populate the rest of the nodes.
+	int move_offset;
+	if ( b->player_to_move == TOP )
+		move_offset = 7;
+	else
+		move_offset = 0;
+
+	for ( int k = 0; k < 6; k++ )
+	{
+		board_copy( b, &boards[6*(n+1) + k] );
+			
+		if ( board_legal_move( &boards[6*(n+1) + k], k + move_offset )
+			 && !board_game_over( b ) )
+			board_make_move( &boards[6*(n+1) + k], k + move_offset );
+
+		// Just leave end of games, etc. be.
+	}
+}
+
+int int_pow(int x, int p) {
+	int i = 1;
+	for (int j = 0; j < p; j++)  i *= x;
+	return i;
+}
 
 int stackless_minimax_move( Board *b )
 {
 	int tree[TREE_SIZE];
 	Board boards[TREE_SIZE];
 
-	// A node's children are in boards[(6 * node) + k]
+	// A node's children are in boards[(6 * (node + 1) ) + k]. The root node is left off of this tree.
 	//  this is a 6-ary tree.
-	// Populate the board tree.
-	board_copy( b, &boards[0] );
+	//
+	// The array ends up looking like
+	//  [ 1 everything else][ 6 leaf nodes ]
+	// So the leaf nodes start at the 0 + 6 + ... + (depth - 1)th step.
+	// I'm too lazy to find a theorem for what this is, so compute it.
+	int leaf_start = 0;
+	for ( int i = 1; i < DEPTH; i++ )
+		leaf_start += int_pow( 6, i );
 
-	int move_offset;
-	for ( int i = 0; i < TREE_SIZE / 2; i++ )
+	// Populate the board tree.	
+	// Populate the first 6 nodes.
+	populate_children( boards, b, -1 );
+
+	// Populate the rest of the nodes
+	for ( int i = 0; i < leaf_start; i++ )
 	{
-		if ( boards[i].player_to_move == TOP )
-			move_offset = 7;
-		else
-			move_offset = 0;
-
-		for ( int j = 0; j < 6; j++ )
-		{
-			board_copy( &boards[i], &boards[6*i + j] );
-			
-			if ( board_legal_move( &boards[6*i + j], j + move_offset )
-				 && !board_game_over( &boards[i] ) )
-				board_make_move( &boards[6*i + j], j + move_offset );
-
-			// Just leave end of games, etc. be.
-		}
+		populate_children( boards, &boards[i], i );
 	}
 
 	// Run the evaluate function on the bottom half of the tree.
-	for ( int i = TREE_SIZE / 2; i <= TREE_SIZE; i++ )
+	for ( int i = leaf_start; i < TREE_SIZE; i++ )
 	{
 		tree[i] = minimax_eval( &boards[i] );
 	}
@@ -226,15 +250,15 @@ int stackless_minimax_move( Board *b )
 	// Run minimax backwards. We can probably do this with more parallelism.
 	// @XXX: PROBLEM: go-agains. This makes the tree not uniformly min-max.
 
-	for ( int i = ( TREE_SIZE / 2 ) - 1; i > 0; i-- ) // we intentionally don't do tree[0].
+	for ( int i = leaf_start - 1; i > 0; i-- )
 	{
 		if ( boards[i].player_to_move == TOP )
 		{
 			tree[i] = INT_MIN;
 			for ( int j = 0; j < 6; j++ )
 			{
-				if ( tree[6*i + j] > tree[i] )
-					tree[i] = tree[6*i + j];
+				if ( tree[6*(i+1) + j] > tree[i] )
+					tree[i] = tree[6*(i+1) + j];
 			}
 		}
 		else
@@ -242,8 +266,8 @@ int stackless_minimax_move( Board *b )
 			tree[i] = INT_MAX;
 			for ( int j = 0; j < 6; j++ )
 			{
-				if ( tree[6*i + j] < tree[i] )
-					tree[i] = tree[6*i + j];
+				if ( tree[6*(i+1) + j] < tree[i] )
+					tree[i] = tree[6*(i+1) + j];
 			}
 		}
 	}
@@ -253,21 +277,23 @@ int stackless_minimax_move( Board *b )
 	if ( b->player_to_move == TOP )
 	{
 		best_score = INT_MIN;
-		for ( int i = 1; i < 7; i++ )
+		for ( int i = 0; i < 7; i++ )
 		{
-			if ( tree[i] > best_score )
+			if ( tree[i] > best_score 
+				 && board_legal_move( b, i + 7 ) )
 			{
 				best_score = tree[i];
-				best_move = i;
+				best_move = i + 7; // 7 is the move offset.
 			}
 		}
 	}
 	else
 	{
 		best_score = INT_MAX;
-		for ( int i = 1; i < 7; i++ )
+		for ( int i = 0; i < 7; i++ )
 		{
-			if ( tree[i] < best_score )
+			if ( tree[i] < best_score
+				 && board_legal_move( b, i ) )
 			{
 				best_score = tree[i];
 				best_move = i;
@@ -278,7 +304,7 @@ int stackless_minimax_move( Board *b )
 	return best_move;
 }
 
-char *stackless_minimax_name()
+char *stackless_minimax_name( void )
 {
 	return "Stackless Minimax";
 }

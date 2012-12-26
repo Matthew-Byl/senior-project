@@ -199,6 +199,11 @@ int board_make_move( Board *b, int move )
 	}
 */
 
+	if ( b->player_to_move == TOP )
+		b->player_to_move = BOTTOM;
+	else
+		b->player_to_move = TOP;
+
 	return capture;
 }
 
