@@ -11,6 +11,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /**
  * Initialize a board with positions for the beginning
@@ -63,6 +64,12 @@ int board_legal_move( Board *b, int move )
 	{
 		return FALSE;
 	}
+}
+
+void board_copy( Board *src, Board *dest )
+{
+	memcpy( dest->board, src->board, sizeof( int ) * BOARD_SIZE );
+	dest->player_to_move = src->player_to_move;
 }
 
 int board_game_over( Board *b )
@@ -127,7 +134,7 @@ int board_make_move( Board *b, int move )
 		if ( MAKE_MOVE_DEBUG )
 		{
 			printf( "Illegal move: %d; terminating.", move );
-			exit( 1 );
+			abort();
 		}
 
 		return -1;
@@ -176,6 +183,10 @@ int board_make_move( Board *b, int move )
 	}
 
 	// who gets the next move?
+
+/*
+  XXX: disabling go-agains for now.
+
 	if ( b->player_to_move == TOP )
 	{
 		if ( pos != 13 )
@@ -186,6 +197,7 @@ int board_make_move( Board *b, int move )
 		if ( pos != 6 )
 			b->player_to_move = TOP;
 	}
+*/
 
 	return capture;
 }

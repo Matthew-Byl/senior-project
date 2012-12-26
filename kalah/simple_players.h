@@ -5,5 +5,6 @@
 
 KalahPlayer human_player( void );
 KalahPlayer bonzo_player( void );
+KalahPlayer minimax_player( void );
 
 #endif

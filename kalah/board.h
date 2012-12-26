@@ -26,6 +26,7 @@ typedef struct {
 } Board;
 
 void board_initialize( Board *b, PlayerPosition to_move );
+void board_copy( Board *src, Board *dest );
 int board_legal_move( Board *b, int move );
 int board_game_over( Board *b );
 int board_make_move( Board *b, int move );

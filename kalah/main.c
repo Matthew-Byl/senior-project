@@ -74,7 +74,7 @@ int play_game( KalahPlayer top, KalahPlayer bottom, PlayerPosition first_player 
 
 int main ( void )
 {
-	KalahPlayer top = bonzo_player();
+	KalahPlayer top = minimax_player();
 	KalahPlayer bottom = bonzo_player();
 
 	printf( "============ Game 1 ============\n" );

@@ -20,8 +20,8 @@ using namespace std;
 
 // The size of the rendered scene. Right now, this has
 //  to be square or there will be distortion.
-#define SIZEX 500
-#define SIZEY 500
+#define SIZEX 700
+#define SIZEY 700
 #define PIXEL_BUFFER_SIZE SIZEX * SIZEY * 4
 
 // The pixel buffer that is drawn onto the screen
