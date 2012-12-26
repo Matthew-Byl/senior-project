@@ -1,6 +1,7 @@
 #include "simple_players.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <limits.h>
 
 /*** Human ***/
@@ -167,7 +168,7 @@ MinimaxResult minimax_move( Board *b, int depth )
 
 int minimax_make_move( Board *b )
 {
-	MinimaxResult res = minimax_move( b, 9 );
+	MinimaxResult res = minimax_move( b, 3 );
 
 	return res.move;
 }
@@ -184,8 +185,8 @@ KalahPlayer minimax_player( void )
 
 /*********** Stackless Minimax player ****************/
 
-#define DEPTH 2
-#define TREE_SIZE 42  // 6 ^ DEPTH ( or something like that )
+#define DEPTH 9
+#define TREE_SIZE 60466176  // 6^1 + 6^2 + 6^3 + 6^4
 
 // Having the b param makes the first one not a special case.
 void populate_children( Board *boards, Board *b, int n )
@@ -217,8 +218,8 @@ int int_pow(int x, int p) {
 
 int stackless_minimax_move( Board *b )
 {
-	int tree[TREE_SIZE];
-	Board boards[TREE_SIZE];
+	int *tree = malloc( sizeof( int ) * TREE_SIZE );
+	Board *boards = malloc( sizeof( Board ) * TREE_SIZE );
 
 	// A node's children are in boards[(6 * (node + 1) ) + k]. The root node is left off of this tree.
 	//  this is a 6-ary tree.
@@ -300,6 +301,9 @@ int stackless_minimax_move( Board *b )
 			}
 		}
 	}
+
+	free( boards );
+	free( tree );
 
 	return best_move;
 }
