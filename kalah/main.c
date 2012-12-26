@@ -22,9 +22,9 @@ int play_game( KalahPlayer top, KalahPlayer bottom, PlayerPosition first_player 
 	{
 		int move;
 
-//		board_print( b );		
+		board_print( b );		
 
-//		printf( "\n" );
+		printf( "\n" );
 
 		if ( b->player_to_move == TOP )
 		{
@@ -34,7 +34,7 @@ int play_game( KalahPlayer top, KalahPlayer bottom, PlayerPosition first_player 
 		else
 		{
 			move = bottom.make_move( b );
-//			printf( "BOTTOM (%s) chooses move %d.\n", bottom.get_name(), move );
+			printf( "BOTTOM (%s) chooses move %d.\n", bottom.get_name(), move );
 		}
 
 		board_make_move( b, move );
@@ -62,11 +62,11 @@ int play_game( KalahPlayer top, KalahPlayer bottom, PlayerPosition first_player 
 		}
 		else
 		{
-/*			if ( b->player_to_move == TOP )
+			if ( b->player_to_move == TOP )
 				printf( "TOP (%s) to move.\n", top.get_name() );
 			else
-			printf( "BOTTOM (%s) to move.\n", bottom.get_name() ); */
-				}
+				printf( "BOTTOM (%s) to move.\n", bottom.get_name() );
+		}
 	}
 
 	return board_top_score( b );

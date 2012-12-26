@@ -111,6 +111,8 @@ MinimaxResult minimax_move( Board *b, int depth )
 		ret.move = -1;
 		ret.score = minimax_eval( b );
 
+		printf( "%d ", ret.score );
+
 		return ret;
 	}
 
@@ -171,6 +173,8 @@ MinimaxResult minimax_move( Board *b, int depth )
 int minimax_make_move( Board *b )
 {
 	MinimaxResult res = minimax_move( b, 1 );
+
+	printf( "Best move has score %d\n", res.score );
 
 	return res.move;
 }
@@ -262,40 +266,49 @@ int stackless_minimax_move( Board *b )
 	// Run minimax backwards. We can probably do this with more parallelism.
 	// @XXX: PROBLEM: go-agains. This makes the tree not uniformly min-max.
 
-	for ( int i = leaf_start - 1; i > 0; i-- )
+	for ( int i = leaf_start - 1; i >= 0; i-- )
 	{
 		if ( board_game_over( &boards[i] ) )
 		{
 			tree[i] = minimax_eval( &boards[i] );
+			printf( "E " );
 			continue;
 		}
 
 		if ( boards[i].player_to_move == TOP )
 		{
 			tree[i] = INT_MIN;
-			for ( int j = 0; j < 7; j++ )
+			for ( int j = 0; j < 6; j++ )
 			{
-				if ( tree[6*(i+1) + j] > tree[i] )
+				if ( tree[6*(i+1) + j] > tree[i]
+					 && board_legal_move( &boards[i], j + 7 ) )
 					tree[i] = tree[6*(i+1) + j];
 			}
+
+			printf( "X " );
 		}
 		else
 		{
 			tree[i] = INT_MAX;
-			for ( int j = 0; j < 7; j++ )
+			for ( int j = 0; j < 6; j++ )
 			{
-				if ( tree[6*(i+1) + j] < tree[i] )
+				if ( tree[6*(i+1) + j] < tree[i]
+					 && board_legal_move( &boards[i], j ) )
 					tree[i] = tree[6*(i+1) + j];
 			}
+
+			printf( "N " );
 		}
 	}
+
+	printf( "\n" );
 
 	int best_move;
 	int best_score;
 	if ( b->player_to_move == TOP )
 	{
 		best_score = INT_MIN;
-		for ( int i = 0; i < 7; i++ )
+		for ( int i = 0; i < 6; i++ )
 		{
 			if ( tree[i] > best_score 
 				 && board_legal_move( b, i + 7 ) )
@@ -308,7 +321,7 @@ int stackless_minimax_move( Board *b )
 	else
 	{
 		best_score = INT_MAX;
-		for ( int i = 0; i < 7; i++ )
+		for ( int i = 0; i < 6; i++ )
 		{
 			if ( tree[i] < best_score
 				 && board_legal_move( b, i ) )
@@ -319,9 +332,17 @@ int stackless_minimax_move( Board *b )
 		}
 	}
 
+	printf( "Score tree:\n" );
+	for ( int i = 0; i < TREE_SIZE; i++ )
+	{
+		printf( "%d ", tree[i] );
+	}
+	printf( "\n" );
+
 	free( boards );
 	free( tree );
 
+	printf( "Best move has score %d\n", best_score );
 	return best_move;
 }
 
