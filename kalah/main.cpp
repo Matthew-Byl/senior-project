@@ -1,6 +1,8 @@
+extern "C" {
 #include "board.h"
 #include "kalah_player.h"
 #include "simple_players.h"
+}
 
 #include <stdio.h>
 
