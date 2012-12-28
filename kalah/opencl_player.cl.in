@@ -30,7 +30,7 @@
  */
 
 // The leaf nodes are 1, so this is the number of minimax layers, including the root.
-#define MINIMAX_DEPTH 2
+#define MINIMAX_DEPTH 3
 
 int tree_size ( void )
 {
