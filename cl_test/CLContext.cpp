@@ -42,6 +42,16 @@ cl::Program CLContext::buildProgram( string &src ) const
     try {
         program.build( myDevices );
     } catch ( cl::Error err ) {		
+		std::cout << "Build Status: "
+                  << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(myDevices[0])
+                  << std::endl;
+		std::cout << "Build Options:\t"
+                  << program.getBuildInfo<CL_PROGRAM_BUILD_OPTIONS>(myDevices[0])
+                  << std::endl;
+		std::cout << "Build Log:\t "
+                  << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(myDevices[0])
+                  << std::endl;
+
 		throw new exception();
     }
 

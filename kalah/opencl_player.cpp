@@ -47,7 +47,8 @@ int main ( void )
 
 	CLContext ctx( 1, 0 );
 	CLKernel test_generate_boards( "test_generate_boards", src );
-	test_generate_boards.setDimensions( 100 );
+	test_generate_boards.setGlobalDimensions( 42 );
+	test_generate_boards.setLocalDimensions( 42 );
 
 	test_generate_boards( board, board_array );
 

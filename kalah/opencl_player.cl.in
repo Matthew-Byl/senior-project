@@ -80,7 +80,8 @@ void generate_boards( Board start, __global Board *board_array )
 __kernel void test_generate_boards( __global Board *host_start, __global Board *board_array )
 {
 	Board start;
-	board_copy_global_to_local( host_start, &start );
+	start = *host_start;
+//	board_copy_global_to_local( host_start, &start );
 
 	generate_boards( start, board_array );
 }
