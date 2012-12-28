@@ -51,9 +51,11 @@ int leaf_start ( void )
 //  group for the synchronization to work.
 // AMD OpenCL allows only 256 work-items per work-group, so we are limited
 //  to a depth of 3 with this approach (when there will be 216 leaf nodes).
-void generate_boards( Board start, __global Board *board_array )
+__kernel void generate_boards( __global Board *host_start, __global Board *board_array )
 {
-//	int local_id = get_local_id( 0 );
+	int tree = get_global_id( 0 );
+	Board start = host_start[tree];
+	int tree_offset = tree_size() * tree;
 
 	int local_id = get_local_id( 1 );
 	int move = local_id % 6;
@@ -66,8 +68,6 @@ void generate_boards( Board start, __global Board *board_array )
 	{
 		if ( local_id < power_of_six )
 		{
-//			printf( "ID %d doing tree level %d, move %d, starting at %d.\n", local_id, i, move, level_start );
-
 			// Find out the board we are basing this level off of.
 			if ( level_start == 0 )
 			{
@@ -78,10 +78,7 @@ void generate_boards( Board start, __global Board *board_array )
 			{
 				// Integer division rounds down.
 				int parent = ( ( local_id + level_start ) / 6 ) - 1; // @XX: not DOUBLE-CHECKed for n > 2.
-//				board_copy_global_to_local( &board_array[parent], &m_board );
 				m_board = board_array[parent];
-
-//				printf( "Parent of %d is %d.\n", local_id + level_start, parent );
 			}
 
 			// Calculate the move offset based on whose turn it is.
@@ -96,26 +93,14 @@ void generate_boards( Board start, __global Board *board_array )
 				board_make_move( &m_board, move + move_offset );
 			}
 
-//			board_copy_local_to_global( &m_board, &board_array[level_start + local_id] );
 			board_array[level_start + local_id] = m_board;
 		}
 
 		level_start += power_of_six;
 		power_of_six *= 6;
 
-//		barrier( CLK_LOCAL_MEM_FENCE );
 		barrier( CLK_GLOBAL_MEM_FENCE );
 	}
-}
-
-__kernel void test_generate_boards( __global Board *host_start, __global Board *board_array )
-{
-	Board start;
-	int tree = get_global_id( 0 );
-	int tree_offset = tree_size() * tree;
-
-	start = host_start[tree];
-	generate_boards( start, board_array + tree_offset );
 }
 
 // Don't use local work size at all for this kernel.
@@ -146,6 +131,62 @@ __kernel void evaluate_board( __global Board *board_array )
 	atomic_add( &board_array[offset].score, weight * board_array[offset].board[board_space] );
 }
 
+// almost exactly like the first one.
+//  dimensions: tree x board
+//  We only will use the # of threads of the l
+//
+// Strategies: use fewer threads, with a loop -> choose this one, because fewer global memory accesses.
+//  use more threads, with an atomic min/max.
+__kernel void minimax( __global Board *board_array )
+{
+	int tree = get_global_id( 0 );
+	int tree_offset = tree_size() * tree;
+	int local_id = get_global_id( 1 );
+
+	int power_of_six = (int) pow( 6.0f, MINIMAX_DEPTH - 1 );
+	int level_start = leaf_start();
+
+	for ( int i = MINIMAX_DEPTH - 2; i >= 0; i-- )
+	{
+		printf( "Depth: %d\n", i );
+		level_start -= power_of_six;
+
+		if ( local_id < power_of_six )
+		{
+//			printf( "Thread %d starting at tree_offset %d, node %d.\n", local_id, tree_offset, level_start + local_id );
+
+			// The board in board_array.
+			int offset = tree_offset + level_start + get_global_id( 1 );
+			int child_offset = 6*( level_start + get_global_id( 1 ) + 1 );
+			PlayerPosition playerToMove;
+			int score;
+
+			playerToMove = board_array[offset].player_to_move;
+			if ( playerToMove == TOP )
+				score = INT_MIN;
+			else
+				score = INT_MAX;
+			
+			for ( int i = 0; i < 6; i++ )
+			{
+				printf( "Parent: %d, child %d\n",  offset, child_offset + i );
+
+				int child_score = board_array[child_offset + i].score;
+				if ( ( playerToMove == TOP && child_score > score )
+					 || ( playerToMove == BOTTOM && child_score < score ) )
+				{
+					score = board_array[child_offset + i].score;
+				}
+			}
+			
+			board_array[offset].score = score;
+		}
+
+		power_of_six /= 6;
+		barrier( CLK_GLOBAL_MEM_FENCE );
+	}
+}
+
 #if 0
 void board_copy_global_to_local( __global Board *src, Board *dest )
 {
@@ -164,7 +205,6 @@ void board_copy_local_to_global( Board *src, __global Board *dest )
 	}
     dest->player_to_move = src->player_to_move;
 }
-
 
 
 #define DEPTH 7

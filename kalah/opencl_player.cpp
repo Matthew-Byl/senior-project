@@ -46,15 +46,20 @@ int main ( void )
 	CLUnitArgument board( "Board", b );
 
 	CLContext ctx( 1, 0 );
-	CLKernel test_generate_boards( "test_generate_boards", src );
-	test_generate_boards.setGlobalDimensions( 1, 42 );
-	test_generate_boards.setLocalDimensions( 1, 42 );
-
-	test_generate_boards( board, board_array );
+	CLKernel generate_boards( "generate_boards", src );
+	generate_boards.setGlobalDimensions( 1, 42 );
+	generate_boards.setLocalDimensions( 1, 42 );
+	generate_boards( board, board_array );
 
 	CLKernel evaluate_board( "evaluate_board", src );
 	evaluate_board.setGlobalDimensions( 1, 36, 14 );
 	evaluate_board( board_array );
+
+	CLKernel minimax( "minimax", src );
+	minimax.setGlobalDimensions( 1, 6 );
+	minimax.setLocalDimensions( 1, 6 );
+	minimax( board_array );
+
 
 	for ( int i = 0; i < 42; i++ )
 	{
