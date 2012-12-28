@@ -16,15 +16,46 @@
  *  bottleneck.
  */
 
+/*
+ * Layout of board_array:
+ *
+ * [  tree 0   ][ tree 1 ]...[ tree n-1 ]
+ *
+ * Due to a theorem (https://ece.uwaterloo.ca/~dwharder/aads/LectureMaterials/4.07.NaryTrees.pdf),
+ *  there are ( N^(k+1) - 1 ) / ( N - 1 ) nodes in a complete N-ary tree.
+ *
+ * Dimensions:
+ *  (tree) x (board) x (board_component)
+ *   (n)   x  216 leaf nodes x 14 components = 3024n threads.
+ */
+
 // The leaf nodes are 1, so this is the number of minimax layers, including the root.
 #define MINIMAX_DEPTH 2
 
+int tree_size ( void )
+{
+	int complete_6ary_tree_size = ( ( (int) pow( 6.0f, MINIMAX_DEPTH + 1 ) - 1 ) / ( 6 - 1 ) );
+
+	// The -1 at the end is because we don't store the root node.
+	return complete_6ary_tree_size - 1;
+}
+
+int leaf_start ( void )
+{
+	int half_6ary_tree_size = ( ( (int) pow( 6.0f, MINIMAX_DEPTH ) - 1 ) / ( 6 - 1 ) );
+	return half_6ary_tree_size - 1;
+}
+
 // (a) generate the boards in log(n) time.
+// Note that to do this in parallel, every thread must be in the same local
+//  group for the synchronization to work.
+// AMD OpenCL allows only 256 work-items per work-group, so we are limited
+//  to a depth of 3 with this approach (when there will be 216 leaf nodes).
 void generate_boards( Board start, __global Board *board_array )
 {
 //	int local_id = get_local_id( 0 );
 
-	int local_id = get_global_id( 0 );
+	int local_id = get_local_id( 1 );
 	int move = local_id % 6;
 	int move_offset;
 
@@ -50,7 +81,7 @@ void generate_boards( Board start, __global Board *board_array )
 //				board_copy_global_to_local( &board_array[parent], &m_board );
 				m_board = board_array[parent];
 
-				printf( "Parent of %d is %d.\n", local_id + level_start, parent );
+//				printf( "Parent of %d is %d.\n", local_id + level_start, parent );
 			}
 
 			// Calculate the move offset based on whose turn it is.
@@ -80,10 +111,36 @@ void generate_boards( Board start, __global Board *board_array )
 __kernel void test_generate_boards( __global Board *host_start, __global Board *board_array )
 {
 	Board start;
-	start = *host_start;
-//	board_copy_global_to_local( host_start, &start );
+	int tree = get_global_id( 0 );
+	int tree_offset = tree_size() * tree;
 
-	generate_boards( start, board_array );
+	start = host_start[tree];
+	generate_boards( start, board_array + tree_offset );
+}
+
+// Don't use local work size at all for this kernel.
+// remember: tree x board x component
+//
+// @XXX: precondition: score = 0 for all boards!
+__kernel void evaluate_board( __global Board *board_array )
+{
+	// Where the tree the board is in is found
+	int tree_offset = tree_size() * get_global_id( 0 );
+
+	// The index of our board in that tree
+	int board_offset = leaf_start() + get_global_id( 1 );
+
+	// The index of our board in board_array.
+	int offset = tree_offset + board_offset;
+
+	// Kalahs count 5 times as much.
+	int weight = 1;
+	int board_space = get_global_id( 2 );
+	if ( board_space == 6
+		 && board_space == 13 )
+		weight = 5;
+		
+	atomic_add( &board_array[offset].score, board_array[offset].board[board_space] );
 }
 
 #if 0
