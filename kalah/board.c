@@ -9,9 +9,11 @@
 
 #include "board.h"
 
+#ifndef _OPENCL_
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#endif
 
 /**
  * Initialize a board with positions for the beginning
@@ -68,7 +70,13 @@ int board_legal_move( Board *b, int move )
 
 void board_copy( Board *src, Board *dest )
 {
+#ifndef _OPENCL_
 	memcpy( dest->board, src->board, sizeof( int ) * BOARD_SIZE );
+#else
+	for ( int i = 0; i < BOARD_SIZE; i++ )
+		dest->board[i] = src->board[i];
+#endif
+
 	dest->player_to_move = src->player_to_move;
 }
 
@@ -131,11 +139,13 @@ int board_make_move( Board *b, int move )
 	// Check if a legal move.
 	if ( !board_legal_move( b, move ) )
 	{
+#ifndef _OPENCL_
 		if ( MAKE_MOVE_DEBUG )
 		{
 			printf( "Illegal move: %d; terminating.", move );
 			abort();
 		}
+#endif
 
 		return -1;
 	}
@@ -199,6 +209,7 @@ int board_make_move( Board *b, int move )
 
 void board_print( Board *b )
 {
+#ifndef _OPENCL_
 	printf("\n    ");
 	for (int i=12; i>=7; i--)
 		printf("%d  ", b->board[i] );
@@ -208,5 +219,5 @@ void board_print( Board *b )
 	for (int i=0; i<=5; i++)
 		printf("%d  ", b->board[i]);
 	printf("\n");
-
+#endif
 }

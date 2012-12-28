@@ -41,7 +41,11 @@ cl::Program CLContext::buildProgram( string &src ) const
 	cl::Program program( myContext, sources );
     try {
         program.build( myDevices );
-    } catch ( cl::Error err ) {
+    } catch ( cl::Error err ) {		
+		throw new exception();
+    }
+
+	// @TODO: this should be myDevices[device].
 		std::cout << "Build Status: "
                   << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(myDevices[0])
                   << std::endl;
@@ -51,9 +55,7 @@ cl::Program CLContext::buildProgram( string &src ) const
 		std::cout << "Build Log:\t "
                   << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(myDevices[0])
                   << std::endl;
-		
-		throw new exception();
-    }
+
 
 	return program;
 }

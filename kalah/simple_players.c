@@ -5,7 +5,7 @@
 #include <limits.h>
 
 /*** Human ***/
-char *human_name( void )
+const char *human_name( void )
 {
 	return "Human";
 }
@@ -57,7 +57,7 @@ int bonzo_move( Board *b )
 }                           // this can't happen unless game is over.
 
 
-char *bonzo_name( void )
+const char *bonzo_name( void )
 {
 	return "Bonzo";
 }
@@ -74,7 +74,7 @@ KalahPlayer bonzo_player( void )
 
 /********* Minimax Player ***************/
 
-char *minimax_name( void )
+const char *minimax_name( void )
 {
 	return "Minimax";
 }
@@ -348,7 +348,7 @@ int stackless_minimax_move( Board *b )
 	return best_move;
 }
 
-char *stackless_minimax_name( void )
+const char *stackless_minimax_name( void )
 {
 	return "Stackless Minimax";
 }

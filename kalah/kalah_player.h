@@ -4,7 +4,7 @@
 #include "board.h"
 
 typedef int (*PlayerMoveFunction)( Board *b );
-typedef char *(*PlayerNameFunction)( void );
+typedef const char *(*PlayerNameFunction)( void );
 
 typedef struct
 {

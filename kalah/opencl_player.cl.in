@@ -1,0 +1,247 @@
+#define _OPENCL_
+#include "board.c"
+
+/*
+ * Plan:
+ *  (a) generate all the boards. This can be done in log(n) time, if correct.
+ *  (b) evaluate the leaf nodes. (~16 at once, using atomic writes)
+ *  (c) perform minimax.
+ *
+ * I don't think local memory is persistent across kernel executions, so
+ *  we probably have to do this all at once.
+ */
+
+/*
+ * We will eventually want a special packed board structure because memory is our
+ *  bottleneck.
+ */
+
+// The leaf nodes are 1, so this is the number of minimax layers, including the root.
+#define MINIMAX_DEPTH 2
+
+void board_copy_global_to_local( __global Board *src, Board *dest )
+{
+	for ( int i = 0; i < 14; i++ )
+	{
+		dest->board[i] = src->board[i];
+	}
+    dest->player_to_move = src->player_to_move;
+}
+
+void board_copy_local_to_global( Board *src, __global Board *dest )
+{
+	for ( int i = 0; i < 14; i++ )
+	{
+		dest->board[i] = src->board[i];
+	}
+    dest->player_to_move = src->player_to_move;
+}
+
+// (a) generate the boards in log(n) time.
+void generate_boards( Board start, __global Board *board_array )
+{
+//	int local_id = get_local_id( 0 );
+
+	int local_id = get_global_id( 0 );
+	int move = local_id % 6;
+	int move_offset;
+
+	Board m_board;
+	int power_of_six = 6;
+	int level_start = 0;
+	for ( int i = 0; i < MINIMAX_DEPTH; i++ )
+	{
+		if ( local_id < power_of_six )
+		{
+//			printf( "ID %d doing tree level %d, move %d, starting at %d.\n", local_id, i, move, level_start );
+
+			// Find out the board we are basing this level off of.
+			if ( level_start == 0 )
+			{
+				// The first 6
+				m_board = start;
+			}
+			else
+			{
+				// Integer division rounds down.
+				int parent = ( ( local_id + level_start ) / 6 ) - 1; // DOUBLE-CHECK!
+				board_copy_global_to_local( &board_array[parent], &m_board );
+
+				printf( "Parent of %d is %d.\n", local_id + level_start, parent );
+			}
+
+			// Calculate the move offset based on whose turn it is.
+			if ( m_board.player_to_move == TOP )
+				move_offset = 7;
+			else
+				move_offset = 0;
+
+			// Make the move.
+			if ( board_legal_move( &m_board, move + move_offset ) )
+			{
+				board_make_move( &m_board, move + move_offset );
+			}
+
+			board_copy_local_to_global( &m_board, &board_array[level_start + local_id] );
+		}
+
+		level_start += power_of_six;
+		power_of_six *= 6;
+
+//		barrier( CLK_LOCAL_MEM_FENCE );
+		barrier( CLK_GLOBAL_MEM_FENCE );
+	}
+}
+
+__kernel void test_generate_boards( __global Board *host_start, __global Board *board_array )
+{
+	Board start;
+	board_copy_global_to_local( host_start, &start );
+
+	generate_boards( start, board_array );
+}
+
+#if 0
+#define DEPTH 7
+#define TREE_SIZE 1679616  // 6^1 + 6^2 + 6^3 + 6^4
+
+// Having the b param makes the first one not a special case.
+void populate_children( Board *boards, Board *b, int n )
+{
+	// Populate the rest of the nodes.
+	int move_offset;
+	if ( b->player_to_move == TOP )
+		move_offset = 7;
+	else
+		move_offset = 0;
+
+	for ( int k = 0; k < 6; k++ )
+	{
+		board_copy( b, &boards[6*(n+1) + k] );
+	}
+
+	// If the game is over, a copy is enough.
+	if ( board_game_over( b ) )
+	{
+		return;
+	}
+
+	for ( int k = 0; k < 6; k++ )
+	{
+		if ( board_legal_move( &boards[6*(n+1) + k], k + move_offset ) )
+		{
+			board_make_move( &boards[6*(n+1) + k], k + move_offset );
+		}
+		// Just leave end of games, etc. be.
+	}
+}
+
+int int_pow(int x, int p) {
+	int i = 1;
+	for (int j = 0; j < p; j++)  i *= x;
+	return i;
+}
+
+int stackless_minimax_move( Board *b )
+{
+	int *tree = malloc( sizeof( int ) * TREE_SIZE );
+	Board *boards = malloc( sizeof( Board ) * TREE_SIZE );
+
+	// A node's children are in boards[(6 * (node + 1) ) + k]. The root node is left off of this tree.
+	//  this is a 6-ary tree.
+	//
+	// The array ends up looking like
+	//  [ 1 everything else][ 6 leaf nodes ]
+	// So the leaf nodes start at the 0 + 6 + ... + (depth - 1)th step.
+	// I'm too lazy to find a theorem for what this is, so compute it.
+	int leaf_start = 0;
+	for ( int i = 1; i < DEPTH; i++ )
+		leaf_start += int_pow( 6, i );
+
+	// Populate the board tree.	
+	// Populate the first 6 nodes.
+	populate_children( boards, b, -1 );
+
+	// Populate the rest of the nodes
+	for ( int i = 0; i < leaf_start; i++ )
+	{
+		populate_children( boards, &boards[i], i );
+	}
+
+	// Run the evaluate function on the bottom half of the tree.
+	for ( int i = leaf_start; i < TREE_SIZE; i++ )
+	{
+		tree[i] = minimax_eval( &boards[i] );
+	}
+
+	// Run minimax backwards. We can probably do this with more parallelism.
+	// @XXX: PROBLEM: go-agains. This makes the tree not uniformly min-max.
+
+	for ( int i = leaf_start - 1; i >= 0; i-- )
+	{
+		if ( board_game_over( &boards[i] ) )
+		{
+			tree[i] = minimax_eval( &boards[i] );
+			continue;
+		}
+
+		if ( boards[i].player_to_move == TOP )
+		{
+			tree[i] = INT_MIN;
+			for ( int j = 0; j < 6; j++ )
+			{
+				if ( tree[6*(i+1) + j] > tree[i]
+					 && board_legal_move( &boards[i], j + 7 ) )
+					tree[i] = tree[6*(i+1) + j];
+			}
+		}
+		else
+		{
+			tree[i] = INT_MAX;
+			for ( int j = 0; j < 6; j++ )
+			{
+				if ( tree[6*(i+1) + j] < tree[i]
+					 && board_legal_move( &boards[i], j ) )
+					tree[i] = tree[6*(i+1) + j];
+			}
+		}
+	}
+
+	printf( "Player to move: %d\n", b->player_to_move );
+
+	int best_move;
+	int best_score;
+	if ( b->player_to_move == TOP )
+	{
+		best_score = INT_MIN;
+		for ( int i = 0; i < 6; i++ )
+		{
+			if ( tree[i] > best_score 
+				 && board_legal_move( b, i + 7 ) )
+			{
+				best_score = tree[i];
+				best_move = i + 7; // 7 is the move offset.
+			}
+		}
+	}
+	else
+	{
+		best_score = INT_MAX;
+		for ( int i = 0; i < 6; i++ )
+		{
+			if ( tree[i] < best_score
+				 && board_legal_move( b, i ) )
+			{
+				best_score = tree[i];
+				best_move = i;
+			}
+		}
+	}
+
+	free( boards );
+	free( tree );
+
+	printf( "Best move has score %d\n", best_score );
+	return best_move;
+}
+#endif
