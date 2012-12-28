@@ -64,8 +64,9 @@ void generate_boards( Board start, __global Board *board_array )
 			else
 			{
 				// Integer division rounds down.
-				int parent = ( ( local_id + level_start ) / 6 ) - 1; // DOUBLE-CHECK!
-				board_copy_global_to_local( &board_array[parent], &m_board );
+				int parent = ( ( local_id + level_start ) / 6 ) - 1; // @XX: not DOUBLE-CHECKed for n > 2.
+//				board_copy_global_to_local( &board_array[parent], &m_board );
+				m_board = board_array[parent];
 
 				printf( "Parent of %d is %d.\n", local_id + level_start, parent );
 			}
@@ -82,7 +83,8 @@ void generate_boards( Board start, __global Board *board_array )
 				board_make_move( &m_board, move + move_offset );
 			}
 
-			board_copy_local_to_global( &m_board, &board_array[level_start + local_id] );
+//			board_copy_local_to_global( &m_board, &board_array[level_start + local_id] );
+			board_array[level_start + local_id] = m_board;
 		}
 
 		level_start += power_of_six;
