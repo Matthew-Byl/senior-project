@@ -44,7 +44,7 @@ int main( void )
 	int numbers[100];
 	CLUnitArgument numbers_arg( numbers, 100 );
 
-	fill_numbers.setDimensions( 100 );
+	fill_numbers.setGlobalDimensions( 100 );
 	fill_numbers( numbers_arg );
 
 	for ( int i = 0; i < 100; i++ )

@@ -19,24 +19,6 @@
 // The leaf nodes are 1, so this is the number of minimax layers, including the root.
 #define MINIMAX_DEPTH 2
 
-void board_copy_global_to_local( __global Board *src, Board *dest )
-{
-	for ( int i = 0; i < 14; i++ )
-	{
-		dest->board[i] = src->board[i];
-	}
-    dest->player_to_move = src->player_to_move;
-}
-
-void board_copy_local_to_global( Board *src, __global Board *dest )
-{
-	for ( int i = 0; i < 14; i++ )
-	{
-		dest->board[i] = src->board[i];
-	}
-    dest->player_to_move = src->player_to_move;
-}
-
 // (a) generate the boards in log(n) time.
 void generate_boards( Board start, __global Board *board_array )
 {
@@ -104,6 +86,26 @@ __kernel void test_generate_boards( __global Board *host_start, __global Board *
 }
 
 #if 0
+void board_copy_global_to_local( __global Board *src, Board *dest )
+{
+	for ( int i = 0; i < 14; i++ )
+	{
+		dest->board[i] = src->board[i];
+	}
+    dest->player_to_move = src->player_to_move;
+}
+
+void board_copy_local_to_global( Board *src, __global Board *dest )
+{
+	for ( int i = 0; i < 14; i++ )
+	{
+		dest->board[i] = src->board[i];
+	}
+    dest->player_to_move = src->player_to_move;
+}
+
+
+
 #define DEPTH 7
 #define TREE_SIZE 1679616  // 6^1 + 6^2 + 6^3 + 6^4
 

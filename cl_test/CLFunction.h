@@ -60,7 +60,7 @@ protected:
 	void copyBuffersToDevice();
 	void copyBuffersFromDevice();
 	cl::Kernel generateKernel( std::string src, std::string kernel_name );
-	void enqueueKernel( cl::Kernel &kernel, std::vector<int> &dimensions );
+	void enqueueKernel( cl::Kernel &kernel, std::vector<int> &globalDimensions, std::vector<int> &localDimensions );
 };
 
 
@@ -131,32 +131,58 @@ void CLFunction<T>::copyBuffersFromDevice()
 }
 
 template<class T>
-void CLFunction<T>::enqueueKernel( cl::Kernel &kernel, std::vector<int> &dimensions )
+void CLFunction<T>::enqueueKernel( cl::Kernel &kernel, std::vector<int> &globalDimensions, std::vector<int> &localDimensions )
 {
 	// OpenCL only allows up to 3 dimensions.
 	cl::NDRange globalWorkSize;
-	if ( dimensions.size() == 1 )
+	if ( globalDimensions.size() == 1 )
 	{
-		globalWorkSize = cl::NDRange( dimensions[0] );
+		globalWorkSize = cl::NDRange( globalDimensions[0] );
 	}
-	else if ( dimensions.size() == 2 )
+	else if ( globalDimensions.size() == 2 )
 	{
 		globalWorkSize = cl::NDRange( 
-			dimensions[0],
-			dimensions[1]
+			globalDimensions[0],
+			globalDimensions[1]
 		);
 	}
-	else if ( dimensions.size() == 3 )
+	else if ( globalDimensions.size() == 3 )
 	{
 		globalWorkSize = cl::NDRange( 
-			dimensions[0],
-			dimensions[1],
-			dimensions[2]
+			globalDimensions[0],
+			globalDimensions[1],
+			globalDimensions[2]
 		);
 	}
 	else
 	{
 		assert( false );
+	}
+
+	// Local dimensions
+	cl::NDRange localWorkSize;
+	if ( localDimensions.size() == 1 )
+	{
+		localWorkSize = cl::NDRange( localDimensions[0] );
+	}
+	else if ( localDimensions.size() == 2 )
+	{
+		localWorkSize = cl::NDRange( 
+			localDimensions[0],
+			localDimensions[1]
+		);
+	}
+	else if ( localDimensions.size() == 3 )
+	{
+		localWorkSize = cl::NDRange( 
+			localDimensions[0],
+			localDimensions[1],
+			localDimensions[2]
+		);
+	}
+	else
+	{
+		localWorkSize = cl::NullRange;
 	}
 
 	// Queue up the kernel.
@@ -165,7 +191,7 @@ void CLFunction<T>::enqueueKernel( cl::Kernel &kernel, std::vector<int> &dimensi
 		kernel,
 		cl::NullRange,
 		globalWorkSize,
-		cl::NullRange,
+		localWorkSize,
 		NULL,
 		NULL
 	);
@@ -202,9 +228,10 @@ T CLFunction<T>::run( std::string type )
 	// Make it the next kernel argument.
 	kernel.setArg( myArguments.size(), resultBuffer );
 
-	std::vector<int> dimensions;
-	dimensions.push_back( 1 );
-	enqueueKernel( kernel, dimensions );
+	std::vector<int> globalDimensions;
+	globalDimensions.push_back( 1 );
+	std::vector<int> localDimensions;
+	enqueueKernel( kernel, globalDimensions, localDimensions );
 
 	// Enqueue reading the result.
 	queue.enqueueReadBuffer(

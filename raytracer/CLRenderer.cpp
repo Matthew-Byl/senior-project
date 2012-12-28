@@ -19,7 +19,7 @@ CLRenderer::CLRenderer(
 	  rayTrace( "raytrace", src, CLContext( 1, 0 ) ),
 	  pixbuf_arg( "uchar", pixel_buffer, width * height * 4, false, true )
 {
-	rayTrace.setDimensions( myWidth, myHeight );
+	rayTrace.setGlobalDimensions( myWidth, myHeight );
 }
 
 void CLRenderer::render( 

@@ -27,9 +27,10 @@ void CLFunction<void>::run()
 	copyBuffersToDevice();
 	cl::Kernel kernel = generateKernel( src, kernelFunction );
 
-	std::vector<int> dimensions;
-	dimensions.push_back( 1 );
-	enqueueKernel( kernel, dimensions );
+	std::vector<int> globalDimensions;
+	globalDimensions.push_back( 1 );
+	std::vector<int> localDimensions;
+	enqueueKernel( kernel, globalDimensions, localDimensions );
 
 	copyBuffersFromDevice();
 }
