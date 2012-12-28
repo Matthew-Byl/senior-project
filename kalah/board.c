@@ -31,6 +31,7 @@ void board_initialize( Board *b, PlayerPosition to_move )
 	b->board[6] = 0;
 	b->board[13] = 0;
 	b->player_to_move = to_move;
+	b->score = 0;
 }
 
 /**
@@ -219,5 +220,6 @@ void board_print( Board *b )
 	for (int i=0; i<=5; i++)
 		printf("%d  ", b->board[i]);
 	printf("\n");
+	printf( "Score: %d\n", b->score );
 #endif
 }

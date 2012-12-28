@@ -137,10 +137,13 @@ __kernel void evaluate_board( __global Board *board_array )
 	int weight = 1;
 	int board_space = get_global_id( 2 );
 	if ( board_space == 6
-		 && board_space == 13 )
+		 || board_space == 13 )
 		weight = 5;
 		
-	atomic_add( &board_array[offset].score, board_array[offset].board[board_space] );
+	if ( board_space < 7 )
+		weight = -weight;
+
+	atomic_add( &board_array[offset].score, weight * board_array[offset].board[board_space] );
 }
 
 #if 0

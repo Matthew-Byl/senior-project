@@ -52,6 +52,9 @@ int main ( void )
 
 	test_generate_boards( board, board_array );
 
+	CLKernel evaluate_board( "evaluate_board", src );
+	evaluate_board.setGlobalDimensions( 1, 36, 14 );
+	evaluate_board( board_array );
 
 	for ( int i = 0; i < 42; i++ )
 	{
