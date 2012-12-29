@@ -148,13 +148,10 @@ __kernel void minimax( __global Board *board_array )
 
 	for ( int i = MINIMAX_DEPTH - 2; i >= 0; i-- )
 	{
-//		printf( "Depth: %d\n", i );
 		level_start -= power_of_six;
 
 		if ( local_id < power_of_six )
 		{
-//			printf( "Thread %d starting at tree_offset %d, node %d.\n", local_id, tree_offset, level_start + local_id );
-
 			// The board in board_array.
 			int offset = tree_offset + level_start + get_global_id( 1 );
 			int child_offset = 6*( level_start + get_global_id( 1 ) + 1 );
@@ -171,7 +168,7 @@ __kernel void minimax( __global Board *board_array )
 			{
 //				printf( "Parent: %d, child %d\n",  offset, child_offset + i );
 
-				int child_score = board_array[child_offset + i].score;
+				int child_score = board_array[tree_offset + child_offset + i].score;
 				if ( ( playerToMove == TOP && child_score > score )
 					 || ( playerToMove == BOTTOM && child_score < score ) )
 				{

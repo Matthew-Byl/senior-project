@@ -3,6 +3,11 @@ extern "C" {
 #include "opencl_player.h"
 }
 
+/*
+ * Things to fix:
+ *  -when there isn't a legal move before we get to the OpenCL part.
+ */
+
 #include <CLKernel.h>
 
 #include <iostream>
@@ -101,6 +106,7 @@ public:
 	MinimaxResult run_minimax( Board parent, int idx, int depth )
 		{
 			MinimaxResult best_result;
+			best_result.move = -1;
 
 			if ( depth == 0 )
 			{
@@ -176,21 +182,54 @@ public:
 			get_results.setGlobalDimensions( num_leaf_nodes );
 			get_results( start_boards, host_boards );
 			
-			/*	
+			for ( int i = 0; i < 6; i++ )
+			{
+				cout << "Minimax picked " << myStartBoards[i].score << " for scores: " << endl;
+				for ( int j = 0; j < 6; j++ )
+				{
+					cout << myBoards[258*i + j].score << " ";
+				}
+				cout << endl;
+			}
+
+/*
+			cout << "Board scores"
 			for ( int i = 0; i < 258; i++ )
 			{
 				printf( "*** %d ***\n" , i );
 				board_print( &myBoards[i] );
 				printf( "\n" );
-				}*/
+				}
+*/
 
-//			for ( int i = 0; i < num_leaf_nodes; i++ )
-//				printf( "%d ", myStartBoards[i].score );
-
-//			printf( "\n" );
+/*
+			cout << "Scores for leaf nodes: " << endl;
+			for ( int i = 0; i < num_leaf_nodes; i++ )
+				printf( "%d ", myStartBoards[i].score );
+			printf( "\n" );
+*/
 
 			// Run minimax on the start boards.
 			MinimaxResult move = run_minimax( myStartBoard, 0, mySequentialDepth );
+
+			// Hack to return something legal when it's our move, even when
+			//  minimax doesn't make it to the GPU.
+			if ( !board_legal_move( &myStartBoard, move.move ) )
+			{
+				cout << "Being Bonzo because our move, " << move.move << " makes no sense." << endl;
+
+				int move_offset;
+				if ( myStartBoard.player_to_move == TOP )
+					move_offset = 7;
+				else
+					move_offset = 0;
+
+				for( int i = move_offset; i < 6 + move_offset; i++ )
+				{
+					if ( myStartBoard.board[i] != 0 )
+						return i;
+				}
+			}
 
 			return move.move;
 		}
@@ -301,7 +340,7 @@ int main ( void )
     string src((std::istreambuf_iterator<char>(t)),
                std::istreambuf_iterator<char>());
 	
-	OpenCLPlayer player( b, 6, src );
+	OpenCLPlayer player( b, 2, src );
 	cout << "Move: " << player.makeMove() << endl;
 
 /*
