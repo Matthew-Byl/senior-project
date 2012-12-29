@@ -1,5 +1,5 @@
 opencl_player: opencl_player.cl opencl_player.cpp board.o
-	clang++ -std=c++11 -Wall -D MAKE_MAIN -I /opt/AMDAPP/include -I ../cl_test/ -L/opt/AMDAPP/lib/x86_64 opencl_player.cpp board.o ../cl_test/libCLTest.a -o opencl_player_test -lOpenCL
+	clang++ -std=c++11 -Wall -D MAKE_MAIN -g -I /opt/AMDAPP/include -I ../cl_test/ -L/opt/AMDAPP/lib/x86_64 opencl_player.cpp board.o ../cl_test/libCLTest.a -o opencl_player_test -lOpenCL
 
 kalah: main.o board.o simple_players.o opencl_player.o opencl_player.cl
 	clang++ main.o board.o simple_players.o opencl_player.o ../cl_test/libCLTest.a -Wall -g -o kalah
