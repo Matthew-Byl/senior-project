@@ -56,6 +56,7 @@ cl::Program CLContext::buildProgram( string &src ) const
     }
 
 	// @TODO: this should be myDevices[device].
+/*
 		std::cout << "Build Status: "
                   << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(myDevices[0])
                   << std::endl;
@@ -65,7 +66,7 @@ cl::Program CLContext::buildProgram( string &src ) const
 		std::cout << "Build Log:\t "
                   << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(myDevices[0])
                   << std::endl;
-
+*/
 
 	return program;
 }

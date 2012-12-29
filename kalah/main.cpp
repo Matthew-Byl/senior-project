@@ -2,6 +2,7 @@ extern "C" {
 #include "board.h"
 #include "kalah_player.h"
 #include "simple_players.h"
+#include "opencl_player.h"
 }
 
 #include <stdio.h>
@@ -78,8 +79,9 @@ void match ( KalahPlayer top, KalahPlayer bottom )
 	printf( "============ Game 1 ============\n" );
 	int game1 = play_game( top, bottom, TOP );
 
+/*
 	printf( "============ Game 2 ============\n" );
-	int game2 = play_game( top, bottom, BOTTOM );
+  	int game2 = play_game( top, bottom, BOTTOM );
 
 	printf( "================================\n\n" );
 
@@ -90,15 +92,13 @@ void match ( KalahPlayer top, KalahPlayer bottom )
 		printf( "BOTTOM (%s) wins, %d to %d.\n", bottom.get_name(), MAX_SCORE - top_score, top_score );
 	else
 		printf( "TIE!\n" );
+*/
 }
 
 int main ( void )
 {
-	KalahPlayer top = stackless_minimax_player();
+	KalahPlayer top = opencl_minimax_player();
 	KalahPlayer bottom = bonzo_player();
-	match( top, bottom );
-
-	top = minimax_player();
 	match( top, bottom );
 
 	return 0;

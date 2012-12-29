@@ -128,7 +128,7 @@ public:
 			MinimaxResult rec_result;
 			for ( int i = 0; i < 6; i++ )
 			{
-				if ( board_legal_move( &parent, i ) )
+				if ( board_legal_move( &parent, i + move_offset ) )
 				{
 					Board moved_board = parent;
 
@@ -155,6 +155,8 @@ public:
 
 	int makeMove()
 		{
+			// @todo: we might exceed a dimension (like when n=7), so run kernels multiple times with a global offset.
+
 			int num_leaf_nodes = get_leaf_nodes( mySequentialDepth );
 
 			// Create start boards
@@ -208,7 +210,65 @@ private:
 
 	CLUnitArgument host_boards;
 	CLUnitArgument start_boards;
+
+	friend class OpenCLPlayerTester;
 };
+
+class OpenCLPlayerTester
+{
+public:
+	void runTests();
+
+private:
+	Board createBoard( PlayerPosition to_move, int *board );
+	void testGenerateBoard();
+};
+
+Board OpenCLPlayerTester::createBoard( PlayerPosition to_move, int *board )
+{
+	Board ret;
+
+	ret.player_to_move = to_move;
+
+	for ( int i = 0; i < 14; i++ )
+		ret.board[i] = board[i];
+
+	return ret;
+}
+
+// This is a low-priority test. I think I have it right.
+void OpenCLPlayerTester::testGenerateBoard()
+{
+	Board b;
+	board_initialize( &b, TOP );	
+
+	ifstream t("opencl_player.cl");
+    string src((std::istreambuf_iterator<char>(t)),
+               std::istreambuf_iterator<char>());
+	
+	OpenCLPlayer player( b, 2, src );
+	player.generate_start_boards();
+	
+	cout << "Testing generate_start_boards()... " << endl << flush;
+	cout << "Generating " << get_leaf_nodes( player.mySequentialDepth ) << " leaf nodes." << endl << flush;
+
+	int board0[] = { 4, 4, 4, 4, 4, 4, 0, 0, 5, 5, 5, 5, 4, 0 };
+	Board b0 = createBoard( BOTTOM, board0 );
+	assert( board_equal( &player.myStartBoards[0], &b0 ) );
+	cout << "* ";
+	
+	int board5[] = { 5, 5, 5, 4, 4, 4, 0, 4, 4, 4, 4, 4, 0, 1 };
+	Board b5 = createBoard( BOTTOM, board5 );
+	assert( board_equal( &player.myStartBoards[5], &b5 ) );
+	cout << "* ";
+
+	cout << endl << "All tests passed." << endl << flush;
+}
+
+void OpenCLPlayerTester::runTests()
+{
+	testGenerateBoard();
+}
 
 extern "C" int opencl_player_move( Board *b )
 {
@@ -216,11 +276,11 @@ extern "C" int opencl_player_move( Board *b )
     string src((std::istreambuf_iterator<char>(t)),
                std::istreambuf_iterator<char>());
 	
-	OpenCLPlayer player( *b, 1, src );
+	OpenCLPlayer player( *b, 5, src );
 	return player.makeMove();
 }
 
-KalahPlayer opencl_player( void )
+KalahPlayer opencl_minimax_player( void )
 {
 	KalahPlayer k;
 
@@ -243,5 +303,10 @@ int main ( void )
 	
 	OpenCLPlayer player( b, 6, src );
 	cout << "Move: " << player.makeMove() << endl;
+
+/*
+	OpenCLPlayerTester tester;
+	tester.runTests();
+*/
 }
 #endif

@@ -222,3 +222,18 @@ void board_print( Board *b )
 	printf( "Score: %d\n", b->score );
 #endif
 }
+
+// Doesn't check score.
+int board_equal( Board *a, Board *b )
+{
+	if ( a->player_to_move != b->player_to_move )
+		return FALSE;
+
+	for ( int i = 0; i < 14; i++ )
+	{
+		if ( a->board[i] != b->board[i] )
+			return FALSE;
+	}
+
+	return TRUE;
+}

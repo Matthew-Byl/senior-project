@@ -36,4 +36,6 @@ int board_top_score( Board *b );
 int board_bottom_score( Board *b );
 void board_print( Board *b );
 
+int board_equal( Board *a, Board *b );
+
 #endif
