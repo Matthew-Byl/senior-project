@@ -78,7 +78,7 @@ __kernel void generate_boards( __global Board *host_start, __global Board *board
 			{
 				// Integer division rounds down.
 				int parent = ( ( local_id + level_start ) / 6 ) - 1; // @XX: not DOUBLE-CHECKed for n > 2.
-				m_board = board_array[parent];
+				m_board = board_array[tree_offset + parent];
 			}
 
 			// Calculate the move offset based on whose turn it is.
@@ -93,7 +93,7 @@ __kernel void generate_boards( __global Board *host_start, __global Board *board
 				board_make_move( &m_board, move + move_offset );
 			}
 
-			board_array[level_start + local_id] = m_board;
+			board_array[tree_offset + level_start + local_id] = m_board;
 		}
 
 		level_start += power_of_six;
