@@ -148,7 +148,7 @@ __kernel void minimax( __global Board *board_array )
 
 	for ( int i = MINIMAX_DEPTH - 2; i >= 0; i-- )
 	{
-		printf( "Depth: %d\n", i );
+//		printf( "Depth: %d\n", i );
 		level_start -= power_of_six;
 
 		if ( local_id < power_of_six )
@@ -169,7 +169,7 @@ __kernel void minimax( __global Board *board_array )
 			
 			for ( int i = 0; i < 6; i++ )
 			{
-				printf( "Parent: %d, child %d\n",  offset, child_offset + i );
+//				printf( "Parent: %d, child %d\n",  offset, child_offset + i );
 
 				int child_score = board_array[child_offset + i].score;
 				if ( ( playerToMove == TOP && child_score > score )
@@ -185,6 +185,33 @@ __kernel void minimax( __global Board *board_array )
 		power_of_six /= 6;
 		barrier( CLK_GLOBAL_MEM_FENCE );
 	}
+}
+
+__kernel void get_results( __global Board *host_start, __global Board *board_array )
+{
+	int tree = get_global_id( 0 );
+	int tree_offset = tree_size() * tree;
+	int score;
+	PlayerPosition playerToMove;	
+
+	playerToMove = host_start[tree].player_to_move;
+	if ( playerToMove == TOP )
+		score = INT_MIN;
+	else
+		score = INT_MAX;
+	
+	for ( int i = 0; i < 6; i++ )
+	{
+		int child_score = board_array[tree_offset + i].score;
+
+		if ( ( playerToMove == TOP && child_score > score )
+			 || ( playerToMove == BOTTOM && child_score < score ) )
+		{
+			score = board_array[tree_offset + i].score;
+		}
+	}
+
+	host_start[tree].score = score;
 }
 
 #if 0
@@ -312,7 +339,7 @@ int stackless_minimax_move( Board *b )
 		}
 	}
 
-	printf( "Player to move: %d\n", b->player_to_move );
+//	printf( "Player to move: %d\n", b->player_to_move );
 
 	int best_move;
 	int best_score;
@@ -346,7 +373,7 @@ int stackless_minimax_move( Board *b )
 	free( boards );
 	free( tree );
 
-	printf( "Best move has score %d\n", best_score );
+//	printf( "Best move has score %d\n", best_score );
 	return best_move;
 }
 #endif

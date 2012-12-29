@@ -5,7 +5,9 @@ extern "C" {
 
 #include <CLKernel.h>
 
+#include <iostream>
 #include <cmath>
+#include <climits>
 #include <fstream>
 #include <string>
 using namespace std;
@@ -33,6 +35,11 @@ int get_board_array_size( int sequentialDepth )
 	return ( leaf * 6 ) + ( leaf * 6 * 6 ) + ( leaf * 6 * 6 * 6 );
 }
 
+typedef struct {
+	int move;
+	int score;
+} MinimaxResult;
+
 class OpenCLPlayer
 {
 public:
@@ -45,6 +52,7 @@ public:
 		  generate_boards( "generate_boards", src ),
 		  evaluate_board( "evaluate_board", src ),
 		  minimax( "minimax", src ),
+		  get_results( "get_results", src ),
 		  host_boards( "Board", myBoards, myBoardsSize ),
 		  start_boards( "Board", myStartBoards, get_leaf_nodes( mySequentialDepth ) )
 		{
@@ -66,7 +74,7 @@ public:
 		{
 			if ( depth == 0 )
 			{
-				printf( "Leaf start: %d\n", leaf_start() );
+//				printf( "Leaf start: %d\n", leaf_start() );
 
 				myStartBoards[idx - leaf_start()] = parent;
 				return;
@@ -90,6 +98,56 @@ public:
 			}
 		}
 
+	MinimaxResult run_minimax( Board parent, int idx, int depth )
+		{
+			MinimaxResult best_result;
+
+			if ( depth == 0 )
+			{
+				MinimaxResult mr;
+
+				mr.score = myStartBoards[idx - leaf_start()].score;
+				mr.move = -1;
+
+				return mr;
+			}
+
+			int move_offset;
+			if ( parent.player_to_move == TOP )
+			{
+				move_offset = 7;
+				best_result.score = INT_MIN;
+			}
+			else
+			{
+				move_offset = 0;
+				best_result.score = INT_MAX;
+			}
+
+			int child_idx = 6 * ( idx + 1 );
+			MinimaxResult rec_result;
+			for ( int i = 0; i < 6; i++ )
+			{
+				if ( board_legal_move( &parent, i ) )
+				{
+					Board moved_board = parent;
+
+					board_make_move( &moved_board, i + move_offset );
+					
+					rec_result = run_minimax( moved_board, child_idx + i, depth - 1 );
+					
+					if ( ( parent.player_to_move == TOP && rec_result.score > best_result.score )
+						 || ( parent.player_to_move == BOTTOM && rec_result.score < best_result.score ) )
+					{
+						best_result.move = i + move_offset;
+						best_result.score = rec_result.score;
+					}
+				}
+            }
+			
+			return best_result;
+		}
+
 	void generate_start_boards()
 		{
 			generate_board( myStartBoard, 0, mySequentialDepth );
@@ -102,16 +160,20 @@ public:
 			// Create start boards
 			generate_start_boards();
 
-			generate_boards.setGlobalDimensions( 1, 216 );
+			generate_boards.setGlobalDimensions( num_leaf_nodes, 216 );
 			generate_boards.setLocalDimensions( 1, 216 ); // this needs to stay with x-dimension 1
 			generate_boards( start_boards, host_boards );
 			
-			evaluate_board.setGlobalDimensions( 1, 216, 14 );
+			evaluate_board.setGlobalDimensions( num_leaf_nodes, 216, 14 );
 			evaluate_board( host_boards );
 			
-			minimax.setGlobalDimensions( 1, 42 );
+			minimax.setGlobalDimensions( num_leaf_nodes, 42 );
 			minimax.setLocalDimensions( 1, 42 ); // this needs to stay with x-dimension 1.
 			minimax( host_boards );
+
+			get_results.setGlobalDimensions( num_leaf_nodes );
+			get_results( start_boards, host_boards );
+			
 			/*	
 			for ( int i = 0; i < 258; i++ )
 			{
@@ -120,7 +182,15 @@ public:
 				printf( "\n" );
 				}*/
 
-			return 0;
+//			for ( int i = 0; i < num_leaf_nodes; i++ )
+//				printf( "%d ", myStartBoards[i].score );
+
+//			printf( "\n" );
+
+			// Run minimax on the start boards.
+			MinimaxResult move = run_minimax( myStartBoard, 0, mySequentialDepth );
+
+			return move.move;
 		}
 
 private:
@@ -134,6 +204,7 @@ private:
 	CLKernel generate_boards;
 	CLKernel evaluate_board;
 	CLKernel minimax;
+	CLKernel get_results;
 
 	CLUnitArgument host_boards;
 	CLUnitArgument start_boards;
@@ -170,8 +241,7 @@ int main ( void )
     string src((std::istreambuf_iterator<char>(t)),
                std::istreambuf_iterator<char>());
 	
-	OpenCLPlayer player( b, 2, src );
-	player.makeMove();
-
+	OpenCLPlayer player( b, 6, src );
+	cout << "Move: " << player.makeMove() << endl;
 }
 #endif

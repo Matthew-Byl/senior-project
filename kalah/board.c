@@ -135,12 +135,11 @@ int board_bottom_score( Board *b )
 
 int board_make_move( Board *b, int move )
 {
-	const int MAKE_MOVE_DEBUG = 1;
-
 	// Check if a legal move.
 	if ( !board_legal_move( b, move ) )
 	{
 #ifndef _OPENCL_
+		const int MAKE_MOVE_DEBUG = 1;
 		if ( MAKE_MOVE_DEBUG )
 		{
 			printf( "Illegal move: %d; terminating.", move );
