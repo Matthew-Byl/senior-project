@@ -186,7 +186,7 @@ public:
 			
 			for ( int i = 0; i < 6; i++ )
 			{
-				cout << "Minimax picked " << myStartBoards[1].score << " for " << endl;
+				cout << "Minimax picked " << myStartBoards[i].score << " for " << endl;
 				if ( myStartBoards[i].player_to_move == TOP )
 					cout << "MAX";
 				else
