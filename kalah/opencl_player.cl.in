@@ -30,7 +30,7 @@
  */
 
 // The leaf nodes are 1, so this is the number of minimax layers, including the root.
-#define MINIMAX_DEPTH 3
+#define MINIMAX_DEPTH 2
 
 int tree_size ( void )
 {
@@ -139,6 +139,8 @@ __kernel void evaluate_board( __global Board *board_array )
 //  use more threads, with an atomic min/max.
 __kernel void minimax( __global Board *board_array )
 {
+	printf( "global id: %d %d\n", get_global_id( 0 ), get_global_id( 1 ) );
+
 	int tree = get_global_id( 0 );
 	int tree_offset = tree_size() * tree;
 	int local_id = get_global_id( 1 );
@@ -164,15 +166,15 @@ __kernel void minimax( __global Board *board_array )
 			else
 				score = INT_MAX;
 			
+			printf( "Parent offset: %d, child offset: %d\n", offset, tree_offset + child_offset );
+
 			for ( int i = 0; i < 6; i++ )
 			{
-//				printf( "Parent: %d, child %d\n",  offset, child_offset + i );
-
 				int child_score = board_array[tree_offset + child_offset + i].score;
 				if ( ( playerToMove == TOP && child_score > score )
 					 || ( playerToMove == BOTTOM && child_score < score ) )
 				{
-					score = board_array[child_offset + i].score;
+					score = child_score;
 				}
 			}
 			
@@ -197,6 +199,7 @@ __kernel void get_results( __global Board *host_start, __global Board *board_arr
 	else
 		score = INT_MAX;
 	
+	printf( "Tree offset: %d\n", tree_offset );
 	for ( int i = 0; i < 6; i++ )
 	{
 		int child_score = board_array[tree_offset + i].score;

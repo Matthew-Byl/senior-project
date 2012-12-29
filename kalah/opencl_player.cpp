@@ -164,19 +164,21 @@ public:
 			// @todo: we might exceed a dimension (like when n=7), so run kernels multiple times with a global offset.
 
 			int num_leaf_nodes = get_leaf_nodes( mySequentialDepth );
+			cout << "Leaf nodes: " << num_leaf_nodes << endl;
 
 			// Create start boards
 			generate_start_boards();
 
-			generate_boards.setGlobalDimensions( num_leaf_nodes, 216 );
-			generate_boards.setLocalDimensions( 1, 216 ); // this needs to stay with x-dimension 1
+			// 42 -> 216 to do more levels.
+			generate_boards.setGlobalDimensions( num_leaf_nodes, 42 );
+			generate_boards.setLocalDimensions( 1, 42 ); // this needs to stay with x-dimension 1
 			generate_boards( start_boards, host_boards );
 			
-			evaluate_board.setGlobalDimensions( num_leaf_nodes, 216, 14 );
+			evaluate_board.setGlobalDimensions( num_leaf_nodes, 42, 14 );
 			evaluate_board( host_boards );
 			
-			minimax.setGlobalDimensions( num_leaf_nodes, 42 );
-			minimax.setLocalDimensions( 1, 42 ); // this needs to stay with x-dimension 1.
+			minimax.setGlobalDimensions( num_leaf_nodes, 6 );
+			minimax.setLocalDimensions( 1, 6 ); // this needs to stay with x-dimension 1.
 			minimax( host_boards );
 
 			get_results.setGlobalDimensions( num_leaf_nodes );
@@ -184,10 +186,16 @@ public:
 			
 			for ( int i = 0; i < 6; i++ )
 			{
-				cout << "Minimax picked " << myStartBoards[i].score << " for scores: " << endl;
+				cout << "Minimax picked " << myStartBoards[1].score << " for " << endl;
+				if ( myStartBoards[i].player_to_move == TOP )
+					cout << "MAX";
+				else
+					cout << "MIN";
+				cout << " node:" << endl;
+
 				for ( int j = 0; j < 6; j++ )
 				{
-					cout << myBoards[258*i + j].score << " ";
+					cout << myBoards[42*i + j].score << " ";
 				}
 				cout << endl;
 			}
@@ -340,7 +348,7 @@ int main ( void )
     string src((std::istreambuf_iterator<char>(t)),
                std::istreambuf_iterator<char>());
 	
-	OpenCLPlayer player( b, 2, src );
+	OpenCLPlayer player( b, 1, src );
 	cout << "Move: " << player.makeMove() << endl;
 
 /*
