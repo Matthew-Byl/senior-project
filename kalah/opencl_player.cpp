@@ -184,6 +184,7 @@ public:
 			get_results.setGlobalDimensions( num_leaf_nodes );
 			get_results( start_boards, host_boards );
 			
+/*
 			for ( int i = 0; i < 6; i++ )
 			{
 				cout << "Minimax picked " << myStartBoards[i].score << " for " << endl;
@@ -199,6 +200,7 @@ public:
 				}
 				cout << endl;
 			}
+*/
 
 /*
 			cout << "Board scores"
