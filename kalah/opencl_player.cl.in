@@ -30,17 +30,17 @@
  *   (n)   x  216 leaf nodes x 14 components = 3024n threads.
  */
 
-// The leaf nodes are 1, so this is the number of minimax layers, including the root.
+// The number of minimax layers, including the root.
 #define MINIMAX_DEPTH 2
 
 int tree_size ( void )
 {
-	return tree_array_size( 6, MINIMAX_DEPTH );
+	return tree_array_size( 6, MINIMAX_DEPTH - 1 );
 }
 
 int leaf_start ( void )
 {
-	return tree_array_size( 6, MINIMAX_DEPTH - 1 );
+	return tree_array_size( 6, MINIMAX_DEPTH - 2 );
 }
 
 // (a) generate the boards in log(n) time.
@@ -109,6 +109,8 @@ __kernel void evaluate_board( __global Board *board_array )
 	// The index of our board in that tree
 	int board_offset = leaf_start() + get_global_id( 1 );
 
+//	printf( "Board_offset: %d\n", board_offset );
+
 	// The index of our board in board_array.
 	int offset = tree_offset + board_offset;
 
@@ -139,13 +141,14 @@ __kernel void minimax( __global Board *board_array )
 	int tree_offset = tree_size() * tree;
 	int local_id = get_global_id( 1 );
 
-	int power_of_six = (int) pow( 6.0f, MINIMAX_DEPTH - 1 );
+	int power_of_six = (int) pow( 6.0f, MINIMAX_DEPTH - 2 );
 	int level_start = leaf_start();
 
 	for ( int i = MINIMAX_DEPTH - 2; i >= 0; i-- )
 	{
 		level_start -= power_of_six;
 
+		printf( "level_start: %d, power_of_six: %d\n", level_start, power_of_six );
 		if ( local_id < power_of_six )
 		{
 			// The board in board_array.
@@ -160,7 +163,7 @@ __kernel void minimax( __global Board *board_array )
 			else
 				score = INT_MAX;
 			
-//			printf( "Parent offset: %d, child offset: %d, tree offset: %d\n", board_offset, child_offset, tree_offset );
+			printf( "Parent offset: %d, child offset: %d, tree offset: %d\n", board_offset, child_offset, tree_offset );
 
 			for ( int i = 0; i < 6; i++ )
 			{

@@ -153,6 +153,13 @@ int OpenCLPlayer::makeMove()
 	generate_boards.setGlobalDimensions( num_leaf_nodes, 36 );
 	generate_boards.setLocalDimensions( 1, 36 ); // this needs to stay with x-dimension 1
 	generate_boards( start_boards, host_boards );
+			
+	evaluate_board.setGlobalDimensions( num_leaf_nodes, 36, 14 );
+	evaluate_board( host_boards );
+			
+	minimax.setGlobalDimensions( num_leaf_nodes, 6 ); // 6 ^ depth - 1
+	minimax.setLocalDimensions( 1, 6 ); // this needs to stay with x-dimension 1.
+	minimax( host_boards );
 
 	for ( int i = 0; i < 7; i++ )
 	{
@@ -161,13 +168,6 @@ int OpenCLPlayer::makeMove()
 	}
 	easy_break();
 	return -1;
-			
-	evaluate_board.setGlobalDimensions( num_leaf_nodes, 36, 14 );
-	evaluate_board( host_boards );
-			
-	minimax.setGlobalDimensions( num_leaf_nodes, 6 ); // 6 ^ depth - 1
-	minimax.setLocalDimensions( 1, 6 ); // this needs to stay with x-dimension 1.
-	minimax( host_boards );
 
 	get_results.setGlobalDimensions( num_leaf_nodes );
 	get_results( start_boards, host_boards );
