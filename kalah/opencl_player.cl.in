@@ -35,7 +35,7 @@
 
 int tree_size ( void )
 {
-	return tree_array_size( 6, MINIMAX_DEPTH - 1 ) + 1;
+	return tree_array_size( 6, MINIMAX_DEPTH - 1 );
 }
 
 int leaf_start ( void )
@@ -60,7 +60,7 @@ __kernel void generate_boards( __global Board *host_start, __global Board *board
 	int move_offset;
 
 	// Put in the root node.
-	if ( local_id == 0 )
+	if ( get_global_id( 1 ) == 0 )
 		board_array[tree_offset] = host_start[tree];
 	barrier( CLK_GLOBAL_MEM_FENCE );
 

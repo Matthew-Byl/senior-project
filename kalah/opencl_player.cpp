@@ -168,16 +168,24 @@ int OpenCLPlayer::makeMove()
 	// Create start boards
 	generate_start_boards();
 
+	cout << "LEAF NODES: " << endl;
+	for ( int i = 0; i < num_leaf_nodes; i++ )
+	{
+		board_print( &myStartBoards[i] );
+		cout << endl;
+	}
+	cout << "================" << endl;
+
 	// 42 -> 216 to do more levels.
-	generate_boards.setGlobalDimensions( num_leaf_nodes, 6 );
-	generate_boards.setLocalDimensions( 1, 6 ); // this needs to stay with x-dimension 1
+	generate_boards.setGlobalDimensions( num_leaf_nodes, 36 );
+	generate_boards.setLocalDimensions( 1, 36 ); // this needs to stay with x-dimension 1
 	generate_boards( start_boards, host_boards );
 			
-	evaluate_board.setGlobalDimensions( num_leaf_nodes, 6, 14 );
+	evaluate_board.setGlobalDimensions( num_leaf_nodes, 36, 14 );
 	evaluate_board( host_boards );
 			
-	minimax.setGlobalDimensions( num_leaf_nodes, 1 ); // 6 ^ depth - 1
-	minimax.setLocalDimensions( 1, 1 ); // this needs to stay with x-dimension 1.
+	minimax.setGlobalDimensions( num_leaf_nodes, 6 ); // 6 ^ depth - 1
+	minimax.setLocalDimensions( 1, 6 ); // this needs to stay with x-dimension 1.
 	minimax( host_boards );
 
 	get_results.setGlobalDimensions( num_leaf_nodes );
@@ -234,6 +242,11 @@ int OpenCLPlayer::makeMove()
 
 	// Run minimax on the start boards.
 	MinimaxResult move = run_minimax( myStartBoard, 0, mySequentialDepth );
+
+	cout << "Choices: ( 0 --> 5 )" << endl;
+	for ( int i = 0; i < 6; i++ )
+		cout << myStartBoards[i].score << endl;
+		
 
 	// Hack to return something legal when it's our move, even when
 	//  minimax doesn't make it to the GPU.
