@@ -158,9 +158,6 @@ MinimaxResult minimax_move( Board *b, int depth )
 
 				if ( rec_result.score < best_result.score )
 				{
-					if ( depth == 3 )
-						printf( "%d: %d\n", i, rec_result.score );
-
 					best_result.move = i;
 					best_result.score = rec_result.score;
 				}
@@ -173,7 +170,7 @@ MinimaxResult minimax_move( Board *b, int depth )
 
 int minimax_make_move( Board *b )
 {
-	MinimaxResult res = minimax_move( b, 2 );
+	MinimaxResult res = minimax_move( b, 3 );
 
 //	printf( "Best move has score %d\n", res.score );
 

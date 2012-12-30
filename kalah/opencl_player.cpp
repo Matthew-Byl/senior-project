@@ -97,7 +97,7 @@ void OpenCLPlayer::set_board( Board b )
 	myStartBoard = b;
 }
 
-#define MINIMAX_DEPTH 2
+#define MINIMAX_DEPTH 3
 
 int OpenCLPlayer::get_leaf_nodes( int sequentialDepth )
 {
@@ -184,27 +184,29 @@ int OpenCLPlayer::makeMove()
 	cout << "================" << endl;
 
 	// 42 -> 216 to do more levels.
-	generate_boards.setGlobalDimensions( num_leaf_nodes, 36 );
-	generate_boards.setLocalDimensions( 1, 36 ); // this needs to stay with x-dimension 1
+	generate_boards.setGlobalDimensions( num_leaf_nodes, ipow( 6, MINIMAX_DEPTH ) );
+	generate_boards.setLocalDimensions( 1, ipow( 6, MINIMAX_DEPTH ) ); // this needs to stay with x-dimension 1
 	generate_boards( start_boards, host_boards );
 			
-	evaluate_board.setGlobalDimensions( num_leaf_nodes, 36, 14 );
+	// Evaluate all boards, not just leaf nodes, so that if the game ends before
+	//  we get to a leaf node, the score will be correct.
+	evaluate_board.setGlobalDimensions( num_leaf_nodes, tree_array_size( 6, MINIMAX_DEPTH ), 14 );
 	evaluate_board( host_boards );
 			
-	minimax.setGlobalDimensions( num_leaf_nodes, 6 ); // 6 ^ depth - 1
-	minimax.setLocalDimensions( 1, 6 ); // this needs to stay with x-dimension 1.
+	minimax.setGlobalDimensions( num_leaf_nodes, ipow( 6, MINIMAX_DEPTH - 1 ) ); // 6 ^ depth - 1
+	minimax.setLocalDimensions( 1, ipow( 6, MINIMAX_DEPTH - 1 ) ); // this needs to stay with x-dimension 1.
 	minimax( host_boards );
 
 	get_results.setGlobalDimensions( num_leaf_nodes );
 	get_results( start_boards, host_boards );
 
-
+/*
 	for ( int i = 0; i < 36; i++ )
 	{
 		board_print( &myBoards[i] );
 		printf( "\n" );
 	}
-
+*/
 //	for ( int i = 7; i < 41; i++ )
 //	{
 //		assert( myBoards[i].score == minimax_eval( myBoards[i] ) );
@@ -250,9 +252,9 @@ int OpenCLPlayer::makeMove()
 	// Run minimax on the start boards.
 	MinimaxResult move = run_minimax( myStartBoard, 0, mySequentialDepth );
 
-	cout << "Choices: ( 0 --> 5 )" << endl;
-	for ( int i = 0; i < 6; i++ )
-		cout << myStartBoards[i].score << endl;
+//	cout << "Choices: ( 0 --> 5 )" << endl;
+//	for ( int i = 0; i < 6; i++ )
+//		cout << myStartBoards[i].score << endl;
 		
 
 	// Hack to return something legal when it's our move, even when
