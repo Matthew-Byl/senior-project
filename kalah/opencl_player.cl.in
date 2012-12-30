@@ -30,6 +30,9 @@
  *   (n)   x  216 leaf nodes x 14 components = 3024n threads.
  */
 
+// Bug: if the game ends after the sequential step but before the GPU evaluation level,
+//   then the score is wonky.
+
 // The number of layers, including the root and bottom layers.
 #define MINIMAX_DEPTH 2
 
@@ -87,7 +90,9 @@ __kernel void generate_boards( __global Board *host_start, __global Board *board
 			// Make the move.
 			if ( m_board.legal_move 
 				 && board_legal_move( &m_board, move + move_offset ) )
+			{
 				board_make_move( &m_board, move + move_offset );
+			}
 			else
 				m_board.legal_move = FALSE;
 

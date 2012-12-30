@@ -368,21 +368,41 @@ KalahPlayer opencl_minimax_player( void )
 
 #ifdef MAKE_MAIN
 
+void easy_breakpoint()
+{
+	return;
+}
+
 int main ( void )
 {
 	KalahPlayer minimax = minimax_player();
 
 	for ( int i = 7; i < 12; i++ )
 	{
-		Board b;
-		board_initialize( &b, TOP );
-		board_make_move( &b, i );
+		for ( int j = 0; j < 6; j++ )
+		{
+			Board b;
+			board_initialize( &b, TOP );
+			board_make_move( &b, i );
 
-		player.set_board( b );
-		cout << "OpenCL Move: " << player.makeMove() << endl;
-		cout << "Minimax Move: " << minimax.make_move( &b ) << endl;
+			// Go-agains
+			if ( b.player_to_move == TOP )
+				continue;
+			
+			board_make_move( &b, j );
+			
+			player.set_board( b );
+			int ocl_move = player.makeMove();
+			int min_move = minimax.make_move( &b );
 
-		break;
+			cerr << "OpenCL Move: " << ocl_move << endl;
+			cerr << "Minimax Move: " << min_move << endl;
+
+			if ( ocl_move != min_move )
+			{
+				easy_breakpoint();
+			}
+		}
 	}
 		
 /*
