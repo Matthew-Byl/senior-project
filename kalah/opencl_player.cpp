@@ -19,6 +19,12 @@ extern "C" {
 #include <list>
 using namespace std;
 
+void easy_break ( void )
+{
+	return;
+}
+
+
 extern "C" const char *opencl_player_name( void )
 {
 	return "OpenCL Minimax";
@@ -144,20 +150,30 @@ int OpenCLPlayer::makeMove()
 	generate_start_boards();
 
 	// 42 -> 216 to do more levels.
-	generate_boards.setGlobalDimensions( num_leaf_nodes, 216 );
-	generate_boards.setLocalDimensions( 1, 216 ); // this needs to stay with x-dimension 1
+	generate_boards.setGlobalDimensions( num_leaf_nodes, 36 );
+	generate_boards.setLocalDimensions( 1, 36 ); // this needs to stay with x-dimension 1
 	generate_boards( start_boards, host_boards );
+
+	for ( int i = 0; i < 7; i++ )
+	{
+		board_print( &myBoards[i] );
+		printf( "\n" );
+	}
+	easy_break();
+	return -1;
 			
-	evaluate_board.setGlobalDimensions( num_leaf_nodes, 216, 14 );
+	evaluate_board.setGlobalDimensions( num_leaf_nodes, 36, 14 );
 	evaluate_board( host_boards );
 			
-	minimax.setGlobalDimensions( num_leaf_nodes, 6 );
+	minimax.setGlobalDimensions( num_leaf_nodes, 6 ); // 6 ^ depth - 1
 	minimax.setLocalDimensions( 1, 6 ); // this needs to stay with x-dimension 1.
 	minimax( host_boards );
 
 	get_results.setGlobalDimensions( num_leaf_nodes );
 	get_results( start_boards, host_boards );
 			
+
+
 /*
   for ( int i = 0; i < 6; i++ )
   {
@@ -217,7 +233,6 @@ int OpenCLPlayer::makeMove()
 
 	return move.move;
 }
-
 
 MinimaxResult OpenCLPlayer::run_minimax( Board parent, int idx, int depth )
 {
@@ -301,7 +316,7 @@ int main ( void )
     string src((std::istreambuf_iterator<char>(t)),
                std::istreambuf_iterator<char>());
 	
-	OpenCLPlayer player( b, 1, src );
+	OpenCLPlayer player( b, 0, src );
 	cout << "Move: " << player.makeMove() << endl;
 
 /*

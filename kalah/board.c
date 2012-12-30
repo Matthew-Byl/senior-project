@@ -32,6 +32,7 @@ void board_initialize( Board *b, PlayerPosition to_move )
 	b->board[13] = 0;
 	b->player_to_move = to_move;
 	b->score = 0;
+	b->legal_move = TRUE;
 }
 
 /**
@@ -220,6 +221,7 @@ void board_print( Board *b )
 		printf("%d  ", b->board[i]);
 	printf("\n");
 	printf( "Score: %d\n", b->score );
+	printf( "Legal move: %d\n", b->legal_move );
 #endif
 }
 

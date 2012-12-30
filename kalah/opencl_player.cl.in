@@ -31,20 +31,16 @@
  */
 
 // The leaf nodes are 1, so this is the number of minimax layers, including the root.
-#define MINIMAX_DEPTH 3
+#define MINIMAX_DEPTH 2
 
 int tree_size ( void )
 {
-	int complete_6ary_tree_size = ( ( (int) pow( 6.0f, MINIMAX_DEPTH + 1 ) - 1 ) / ( 6 - 1 ) );
-
-	// The -1 at the end is because we don't store the root node.
-	return complete_6ary_tree_size - 1;
+	return tree_array_size( 6, MINIMAX_DEPTH );
 }
 
 int leaf_start ( void )
 {
-	int half_6ary_tree_size = ( ( (int) pow( 6.0f, MINIMAX_DEPTH ) - 1 ) / ( 6 - 1 ) );
-	return half_6ary_tree_size - 1;
+	return tree_array_size( 6, MINIMAX_DEPTH - 1 );
 }
 
 // (a) generate the boards in log(n) time.
@@ -55,32 +51,28 @@ int leaf_start ( void )
 __kernel void generate_boards( __global Board *host_start, __global Board *board_array )
 {
 	int tree = get_global_id( 0 );
-	Board start = host_start[tree];
 	int tree_offset = tree_size() * tree;
 
 	int local_id = get_local_id( 1 );
 	int move = local_id % 6;
 	int move_offset;
 
+	// Put in the root node.
+	if ( local_id == 0 )
+		board_array[tree_offset] = host_start[tree];
+	barrier( CLK_GLOBAL_MEM_FENCE );
+
 	Board m_board;
 	int power_of_six = 6;
-	int level_start = 0;
-	for ( int i = 0; i < MINIMAX_DEPTH; i++ )
+	int level_start = 1;
+	for ( int i = 1; i < MINIMAX_DEPTH; i++ )
 	{
 		if ( local_id < power_of_six )
 		{
-			// Find out the board we are basing this level off of.
-			if ( level_start == 0 )
-			{
-				// The first 6
-				m_board = start;
-			}
-			else
-			{
-				// Integer division rounds down.
-				int parent = ( ( local_id + level_start ) / 6 ) - 1; // @XX: not DOUBLE-CHECKed for n > 2.
-				m_board = board_array[tree_offset + parent];
-			}
+			// Integer division rounds down.
+			int parent = tree_array_parent( 6, level_start + local_id );
+			printf( "Current: %d, Parent: %d\n", level_start + local_id, parent );
+			m_board = board_array[tree_offset + parent];
 
 			// Calculate the move offset based on whose turn it is.
 			if ( m_board.player_to_move == TOP )
@@ -89,10 +81,11 @@ __kernel void generate_boards( __global Board *host_start, __global Board *board
 				move_offset = 0;
 
 			// Make the move.
-			if ( board_legal_move( &m_board, move + move_offset ) )
-			{
+			if ( m_board.legal_move 
+				 &&board_legal_move( &m_board, move + move_offset ) )
 				board_make_move( &m_board, move + move_offset );
-			}
+			else
+				m_board.legal_move = FALSE;
 
 			board_array[tree_offset + level_start + local_id] = m_board;
 		}
@@ -157,7 +150,7 @@ __kernel void minimax( __global Board *board_array )
 		{
 			// The board in board_array.
 			int board_offset = level_start + get_global_id( 1 );
-			int child_offset = 6*( board_offset + 1 );
+			int child_offset = tree_array_first_child( 6, board_offset );
 			PlayerPosition playerToMove;
 			int score;
 
@@ -171,11 +164,12 @@ __kernel void minimax( __global Board *board_array )
 
 			for ( int i = 0; i < 6; i++ )
 			{
-				int child_score = board_array[tree_offset + child_offset + i].score;
-				if ( ( playerToMove == TOP && child_score > score )
-					 || ( playerToMove == BOTTOM && child_score < score ) )
+				Board child = board_array[tree_offset + child_offset + i];
+				if ( child.legal_move 
+					 && ( ( playerToMove == TOP && child.score > score )
+						  || ( playerToMove == BOTTOM && child.score < score ) ) )
 				{
-					score = child_score;
+					score = child.score;
 				}
 			}
 			

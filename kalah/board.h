@@ -24,6 +24,7 @@ typedef struct {
 	CL_INT board[BOARD_SIZE];
 	PlayerPosition player_to_move;
 	CL_INT score;
+	CL_INT legal_move;
 } Board;
 
 void board_initialize( Board *b, PlayerPosition to_move );
