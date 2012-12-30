@@ -44,10 +44,9 @@ typedef struct {
 class OpenCLPlayer
 {
 public:
-	OpenCLPlayer( Board start, int sequentialDepth, string src )
+	OpenCLPlayer( int sequentialDepth, string src )
 		: mySequentialDepth( sequentialDepth ),
 		  myBoardsSize( get_board_array_size( sequentialDepth ) ),
-		  myStartBoard( start ),
 		  myBoards( new Board[myBoardsSize] ),
 		  myStartBoards( new Board[ get_leaf_nodes( mySequentialDepth ) ] ),
 		  generate_boards( "generate_boards", src ),
@@ -70,10 +69,12 @@ public:
 	int get_board_array_size( int sequentialDepth );
 
 	void generate_board( Board parent, int idx, int depth );
-	MinimaxResult run_minimax( Board parent, int idx, int depth );
+	MinimaxResult run_minimax( Board &parent, int idx, int depth );
 	void generate_start_boards();
 	int makeMove();
 	int minimax_eval( Board b );
+
+	void set_board( Board b );
 
 private:
 	int mySequentialDepth;
@@ -91,6 +92,13 @@ private:
 	CLUnitArgument start_boards;
 };
 
+void OpenCLPlayer::set_board( Board b )
+{
+	myStartBoard = b;
+}
+
+#define MINIMAX_DEPTH 2
+
 int OpenCLPlayer::get_leaf_nodes( int sequentialDepth )
 {
 	// The number of leaf nodes of the given sequential depth.
@@ -101,13 +109,12 @@ int OpenCLPlayer::get_board_array_size( int sequentialDepth )
 {
 	int leaf = get_leaf_nodes( sequentialDepth );
 
-	return ( leaf * 6 ) + ( leaf * 6 * 6 ) + ( leaf * 6 * 6 * 6 );
+	return leaf * tree_array_size( 6, MINIMAX_DEPTH );
 }
 
 int OpenCLPlayer::leaf_start()
 {
-	int half_6ary_tree_size = ( ( (int) pow( 6.0f, mySequentialDepth + 1 ) - 1 ) / ( 6 - 1 ) );
-	return half_6ary_tree_size - 1;
+	return tree_array_size( 6, mySequentialDepth - 1 );
 }
 
 void OpenCLPlayer::generate_board( Board parent, int idx, int depth )
@@ -118,7 +125,7 @@ void OpenCLPlayer::generate_board( Board parent, int idx, int depth )
 		return;
 	}
 	
-	int child_idx = 6 * ( idx + 1 );
+	int child_idx = tree_array_first_child( 6, idx );
 	for ( int i = 0; i < 6; i++ )
 	{
 		int move_offset = 0;
@@ -274,7 +281,7 @@ int OpenCLPlayer::makeMove()
 	return move.move;
 }
 
-MinimaxResult OpenCLPlayer::run_minimax( Board parent, int idx, int depth )
+MinimaxResult OpenCLPlayer::run_minimax( Board &parent, int idx, int depth )
 {
 	MinimaxResult best_result;
 	best_result.move = -1;
@@ -333,6 +340,11 @@ MinimaxResult OpenCLPlayer::run_minimax( Board parent, int idx, int depth )
 	return best_result;
 }
 
+ifstream t("opencl_player.cl");
+string src((std::istreambuf_iterator<char>(t)),
+		   std::istreambuf_iterator<char>());
+OpenCLPlayer player( 1, src );
+
 extern "C" int opencl_player_move( Board *b )
 {
 	ifstream t("opencl_player.cl");
@@ -340,7 +352,7 @@ extern "C" int opencl_player_move( Board *b )
                std::istreambuf_iterator<char>());
 
 	// This is a recompile every move. Fix it later.
-	OpenCLPlayer player( *b, 1, src );
+	player.set_board( *b );
 	return player.makeMove();
 }
 
@@ -360,17 +372,13 @@ int main ( void )
 {
 	KalahPlayer minimax = minimax_player();
 
-	ifstream t("opencl_player.cl");
-    string src((std::istreambuf_iterator<char>(t)),
-               std::istreambuf_iterator<char>());
-
 	for ( int i = 7; i < 12; i++ )
 	{
 		Board b;
 		board_initialize( &b, TOP );
 		board_make_move( &b, i );
 
-		OpenCLPlayer player( b, 1, src );
+		player.set_board( b );
 		cout << "OpenCL Move: " << player.makeMove() << endl;
 		cout << "Minimax Move: " << minimax.make_move( &b ) << endl;
 
