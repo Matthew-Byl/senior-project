@@ -48,13 +48,13 @@ public:
 		: mySequentialDepth( sequentialDepth ),
 		  myBoardsSize( get_board_array_size( sequentialDepth ) ),
 		  myStartBoard( start ),
-//		  myBoards( new Board[myBoardsSize] ),
+		  myBoards( new Board[myBoardsSize] ),
 		  myStartBoards( new Board[ get_leaf_nodes( mySequentialDepth ) ] ),
 		  generate_boards( "generate_boards", src ),
 		  evaluate_board( "evaluate_board", src ),
 		  minimax( "minimax", src ),
 		  get_results( "get_results", src ),
-		  host_boards( "Board", (Board *) nullptr, myBoardsSize, false, false ),
+		  host_boards( "Board", myBoards, myBoardsSize ),
 		  start_boards( "Board", myStartBoards, get_leaf_nodes( mySequentialDepth ) )
 		{
 
@@ -62,7 +62,7 @@ public:
 
 	~OpenCLPlayer()
 		{
-//			delete[] myBoards;
+			delete[] myBoards;
 		};
 
 	int leaf_start();
@@ -79,7 +79,7 @@ private:
 	int mySequentialDepth;
 	int myBoardsSize;
 	Board myStartBoard;
-//	Board *myBoards;
+	Board *myBoards;
 	Board *myStartBoards;
 
 	CLKernel generate_boards;
@@ -169,27 +169,26 @@ int OpenCLPlayer::makeMove()
 	generate_start_boards();
 
 	// 42 -> 216 to do more levels.
-	generate_boards.setGlobalDimensions( num_leaf_nodes, 36 );
-	generate_boards.setLocalDimensions( 1, 36 ); // this needs to stay with x-dimension 1
+	generate_boards.setGlobalDimensions( num_leaf_nodes, 6 );
+	generate_boards.setLocalDimensions( 1, 6 ); // this needs to stay with x-dimension 1
 	generate_boards( start_boards, host_boards );
 			
-	evaluate_board.setGlobalDimensions( num_leaf_nodes, 36, 14 );
+	evaluate_board.setGlobalDimensions( num_leaf_nodes, 6, 14 );
 	evaluate_board( host_boards );
 			
-	minimax.setGlobalDimensions( num_leaf_nodes, 6 ); // 6 ^ depth - 1
-	minimax.setLocalDimensions( 1, 6 ); // this needs to stay with x-dimension 1.
+	minimax.setGlobalDimensions( num_leaf_nodes, 1 ); // 6 ^ depth - 1
+	minimax.setLocalDimensions( 1, 1 ); // this needs to stay with x-dimension 1.
 	minimax( host_boards );
 
 	get_results.setGlobalDimensions( num_leaf_nodes );
 	get_results( start_boards, host_boards );
 
-/*			
-	for ( int i = 0; i < 41; i++ )
+
+	for ( int i = 0; i < 36; i++ )
 	{
 		board_print( &myBoards[i] );
 		printf( "\n" );
 	}
-*/
 
 //	for ( int i = 7; i < 41; i++ )
 //	{
@@ -361,6 +360,8 @@ int main ( void )
 		OpenCLPlayer player( b, 1, src );
 		cout << "OpenCL Move: " << player.makeMove() << endl;
 		cout << "Minimax Move: " << minimax.make_move( &b ) << endl;
+
+		break;
 	}
 		
 /*

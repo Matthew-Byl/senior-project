@@ -31,11 +31,11 @@
  */
 
 // The number of layers, including the root and bottom layers.
-#define MINIMAX_DEPTH 3
+#define MINIMAX_DEPTH 2
 
 int tree_size ( void )
 {
-	return tree_array_size( 6, MINIMAX_DEPTH - 1 );
+	return tree_array_size( 6, MINIMAX_DEPTH - 1 ) + 1;
 }
 
 int leaf_start ( void )
@@ -52,6 +52,8 @@ __kernel void generate_boards( __global Board *host_start, __global Board *board
 {
 	int tree = get_global_id( 0 );
 	int tree_offset = tree_size() * tree;
+
+//	printf( "Tree_offset: %d\n", tree_offset );
 
 	int local_id = get_local_id( 1 );
 	int move = local_id % 6;
@@ -71,8 +73,10 @@ __kernel void generate_boards( __global Board *host_start, __global Board *board
 		{
 			// Integer division rounds down.
 			int parent = tree_array_parent( 6, level_start + local_id );
-//			printf( "Current: %d, Parent: %d\n", level_start + local_id, parent );
+			printf( "Tree: %d, Current: %d, Parent: %d, move: %d\n", tree_offset, level_start + local_id, parent, move );
 			m_board = board_array[tree_offset + parent];
+
+//			printf( "Tree offset: %d, parent: %d, move: %d\n", tree_offset, parent + tree_offset, move );
 
 			// Calculate the move offset based on whose turn it is.
 			if ( m_board.player_to_move == TOP )
@@ -82,7 +86,7 @@ __kernel void generate_boards( __global Board *host_start, __global Board *board
 
 			// Make the move.
 			if ( m_board.legal_move 
-				 &&board_legal_move( &m_board, move + move_offset ) )
+				 && board_legal_move( &m_board, move + move_offset ) )
 				board_make_move( &m_board, move + move_offset );
 			else
 				m_board.legal_move = FALSE;

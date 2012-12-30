@@ -12,7 +12,7 @@ int tree_array_first_child( int ary, int node )
 int tree_array_parent( int ary, int node )
 {
 	// Integer division rounds down.
-	return node / ary;
+	return ( node - 1 ) / ary;
 }
 
 /*
