@@ -30,8 +30,8 @@
  *   (n)   x  216 leaf nodes x 14 components = 3024n threads.
  */
 
-// The number of minimax layers, including the root.
-#define MINIMAX_DEPTH 2
+// The number of layers, including the root and bottom layers.
+#define MINIMAX_DEPTH 3
 
 int tree_size ( void )
 {
@@ -71,7 +71,7 @@ __kernel void generate_boards( __global Board *host_start, __global Board *board
 		{
 			// Integer division rounds down.
 			int parent = tree_array_parent( 6, level_start + local_id );
-			printf( "Current: %d, Parent: %d\n", level_start + local_id, parent );
+//			printf( "Current: %d, Parent: %d\n", level_start + local_id, parent );
 			m_board = board_array[tree_offset + parent];
 
 			// Calculate the move offset based on whose turn it is.
@@ -148,7 +148,7 @@ __kernel void minimax( __global Board *board_array )
 	{
 		level_start -= power_of_six;
 
-		printf( "level_start: %d, power_of_six: %d\n", level_start, power_of_six );
+//		printf( "level_start: %d, power_of_six: %d\n", level_start, power_of_six );
 		if ( local_id < power_of_six )
 		{
 			// The board in board_array.
@@ -163,7 +163,7 @@ __kernel void minimax( __global Board *board_array )
 			else
 				score = INT_MAX;
 			
-			printf( "Parent offset: %d, child offset: %d, tree offset: %d\n", board_offset, child_offset, tree_offset );
+//			printf( "Parent offset: %d, child offset: %d, tree offset: %d\n", board_offset, child_offset, tree_offset );
 
 			for ( int i = 0; i < 6; i++ )
 			{
@@ -188,26 +188,6 @@ __kernel void get_results( __global Board *host_start, __global Board *board_arr
 {
 	int tree = get_global_id( 0 );
 	int tree_offset = tree_size() * tree;
-	int score;
-	PlayerPosition playerToMove;	
 
-	playerToMove = host_start[tree].player_to_move;
-	if ( playerToMove == TOP )
-		score = INT_MIN;
-	else
-		score = INT_MAX;
-	
-//	printf( "Tree offset: %d\n", tree_offset );
-	for ( int i = 0; i < 6; i++ )
-	{
-		int child_score = board_array[tree_offset + i].score;
-
-		if ( ( playerToMove == TOP && child_score > score )
-			 || ( playerToMove == BOTTOM && child_score < score ) )
-		{
-			score = board_array[tree_offset + i].score;
-		}
-	}
-
-	host_start[tree].score = score;
+	host_start[tree].score = board_array[tree_offset].score;
 }

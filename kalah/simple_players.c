@@ -170,9 +170,9 @@ MinimaxResult minimax_move( Board *b, int depth )
 
 int minimax_make_move( Board *b )
 {
-	MinimaxResult res = minimax_move( b, 10 );
+	MinimaxResult res = minimax_move( b, 5 );
 
-	printf( "Best move has score %d\n", res.score );
+//	printf( "Best move has score %d\n", res.score );
 
 	return res.move;
 }

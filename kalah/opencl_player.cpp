@@ -1,7 +1,8 @@
 extern "C" {
 #include "board.h"
 #include "opencl_player.h"
-// #include "tree_array.h"
+#include "tree_array.h"
+#include "simple_players.h"
 }
 
 /*
@@ -47,13 +48,13 @@ public:
 		: mySequentialDepth( sequentialDepth ),
 		  myBoardsSize( get_board_array_size( sequentialDepth ) ),
 		  myStartBoard( start ),
-		  myBoards( new Board[myBoardsSize] ),
+//		  myBoards( new Board[myBoardsSize] ),
 		  myStartBoards( new Board[ get_leaf_nodes( mySequentialDepth ) ] ),
 		  generate_boards( "generate_boards", src ),
 		  evaluate_board( "evaluate_board", src ),
 		  minimax( "minimax", src ),
 		  get_results( "get_results", src ),
-		  host_boards( "Board", myBoards, myBoardsSize ),
+		  host_boards( "Board", (Board *) nullptr, myBoardsSize, false, false ),
 		  start_boards( "Board", myStartBoards, get_leaf_nodes( mySequentialDepth ) )
 		{
 
@@ -61,7 +62,7 @@ public:
 
 	~OpenCLPlayer()
 		{
-			delete[] myBoards;
+//			delete[] myBoards;
 		};
 
 	int leaf_start();
@@ -72,12 +73,13 @@ public:
 	MinimaxResult run_minimax( Board parent, int idx, int depth );
 	void generate_start_boards();
 	int makeMove();
+	int minimax_eval( Board b );
 
 private:
 	int mySequentialDepth;
 	int myBoardsSize;
 	Board myStartBoard;
-	Board *myBoards;
+//	Board *myBoards;
 	Board *myStartBoards;
 
 	CLKernel generate_boards;
@@ -129,6 +131,10 @@ void OpenCLPlayer::generate_board( Board parent, int idx, int depth )
 		{
 			board_make_move( &m_board, i + move_offset );
 		}
+		else
+		{
+			m_board.legal_move = FALSE;
+		}
 		
 		generate_board( m_board, child_idx + i, depth - 1 );
 	}
@@ -138,6 +144,19 @@ void OpenCLPlayer::generate_start_boards()
 {
 	generate_board( myStartBoard, 0, mySequentialDepth );
 };
+
+int OpenCLPlayer::minimax_eval( Board b )
+{
+    int score = 5 * ( b.board[13] - b.board[6] );
+
+    for ( int i = 0; i <= 5; i++ )
+        score -= b.board[i];
+
+    for ( int i = 7; i <= 12; i++ )
+		score += b.board[i];
+
+    return score;
+}
 
 int OpenCLPlayer::makeMove()
 {
@@ -161,18 +180,23 @@ int OpenCLPlayer::makeMove()
 	minimax.setLocalDimensions( 1, 6 ); // this needs to stay with x-dimension 1.
 	minimax( host_boards );
 
-	for ( int i = 0; i < 7; i++ )
+	get_results.setGlobalDimensions( num_leaf_nodes );
+	get_results( start_boards, host_boards );
+
+/*			
+	for ( int i = 0; i < 41; i++ )
 	{
 		board_print( &myBoards[i] );
 		printf( "\n" );
 	}
-	easy_break();
-	return -1;
+*/
 
-	get_results.setGlobalDimensions( num_leaf_nodes );
-	get_results( start_boards, host_boards );
-			
+//	for ( int i = 7; i < 41; i++ )
+//	{
+//		assert( myBoards[i].score == minimax_eval( myBoards[i] ) );
+//	}
 
+//	return -1;
 
 /*
   for ( int i = 0; i < 6; i++ )
@@ -214,6 +238,7 @@ int OpenCLPlayer::makeMove()
 
 	// Hack to return something legal when it's our move, even when
 	//  minimax doesn't make it to the GPU.
+/*
 	if ( !board_legal_move( &myStartBoard, move.move ) )
 	{
 		cout << "Being Bonzo because our move, " << move.move << " makes no sense." << endl;
@@ -230,6 +255,9 @@ int OpenCLPlayer::makeMove()
 				return i;
 		}
 	}
+*/
+
+	assert( board_legal_move( &myStartBoard, move.move ) );
 
 	return move.move;
 }
@@ -261,12 +289,14 @@ MinimaxResult OpenCLPlayer::run_minimax( Board parent, int idx, int depth )
 		best_result.score = INT_MAX;
 	}
 
-	int child_idx = 6 * ( idx + 1 );
+	int child_idx = tree_array_first_child( 6, idx );
 	MinimaxResult rec_result;
+	bool has_legal_move = false;
 	for ( int i = 0; i < 6; i++ )
 	{
 		if ( board_legal_move( &parent, i + move_offset ) )
 		{
+			has_legal_move = true;
 			Board moved_board = parent;
 
 			board_make_move( &moved_board, i + move_offset );
@@ -282,6 +312,12 @@ MinimaxResult OpenCLPlayer::run_minimax( Board parent, int idx, int depth )
 		}
 	}
 			
+	if ( !has_legal_move )
+	{
+		best_result.move = -1;
+		best_result.score = minimax_eval( parent );
+	}
+
 	return best_result;
 }
 
@@ -290,8 +326,9 @@ extern "C" int opencl_player_move( Board *b )
 	ifstream t("opencl_player.cl");
     string src((std::istreambuf_iterator<char>(t)),
                std::istreambuf_iterator<char>());
-	
-	OpenCLPlayer player( *b, 6, src );
+
+	// This is a recompile every move. Fix it later.
+	OpenCLPlayer player( *b, 1, src );
 	return player.makeMove();
 }
 
@@ -309,16 +346,23 @@ KalahPlayer opencl_minimax_player( void )
 
 int main ( void )
 {
-	Board b;
-	board_initialize( &b, TOP );
+	KalahPlayer minimax = minimax_player();
 
 	ifstream t("opencl_player.cl");
     string src((std::istreambuf_iterator<char>(t)),
                std::istreambuf_iterator<char>());
-	
-	OpenCLPlayer player( b, 0, src );
-	cout << "Move: " << player.makeMove() << endl;
 
+	for ( int i = 7; i < 12; i++ )
+	{
+		Board b;
+		board_initialize( &b, TOP );
+		board_make_move( &b, i );
+
+		OpenCLPlayer player( b, 1, src );
+		cout << "OpenCL Move: " << player.makeMove() << endl;
+		cout << "Minimax Move: " << minimax.make_move( &b ) << endl;
+	}
+		
 /*
 	OpenCLPlayerTester tester;
 	tester.runTests();

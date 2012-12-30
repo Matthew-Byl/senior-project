@@ -69,7 +69,8 @@ cl::Buffer CLUnitArgument::getBuffer( CLContext &context )
 	{
 		myBuffer = cl::Buffer(
 			context.getContext(),
-			CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
+			// If we don't supply memory, allocate some for us.
+			( myPtr == nullptr ) ? CL_MEM_READ_WRITE : CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
 			mySize,
 			myPtr
 			);
