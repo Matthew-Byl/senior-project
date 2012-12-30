@@ -1,6 +1,7 @@
 extern "C" {
 #include "board.h"
 #include "opencl_player.h"
+// #include "tree_array.h"
 }
 
 /*
@@ -164,17 +165,17 @@ public:
 			// @todo: we might exceed a dimension (like when n=7), so run kernels multiple times with a global offset.
 
 			int num_leaf_nodes = get_leaf_nodes( mySequentialDepth );
-			cout << "Leaf nodes: " << num_leaf_nodes << endl;
+//			cout << "Leaf nodes: " << num_leaf_nodes << endl;
 
 			// Create start boards
 			generate_start_boards();
 
 			// 42 -> 216 to do more levels.
-			generate_boards.setGlobalDimensions( num_leaf_nodes, 42 );
-			generate_boards.setLocalDimensions( 1, 42 ); // this needs to stay with x-dimension 1
+			generate_boards.setGlobalDimensions( num_leaf_nodes, 216 );
+			generate_boards.setLocalDimensions( 1, 216 ); // this needs to stay with x-dimension 1
 			generate_boards( start_boards, host_boards );
 			
-			evaluate_board.setGlobalDimensions( num_leaf_nodes, 42, 14 );
+			evaluate_board.setGlobalDimensions( num_leaf_nodes, 216, 14 );
 			evaluate_board( host_boards );
 			
 			minimax.setGlobalDimensions( num_leaf_nodes, 6 );
@@ -251,7 +252,6 @@ private:
 	Board *myBoards;
 	Board *myStartBoards;
 
-	CLContext myContext;
 	CLKernel generate_boards;
 	CLKernel evaluate_board;
 	CLKernel minimax;
@@ -325,7 +325,7 @@ extern "C" int opencl_player_move( Board *b )
     string src((std::istreambuf_iterator<char>(t)),
                std::istreambuf_iterator<char>());
 	
-	OpenCLPlayer player( *b, 5, src );
+	OpenCLPlayer player( *b, 6, src );
 	return player.makeMove();
 }
 

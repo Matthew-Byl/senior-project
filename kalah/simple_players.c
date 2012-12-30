@@ -83,7 +83,7 @@ int minimax_eval( Board *b )
 {
 	// Kalah counts double, but stones count too.
 
-	int score = 10 * ( b->board[13] - b->board[6] );
+	int score = 5 * ( b->board[13] - b->board[6] );
 	
 	for ( int i = 0; i <= 5; i++ )
 		score -= b->board[i];
@@ -170,7 +170,7 @@ MinimaxResult minimax_move( Board *b, int depth )
 
 int minimax_make_move( Board *b )
 {
-	MinimaxResult res = minimax_move( b, 8 );
+	MinimaxResult res = minimax_move( b, 10 );
 
 	printf( "Best move has score %d\n", res.score );
 

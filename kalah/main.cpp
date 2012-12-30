@@ -95,8 +95,8 @@ void match ( KalahPlayer top, KalahPlayer bottom )
 
 int main ( void )
 {
-	KalahPlayer top = opencl_minimax_player();
-	KalahPlayer bottom = bonzo_player();
+	KalahPlayer bottom = opencl_minimax_player();
+	KalahPlayer top = minimax_player();
 	match( top, bottom );
 
 	return 0;
