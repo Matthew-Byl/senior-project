@@ -138,7 +138,7 @@ __kernel void evaluate_board( __global Board *board_array )
 //
 // Strategies: use fewer threads, with a loop -> choose this one, because fewer global memory accesses.
 //  use more threads, with an atomic min/max.
-__kernel void minimax( __global Board *board_array )
+__kernel void minimax( __global int *scores )
 {
 //	printf( "global id: %d %d\n", get_global_id( 0 ), get_global_id( 1 ) );
 
@@ -179,7 +179,7 @@ __kernel void minimax( __global Board *board_array )
 				}
 			}
 			
-			board_array[tree_offset + board_offset].score = score;
+			scores[tree_offset + board_offset] = score;
 		}
 
 		power_of_six /= 6;

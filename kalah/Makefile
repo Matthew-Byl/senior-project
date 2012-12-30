@@ -14,4 +14,4 @@ opencl_player.cl: opencl_player.cl.in board.c
 	cpp opencl_player.cl.in > opencl_player.cl
 
 clean:
-	rm -f kalah opencl_player.cl *.o
+	rm -f kalah opencl_player.cl *.o opencl_player_test
