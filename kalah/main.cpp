@@ -5,7 +5,7 @@ extern "C" {
 #include "opencl_player.h"
 }
 
-#include <stdio.h>
+#include <cstdio>
 
 #define MAX_SCORE 96
 

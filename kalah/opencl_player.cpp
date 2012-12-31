@@ -321,6 +321,12 @@ void easy_breakpoint()
 	return;
 }
 
+#include <time.h>
+clock_t startm, stopm;
+#define START if ( (startm = clock()) == -1) {printf("Error calling clock");exit(1);}
+#define STOP if ( (stopm = clock()) == -1) {printf("Error calling clock");exit(1);}
+#define PRINTTIME printf( "%6.3f seconds used by the processor.", ((double)stopm-startm)/CLOCKS_PER_SEC);
+
 int main ( void )
 {
 	KalahPlayer minimax = minimax_player();
@@ -340,8 +346,18 @@ int main ( void )
 			board_make_move( &b, j );
 			
 			player.set_board( b );
+
+			START;
 			int ocl_move = player.makeMove();
+			STOP;
+			PRINTTIME;
+			cout << endl;
+
+			START;
 			int min_move = minimax.make_move( &b );
+			STOP;
+			PRINTTIME;
+			cout << endl;
 
 			cerr << "OpenCL Move: " << ocl_move << endl;
 			cerr << "Minimax Move: " << min_move << endl;
