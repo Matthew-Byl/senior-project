@@ -35,6 +35,7 @@
 
 // The number of layers, including the root and bottom layers.
 #define MINIMAX_DEPTH 3
+#define WORKGROUP_SIZE 32768
 
 int tree_size ( void )
 {
@@ -53,7 +54,7 @@ int leaf_start ( void )
 //  to a depth of 3 with this approach (when there will be 216 leaf nodes).
 __kernel void generate_boards( __global Board *host_start, __global Board *board_array )
 {
-	int tree = get_global_id( 0 );
+	int tree = get_global_id( 0 ) % WORKGROUP_SIZE;
 	int tree_offset = tree_size() * tree;
 
 //	printf( "Tree_offset: %d\n", tree_offset );
@@ -64,7 +65,12 @@ __kernel void generate_boards( __global Board *host_start, __global Board *board
 
 	// Put in the root node.
 	if ( get_global_id( 1 ) == 0 )
+	{
 		board_array[tree_offset] = host_start[tree];
+
+//		if ( tree == 2 )
+//			printf( "Tree: %d, tree_offset: %d, global_id: %d\n", tree, tree_offset, get_global_id( 0 ) );
+	}
 	barrier( CLK_GLOBAL_MEM_FENCE );
 
 	Board m_board;
@@ -200,7 +206,7 @@ __kernel void minimax( __global Board *board_array )
 __kernel void get_results( __global Board *host_start, __global Board *board_array )
 {
 	int tree = get_global_id( 0 );
-	int tree_offset = tree_size() * tree;
+	int tree_offset = tree_size() * ( tree % WORKGROUP_SIZE );
 
 	host_start[tree].score = board_array[tree_offset].score;
 }

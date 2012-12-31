@@ -44,19 +44,21 @@ typedef struct {
 	int score;
 } MinimaxResult;
 
+#define _WG_SIZE 32768
+
 class OpenCLPlayer
 {
 public:
 	OpenCLPlayer( int sequentialDepth, string src )
 		: mySequentialDepth( sequentialDepth ),
-		  myBoardsSize( get_board_array_size( sequentialDepth ) ),
-		  myBoards( new Board[myBoardsSize] ),
+		  myBoardsSize( _WG_SIZE * tree_array_size( 6, PARALLEL_DEPTH ) ),
+		  myBoards( new Board[myBoardsSize] ), // @TODO: this dependent on the work size below.
 		  myStartBoards( new Board[ get_leaf_nodes( mySequentialDepth ) ] ),
 		  generate_boards( "generate_boards", src ),
 		  evaluate_board( "evaluate_board", src ),
 		  minimax( "minimax", src ),
 		  get_results( "get_results", src ),
-		  host_boards( "Board", myBoards, myBoardsSize ),
+		  host_boards( "Board", myBoards, myBoardsSize /*, false, false */ ),
 		  start_boards( "Board", myStartBoards, get_leaf_nodes( mySequentialDepth ) )
 		{
 
@@ -187,7 +189,7 @@ int OpenCLPlayer::makeMove()
 */
 
 	// Assume the maximum local dimension is 512.
-	const int WORKGROUP_SIZE = 512;
+	const int WORKGROUP_SIZE = _WG_SIZE;
 	int offset = 0;
 	int items;
 	do {
@@ -204,11 +206,11 @@ int OpenCLPlayer::makeMove()
 		// Evaluate all boards, not just leaf nodes, so that if the game ends before
 		//  we get to a leaf node, the score will be correct.
 		evaluate_board.setGlobalDimensions( items, tree_array_size( 6, PARALLEL_DEPTH ), 14 );
-		evaluate_board.setGlobalOffset( offset, 0, 0 );
+//		evaluate_board.setGlobalOffset( offset, 0, 0 );
 		evaluate_board( host_boards );
 		
 		minimax.setGlobalDimensions( items, ipow( 6, PARALLEL_DEPTH - 1 ) ); // 6 ^ depth - 1
-		minimax.setGlobalOffset( offset, 0 );
+//		minimax.setGlobalOffset( offset, 0 );
 		minimax.setLocalDimensions( 1, ipow( 6, PARALLEL_DEPTH - 1 ) ); // this needs to stay with x-dimension 1.
 		minimax( host_boards );
 		
