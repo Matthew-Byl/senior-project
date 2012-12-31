@@ -51,6 +51,8 @@ CLUnitArgument::CLUnitArgument( const CLUnitArgument &other )
 
 	if ( other.myCopy )
 	{
+//		cout << "COPYING DATA!" << endl;
+
 		copy_data( other.mySize, other.myPtr );
 		myBufferInitialized = false;
 	}
@@ -74,6 +76,8 @@ cl::Buffer &CLUnitArgument::getBuffer( CLContext &context )
 {
 	if ( !myBufferInitialized )
 	{
+//		cout << "Initializing buffer!" << endl;
+
 		myBuffer = cl::Buffer(
 			context.getContext(),
 			// If we don't supply memory, allocate some for us.

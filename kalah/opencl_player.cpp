@@ -58,11 +58,11 @@ public:
 		  evaluate_board( "evaluate_board", src ),
 		  minimax( "minimax", src ),
 		  get_results( "get_results", src ),
-		  host_boards( "Board", myBoards, myBoardsSize, false, false ),
+		  host_boards( "Board", myBoards, myBoardsSize ),
 		  start_boards( "Board", myStartBoards, get_leaf_nodes( mySequentialDepth ) )
 		{
-			CLContext default_context;
-			host_boards.makePersistent( default_context );
+//			CLContext default_context;
+//			host_boards.makePersistent( default_context );
 		};
 
 	~OpenCLPlayer()
