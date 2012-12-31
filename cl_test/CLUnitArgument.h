@@ -70,7 +70,7 @@ public:
 
 	void makePersistent( CLContext &context );
 
-	cl::Buffer &getBuffer( CLContext &context );
+	cl::Buffer *getBuffer( CLContext &context );
 	std::string getType();
 	void copyToDevice( cl::CommandQueue &queue );
 	void copyFromDevice( cl::CommandQueue &queue );
@@ -84,7 +84,7 @@ private:
 	void *myPtr;
 	size_t mySize;
     std::string myName;
-	cl::Buffer myBuffer;
+	cl::Buffer *myBuffer;
 	bool myCopy;
 	bool myIsArray;
 	bool myCopyTo;

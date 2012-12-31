@@ -49,7 +49,7 @@ public:
 protected:
 	CLContext myContext;
 	std::vector<CLUnitArgument> myArguments;
-	std::vector<cl::Buffer> myBuffers;
+	std::vector<cl::Buffer*> myBuffers;
 	std::string myFunction;
 	std::string myKernel;
 	cl::Kernel myCLKernel;
@@ -114,7 +114,9 @@ cl::Kernel CLFunction<T>::generateKernel( std::string src, std::string kernel_na
 	for ( unsigned i = 0; i < myBuffers.size(); i++ )
 	{
 //		std::cout << "Setting argument " << i << " of type " << myArguments[i].getType() << std::endl;
-		myCLKernel.setArg( i, myBuffers[i] );
+
+		printf( "Argument %d: %x\n", i, myBuffers[i] );
+		myCLKernel.setArg( i, *myBuffers[i] );
 	}
 
 	return myCLKernel;

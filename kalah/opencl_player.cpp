@@ -54,15 +54,14 @@ public:
 		  myBoardsSize( _WG_SIZE * tree_array_size( 6, PARALLEL_DEPTH ) ),
 		  myBoards( new Board[myBoardsSize] ), // @TODO: this dependent on the work size below.
 		  myStartBoards( new Board[ get_leaf_nodes( mySequentialDepth ) ] ),
-		  generate_boards( "generate_boards", src ),
-		  evaluate_board( "evaluate_board", src ),
-		  minimax( "minimax", src ),
-		  get_results( "get_results", src ),
-		  host_boards( "Board", myBoards, myBoardsSize ),
+		  generate_boards( "generate_boards", src, myContext ),
+		  evaluate_board( "evaluate_board", src, myContext ),
+		  minimax( "minimax", src, myContext ),
+		  get_results( "get_results", src, myContext ),
+		  host_boards( "Board", myBoards, myBoardsSize, false, false ),
 		  start_boards( "Board", myStartBoards, get_leaf_nodes( mySequentialDepth ) )
 		{
-//			CLContext default_context;
-//			host_boards.makePersistent( default_context );
+			host_boards.makePersistent( myContext );
 		};
 
 	~OpenCLPlayer()
@@ -83,6 +82,7 @@ public:
 	void set_board( Board b );
 
 private:
+	CLContext myContext;
 	int mySequentialDepth;
 	int myBoardsSize;
 	Board myStartBoard;
@@ -300,7 +300,6 @@ extern "C" int opencl_player_move( Board *b )
     string src((std::istreambuf_iterator<char>(t)),
                std::istreambuf_iterator<char>());
 
-	// This is a recompile every move. Fix it later.
 	player.set_board( *b );
 	return player.makeMove();
 }
@@ -364,6 +363,8 @@ int main ( void )
 
 			cerr << "OpenCL Move: " << ocl_move << endl;
 			cerr << "Minimax Move: " << min_move << endl;
+
+			break;
 
 			if ( ocl_move != min_move )
 			{

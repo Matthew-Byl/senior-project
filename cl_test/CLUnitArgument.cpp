@@ -72,13 +72,13 @@ CLUnitArgument::~CLUnitArgument()
 	}
 }
 
-cl::Buffer &CLUnitArgument::getBuffer( CLContext &context )
+cl::Buffer *CLUnitArgument::getBuffer( CLContext &context )
 {
 	if ( !myBufferInitialized )
 	{
 //		cout << "Initializing buffer!" << endl;
 
-		myBuffer = cl::Buffer(
+		myBuffer = new cl::Buffer(
 			context.getContext(),
 			// If we don't supply memory, allocate some for us.
 			( myPtr == nullptr ) ? CL_MEM_ALLOC_HOST_PTR : CL_MEM_USE_HOST_PTR,
@@ -108,7 +108,7 @@ void CLUnitArgument::copyToDevice( cl::CommandQueue &queue )
 //	cout << "Coyping " << mySize << " bytes to device." << endl;
 
 	queue.enqueueWriteBuffer(
-		myBuffer,
+		*myBuffer,
 		CL_TRUE,
 		0,
 		mySize,
@@ -118,7 +118,7 @@ void CLUnitArgument::copyToDevice( cl::CommandQueue &queue )
 
 void CLUnitArgument::makePersistent( CLContext &context )
 {
-	myBuffer = cl::Buffer(
+	myBuffer = new cl::Buffer(
 		context.getContext(),
 		// If we don't supply memory, allocate some for us.
 		( myPtr == nullptr ) ? CL_MEM_ALLOC_HOST_PTR : CL_MEM_USE_HOST_PTR,
@@ -142,7 +142,7 @@ void CLUnitArgument::copyFromDevice( cl::CommandQueue &queue )
 //	cout << "Coyping " << mySize << " bytes back from device." << endl;
 
 	queue.enqueueReadBuffer(
-		myBuffer,
+		*myBuffer,
 		CL_TRUE,
 		0,
 		mySize,
