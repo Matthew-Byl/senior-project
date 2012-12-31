@@ -348,12 +348,14 @@ int main ( void )
 			player.set_board( b );
 
 			START;
+			cout << "OpenCL: " << endl;
 			int ocl_move = player.makeMove();
 			STOP;
 			PRINTTIME;
 			cout << endl;
 
 			START;
+			cout << "Minimax: " << endl;
 			int min_move = minimax.make_move( &b );
 			STOP;
 			PRINTTIME;
