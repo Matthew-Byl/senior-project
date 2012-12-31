@@ -364,8 +364,6 @@ int main ( void )
 			cerr << "OpenCL Move: " << ocl_move << endl;
 			cerr << "Minimax Move: " << min_move << endl;
 
-			break;
-
 			if ( ocl_move != min_move )
 			{
 				easy_breakpoint();
