@@ -5,6 +5,9 @@ extern "C" {
 #include "simple_players.h"
 }
 
+#define SEQUENTIAL_DEPTH 5
+#define PARALLEL_DEPTH 3 // This has to match the value MINIMAX_DEPTH in the kernel. @TODO: consistency
+
 /*
  * Things to fix:
  *  -when there isn't a legal move before we get to the OpenCL part.
@@ -97,8 +100,6 @@ void OpenCLPlayer::set_board( Board b )
 	myStartBoard = b;
 }
 
-#define MINIMAX_DEPTH 3
-
 int OpenCLPlayer::get_leaf_nodes( int sequentialDepth )
 {
 	// The number of leaf nodes of the given sequential depth.
@@ -109,7 +110,7 @@ int OpenCLPlayer::get_board_array_size( int sequentialDepth )
 {
 	int leaf = get_leaf_nodes( sequentialDepth );
 
-	return leaf * tree_array_size( 6, MINIMAX_DEPTH );
+	return leaf * tree_array_size( 6, PARALLEL_DEPTH );
 }
 
 int OpenCLPlayer::leaf_start()
@@ -175,6 +176,7 @@ int OpenCLPlayer::makeMove()
 	// Create start boards
 	generate_start_boards();
 
+/*
 	cout << "LEAF NODES: " << endl;
 	for ( int i = 0; i < num_leaf_nodes; i++ )
 	{
@@ -182,19 +184,20 @@ int OpenCLPlayer::makeMove()
 		cout << endl;
 	}
 	cout << "================" << endl;
+*/
 
 	// 42 -> 216 to do more levels.
-	generate_boards.setGlobalDimensions( num_leaf_nodes, ipow( 6, MINIMAX_DEPTH ) );
-	generate_boards.setLocalDimensions( 1, ipow( 6, MINIMAX_DEPTH ) ); // this needs to stay with x-dimension 1
+	generate_boards.setGlobalDimensions( num_leaf_nodes, ipow( 6, PARALLEL_DEPTH ) );
+	generate_boards.setLocalDimensions( 1, ipow( 6, PARALLEL_DEPTH ) ); // this needs to stay with x-dimension 1
 	generate_boards( start_boards, host_boards );
 			
 	// Evaluate all boards, not just leaf nodes, so that if the game ends before
 	//  we get to a leaf node, the score will be correct.
-	evaluate_board.setGlobalDimensions( num_leaf_nodes, tree_array_size( 6, MINIMAX_DEPTH ), 14 );
+	evaluate_board.setGlobalDimensions( num_leaf_nodes, tree_array_size( 6, PARALLEL_DEPTH ), 14 );
 	evaluate_board( host_boards );
 			
-	minimax.setGlobalDimensions( num_leaf_nodes, ipow( 6, MINIMAX_DEPTH - 1 ) ); // 6 ^ depth - 1
-	minimax.setLocalDimensions( 1, ipow( 6, MINIMAX_DEPTH - 1 ) ); // this needs to stay with x-dimension 1.
+	minimax.setGlobalDimensions( num_leaf_nodes, ipow( 6, PARALLEL_DEPTH - 1 ) ); // 6 ^ depth - 1
+	minimax.setLocalDimensions( 1, ipow( 6, PARALLEL_DEPTH - 1 ) ); // this needs to stay with x-dimension 1.
 	minimax( host_boards );
 
 	get_results.setGlobalDimensions( num_leaf_nodes );
@@ -345,7 +348,7 @@ MinimaxResult OpenCLPlayer::run_minimax( Board &parent, int idx, int depth )
 ifstream t("opencl_player.cl");
 string src((std::istreambuf_iterator<char>(t)),
 		   std::istreambuf_iterator<char>());
-OpenCLPlayer player( 1, src );
+OpenCLPlayer player( SEQUENTIAL_DEPTH, src );
 
 extern "C" int opencl_player_move( Board *b )
 {
