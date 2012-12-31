@@ -47,6 +47,8 @@ CLUnitArgument::CLUnitArgument( const CLUnitArgument &other )
 	  myCopyTo( other.myCopyTo ),
 	  myCopyBack( other.myCopyBack )
 {
+//	printf( "Copying: init: %d, copy: %d\n", myBufferInitialized, myCopy );
+
 	if ( other.myCopy )
 	{
 		copy_data( other.mySize, other.myPtr );
@@ -68,7 +70,7 @@ CLUnitArgument::~CLUnitArgument()
 	}
 }
 
-cl::Buffer CLUnitArgument::getBuffer( CLContext &context )
+cl::Buffer &CLUnitArgument::getBuffer( CLContext &context )
 {
 	if ( !myBufferInitialized )
 	{
@@ -83,6 +85,7 @@ cl::Buffer CLUnitArgument::getBuffer( CLContext &context )
 		myBufferInitialized = true;
 	}
 
+//	printf( "Returning buffer %x\n", myBuffer );
 	return myBuffer;
 }
 
@@ -107,6 +110,19 @@ void CLUnitArgument::copyToDevice( cl::CommandQueue &queue )
 		mySize,
 		myPtr
 	);
+}
+
+void CLUnitArgument::makePersistent( CLContext &context )
+{
+	myBuffer = cl::Buffer(
+		context.getContext(),
+		// If we don't supply memory, allocate some for us.
+		( myPtr == nullptr ) ? CL_MEM_ALLOC_HOST_PTR : CL_MEM_USE_HOST_PTR,
+		mySize,
+		myPtr
+		);
+	
+	myBufferInitialized = true;
 }
 
 void CLUnitArgument::copyFromDevice( cl::CommandQueue &queue )

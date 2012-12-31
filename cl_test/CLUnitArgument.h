@@ -68,7 +68,9 @@ public:
 
 	~CLUnitArgument();
 
-	cl::Buffer getBuffer( CLContext &context );
+	void makePersistent( CLContext &context );
+
+	cl::Buffer &getBuffer( CLContext &context );
 	std::string getType();
 	void copyToDevice( cl::CommandQueue &queue );
 	void copyFromDevice( cl::CommandQueue &queue );

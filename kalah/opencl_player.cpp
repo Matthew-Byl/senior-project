@@ -58,10 +58,11 @@ public:
 		  evaluate_board( "evaluate_board", src ),
 		  minimax( "minimax", src ),
 		  get_results( "get_results", src ),
-		  host_boards( "Board", myBoards, myBoardsSize, true, true ),
+		  host_boards( "Board", myBoards, myBoardsSize, false, false ),
 		  start_boards( "Board", myStartBoards, get_leaf_nodes( mySequentialDepth ) )
 		{
-
+			CLContext default_context;
+			host_boards.makePersistent( default_context );
 		};
 
 	~OpenCLPlayer()
@@ -347,19 +348,19 @@ int main ( void )
 			
 			player.set_board( b );
 
-			START;
-			cout << "OpenCL: " << endl;
+//			START;
+//			cout << "OpenCL: " << endl;
 			int ocl_move = player.makeMove();
-			STOP;
-			PRINTTIME;
-			cout << endl;
+//			STOP;
+//			PRINTTIME;
+//			cout << endl;
 
-			START;
-			cout << "Minimax: " << endl;
+//			START;
+//			cout << "Minimax: " << endl;
 			int min_move = minimax.make_move( &b );
-			STOP;
-			PRINTTIME;
-			cout << endl;
+//			STOP;
+//			PRINTTIME;
+//			cout << endl;
 
 			cerr << "OpenCL Move: " << ocl_move << endl;
 			cerr << "Minimax Move: " << min_move << endl;
