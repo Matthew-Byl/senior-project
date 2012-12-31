@@ -58,7 +58,7 @@ public:
 		  evaluate_board( "evaluate_board", src ),
 		  minimax( "minimax", src ),
 		  get_results( "get_results", src ),
-		  host_boards( "Board", myBoards, myBoardsSize /*, false, false */ ),
+		  host_boards( "Board", myBoards, myBoardsSize, true, true ),
 		  start_boards( "Board", myStartBoards, get_leaf_nodes( mySequentialDepth ) )
 		{
 

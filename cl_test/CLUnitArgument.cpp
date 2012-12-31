@@ -39,7 +39,8 @@ void CLUnitArgument::copy_data(
 }
 
 CLUnitArgument::CLUnitArgument( const CLUnitArgument &other )
-	: mySize( other.mySize ), 
+	: myBufferInitialized( other.myBufferInitialized ),
+	  mySize( other.mySize ), 
 	  myName( other.myName ), 
 	  myCopy( other.myCopy ),
 	  myIsArray( other.myIsArray ),
@@ -47,11 +48,15 @@ CLUnitArgument::CLUnitArgument( const CLUnitArgument &other )
 	  myCopyBack( other.myCopyBack )
 {
 	if ( other.myCopy )
+	{
 		copy_data( other.mySize, other.myPtr );
+		myBufferInitialized = false;
+	}
 	else
+	{
 		myPtr = other.myPtr;
-
-	myBufferInitialized = false;
+		myBuffer = other.myBuffer;
+	}
 }
 
 CLUnitArgument::~CLUnitArgument()
@@ -70,7 +75,7 @@ cl::Buffer CLUnitArgument::getBuffer( CLContext &context )
 		myBuffer = cl::Buffer(
 			context.getContext(),
 			// If we don't supply memory, allocate some for us.
-			( myPtr == nullptr ) ? CL_MEM_READ_WRITE : CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
+			( myPtr == nullptr ) ? CL_MEM_ALLOC_HOST_PTR : CL_MEM_USE_HOST_PTR,
 			mySize,
 			myPtr
 			);

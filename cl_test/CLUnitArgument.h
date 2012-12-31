@@ -5,6 +5,8 @@
 #include "CLContext.h"
 #include <string>
 
+#include <iostream>
+
 // Don't worry about ___3 types for the time being.
 //  and half* types, which are also typedefed with something
 //  else that makes it impossible for C++ to tell their types apart.
