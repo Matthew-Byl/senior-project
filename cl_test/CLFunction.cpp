@@ -30,7 +30,8 @@ void CLFunction<void>::run()
 	std::vector<int> globalDimensions;
 	globalDimensions.push_back( 1 );
 	std::vector<int> localDimensions;
-	enqueueKernel( kernel, globalDimensions, localDimensions );
+	std::vector<int> globalOffset;
+	enqueueKernel( kernel, globalDimensions, globalOffset, localDimensions );
 
 	copyBuffersFromDevice();
 }

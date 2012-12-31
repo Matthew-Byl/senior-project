@@ -48,6 +48,30 @@ void CLKernel::setLocalDimensions( int dim1, int dim2, int dim3 )
 	localDimensionsSet = true;
 }
 
+void CLKernel::setGlobalOffset( int dim1 )
+{
+	globalOffset.clear();
+	globalOffset.push_back( dim1 );
+	globalOffsetSet = true;
+}
+
+void CLKernel::setGlobalOffset( int dim1, int dim2 )
+{
+	globalOffset.clear();
+	globalOffset.push_back( dim1 );
+	globalOffset.push_back( dim2 );
+	globalOffsetSet = true;
+}
+
+void CLKernel::setGlobalOffset( int dim1, int dim2, int dim3 )
+{
+	globalOffset.clear();
+	globalOffset.push_back( dim1 );
+	globalOffset.push_back( dim2 );
+	globalOffset.push_back( dim3 );
+	globalOffsetSet = true;
+}
+
 void CLKernel::run()
 {
 	// Be nicer, later.
@@ -56,7 +80,7 @@ void CLKernel::run()
 	copyBuffersToDevice();
 
 	cl::Kernel kernel = generateKernel( myKernel, myFunction );
-	enqueueKernel( kernel, globalDimensions, localDimensions );
+	enqueueKernel( kernel, globalDimensions, globalOffset, localDimensions );
 
 	copyBuffersFromDevice();
 }

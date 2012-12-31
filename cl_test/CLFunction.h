@@ -60,7 +60,7 @@ protected:
 	void copyBuffersToDevice();
 	void copyBuffersFromDevice();
 	cl::Kernel generateKernel( std::string src, std::string kernel_name );
-	void enqueueKernel( cl::Kernel &kernel, std::vector<int> &globalDimensions, std::vector<int> &localDimensions );
+	void enqueueKernel( cl::Kernel &kernel, std::vector<int> &globalDimensions, std::vector<int> &globalOffset, std::vector<int> &localDimensions );
 };
 
 
@@ -131,7 +131,11 @@ void CLFunction<T>::copyBuffersFromDevice()
 }
 
 template<class T>
-void CLFunction<T>::enqueueKernel( cl::Kernel &kernel, std::vector<int> &globalDimensions, std::vector<int> &localDimensions )
+void CLFunction<T>::enqueueKernel( 
+	cl::Kernel &kernel, 
+	std::vector<int> &globalDimensions, 
+	std::vector<int> &globalOffset, 
+	std::vector<int> &localDimensions )
 {
 	// OpenCL only allows up to 3 dimensions.
 	cl::NDRange globalWorkSize;
@@ -157,6 +161,32 @@ void CLFunction<T>::enqueueKernel( cl::Kernel &kernel, std::vector<int> &globalD
 	else
 	{
 		assert( false );
+	}
+
+	// Global offset
+	cl::NDRange globalOffsetRange;
+	if ( globalOffset.size() == 1 )
+	{
+		globalOffsetRange = cl::NDRange( globalOffset[0] );
+	}
+	else if ( globalOffset.size() == 2 )
+	{
+		globalOffsetRange = cl::NDRange( 
+			globalOffset[0],
+			globalOffset[1]
+		);
+	}
+	else if ( globalOffset.size() == 3 )
+	{
+		globalOffsetRange = cl::NDRange( 
+			globalOffset[0],
+			globalOffset[1],
+			globalOffset[2]
+		);
+	}
+	else
+	{
+		globalOffsetRange = cl::NullRange;
 	}
 
 	// Local dimensions
@@ -189,7 +219,7 @@ void CLFunction<T>::enqueueKernel( cl::Kernel &kernel, std::vector<int> &globalD
 	auto &queue = myContext.getCommandQueue();
 	queue.enqueueNDRangeKernel(
 		kernel,
-		cl::NullRange,
+		globalOffsetRange,
 		globalWorkSize,
 		localWorkSize,
 		NULL,
@@ -231,7 +261,8 @@ T CLFunction<T>::run( std::string type )
 	std::vector<int> globalDimensions;
 	globalDimensions.push_back( 1 );
 	std::vector<int> localDimensions;
-	enqueueKernel( kernel, globalDimensions, localDimensions );
+	std::vector<int> globalOffset;
+	enqueueKernel( kernel, globalDimensions, globalOffset, localDimensions );
 
 	// Enqueue reading the result.
 	queue.enqueueReadBuffer(

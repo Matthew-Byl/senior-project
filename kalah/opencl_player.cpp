@@ -5,7 +5,7 @@ extern "C" {
 #include "simple_players.h"
 }
 
-#define SEQUENTIAL_DEPTH 5
+#define SEQUENTIAL_DEPTH 6
 #define PARALLEL_DEPTH 3 // This has to match the value MINIMAX_DEPTH in the kernel. @TODO: consistency
 
 /*
@@ -186,100 +186,41 @@ int OpenCLPlayer::makeMove()
 	cout << "================" << endl;
 */
 
-	// 42 -> 216 to do more levels.
-	generate_boards.setGlobalDimensions( num_leaf_nodes, ipow( 6, PARALLEL_DEPTH ) );
-	generate_boards.setLocalDimensions( 1, ipow( 6, PARALLEL_DEPTH ) ); // this needs to stay with x-dimension 1
-	generate_boards( start_boards, host_boards );
-			
-	// Evaluate all boards, not just leaf nodes, so that if the game ends before
-	//  we get to a leaf node, the score will be correct.
-	evaluate_board.setGlobalDimensions( num_leaf_nodes, tree_array_size( 6, PARALLEL_DEPTH ), 14 );
-	evaluate_board( host_boards );
-			
-	minimax.setGlobalDimensions( num_leaf_nodes, ipow( 6, PARALLEL_DEPTH - 1 ) ); // 6 ^ depth - 1
-	minimax.setLocalDimensions( 1, ipow( 6, PARALLEL_DEPTH - 1 ) ); // this needs to stay with x-dimension 1.
-	minimax( host_boards );
+	// Assume the maximum local dimension is 512.
+	const int WORKGROUP_SIZE = 512;
+	int offset = 0;
+	int items;
+	do {
+		if ( ( num_leaf_nodes - offset ) < WORKGROUP_SIZE )
+			items = num_leaf_nodes - offset;
+		else
+			items = WORKGROUP_SIZE;
 
-	get_results.setGlobalDimensions( num_leaf_nodes );
-	get_results( start_boards, host_boards );
+		generate_boards.setGlobalDimensions( items, ipow( 6, PARALLEL_DEPTH ) );
+		generate_boards.setGlobalOffset( offset, 0 );
+		generate_boards.setLocalDimensions( 1, ipow( 6, PARALLEL_DEPTH ) ); // this needs to stay with x-dimension 1
+		generate_boards( start_boards, host_boards );
+		
+		// Evaluate all boards, not just leaf nodes, so that if the game ends before
+		//  we get to a leaf node, the score will be correct.
+		evaluate_board.setGlobalDimensions( items, tree_array_size( 6, PARALLEL_DEPTH ), 14 );
+		evaluate_board.setGlobalOffset( offset, 0, 0 );
+		evaluate_board( host_boards );
+		
+		minimax.setGlobalDimensions( items, ipow( 6, PARALLEL_DEPTH - 1 ) ); // 6 ^ depth - 1
+		minimax.setGlobalOffset( offset, 0 );
+		minimax.setLocalDimensions( 1, ipow( 6, PARALLEL_DEPTH - 1 ) ); // this needs to stay with x-dimension 1.
+		minimax( host_boards );
+		
+		get_results.setGlobalDimensions( items );
+		get_results.setGlobalOffset( offset );
+		get_results( start_boards, host_boards );
 
-/*
-	for ( int i = 0; i < 36; i++ )
-	{
-		board_print( &myBoards[i] );
-		printf( "\n" );
-	}
-*/
-//	for ( int i = 7; i < 41; i++ )
-//	{
-//		assert( myBoards[i].score == minimax_eval( myBoards[i] ) );
-//	}
-
-//	return -1;
-
-/*
-  for ( int i = 0; i < 6; i++ )
-  {
-  cout << "Minimax picked " << myStartBoards[i].score << " for " << endl;
-  if ( myStartBoards[i].player_to_move == TOP )
-  cout << "MAX";
-  else
-  cout << "MIN";
-  cout << " node:" << endl;
-
-  for ( int j = 0; j < 6; j++ )
-  {
-  cout << myBoards[42*i + j].score << " ";
-  }
-  cout << endl;
-  }
-*/
-
-/*
-  cout << "Board scores"
-  for ( int i = 0; i < 258; i++ )
-  {
-  printf( "*** %d ***\n" , i );
-  board_print( &myBoards[i] );
-  printf( "\n" );
-  }
-*/
-
-/*
-  cout << "Scores for leaf nodes: " << endl;
-  for ( int i = 0; i < num_leaf_nodes; i++ )
-  printf( "%d ", myStartBoards[i].score );
-  printf( "\n" );
-*/
+		offset += WORKGROUP_SIZE;
+	} while ( offset < num_leaf_nodes );
 
 	// Run minimax on the start boards.
 	MinimaxResult move = run_minimax( myStartBoard, 0, mySequentialDepth );
-
-//	cout << "Choices: ( 0 --> 5 )" << endl;
-//	for ( int i = 0; i < 6; i++ )
-//		cout << myStartBoards[i].score << endl;
-		
-
-	// Hack to return something legal when it's our move, even when
-	//  minimax doesn't make it to the GPU.
-/*
-	if ( !board_legal_move( &myStartBoard, move.move ) )
-	{
-		cout << "Being Bonzo because our move, " << move.move << " makes no sense." << endl;
-
-		int move_offset;
-		if ( myStartBoard.player_to_move == TOP )
-			move_offset = 7;
-		else
-			move_offset = 0;
-
-		for( int i = move_offset; i < 6 + move_offset; i++ )
-		{
-			if ( myStartBoard.board[i] != 0 )
-				return i;
-		}
-	}
-*/
 
 	assert( board_legal_move( &myStartBoard, move.move ) );
 
