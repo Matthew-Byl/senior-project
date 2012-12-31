@@ -173,7 +173,8 @@ __kernel void minimax( __global Board *board_array )
 				score = INT_MAX;
 			
 //			printf( "Parent offset: %d, child offset: %d, tree offset: %d\n", board_offset, child_offset, tree_offset );
-
+			
+			int has_legal_move = FALSE;
 			for ( int i = 0; i < 6; i++ )
 			{
 				Board child = board_array[tree_offset + child_offset + i];
@@ -181,11 +182,14 @@ __kernel void minimax( __global Board *board_array )
 					 && ( ( playerToMove == TOP && child.score > score )
 						  || ( playerToMove == BOTTOM && child.score < score ) ) )
 				{
+					has_legal_move = TRUE;
 					score = child.score;
 				}
 			}
 			
-			board_array[tree_offset + board_offset].score = score;
+			if ( has_legal_move )
+				board_array[tree_offset + board_offset].score = score;
+			// else leave it with the evaluated score.
 		}
 
 		power_of_six /= 6;
