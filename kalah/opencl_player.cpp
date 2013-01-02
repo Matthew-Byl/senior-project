@@ -5,8 +5,10 @@ extern "C" {
 #include "simple_players.h"
 }
 
-#define SEQUENTIAL_DEPTH 6
+#define SEQUENTIAL_DEPTH 4
 #define PARALLEL_DEPTH 3 // This has to match the value MINIMAX_DEPTH in the kernel. @TODO: consistency
+// Actual tree depth:
+//  MINIMAX_DEPTH = SEQUENTIAL_DEPTH + PARALLEL_DEPTH - 1
 
 /*
  * Things to fix:
@@ -333,7 +335,7 @@ int main ( void )
 {
 	KalahPlayer minimax = minimax_player();
 
-	ProfilerStart( "opencl_player.perf" );
+//	ProfilerStart( "opencl_player.perf" );
 	for ( int i = 7; i < 12; i++ )
 	{
 		for ( int j = 0; j < 6; j++ )
@@ -350,33 +352,35 @@ int main ( void )
 			
 			player.set_board( b );
 
-			START;
-			cout << "OpenCL: " << endl;
+//			START;
+//			cout << "OpenCL: " << endl;
 
 			int ocl_move = player.makeMove();
 
-			STOP;
-			PRINTTIME;
-			cout << endl;
+//			STOP;
+//			PRINTTIME;
+//			cout << endl;
 
-			START;
-			cout << "Minimax: " << endl;
+//			START;
+//			cout << "Minimax: " << endl;
 			int min_move = minimax.make_move( &b );
-			STOP;
-			PRINTTIME;
-			cout << endl;
+//			STOP;
+//			PRINTTIME;
+//			cout << endl;
 
-			cerr << "OpenCL Move: " << ocl_move << endl;
-			cerr << "Minimax Move: " << min_move << endl;
+//			cerr << "OpenCL Move: " << ocl_move << endl;
+//			cerr << "Minimax Move: " << min_move << endl;
 
 			if ( ocl_move != min_move )
 			{
-				easy_breakpoint();
-			}
+			cout << "OpenCL Move: " << ocl_move << endl;
+			cout << "Minimax Move: " << min_move << endl;
+
+		   			}
 		}
 	}
 
-			ProfilerStop();
+//			ProfilerStop();
 		
 /*
 	OpenCLPlayerTester tester;

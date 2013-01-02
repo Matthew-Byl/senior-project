@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <limits.h>
 
+#define MINIMAX_DEPTH 10
+
 /*** Human ***/
 const char *human_name( void )
 {
@@ -170,7 +172,7 @@ MinimaxResult minimax_move( Board *b, int depth )
 
 int minimax_make_move( Board *b )
 {
-	MinimaxResult res = minimax_move( b, 9 );
+	MinimaxResult res = minimax_move( b, MINIMAX_DEPTH );
 
 //	printf( "Best move has score %d\n", res.score );
 
