@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <limits.h>
 
-#define MINIMAX_DEPTH 10
+#define MINIMAX_DEPTH 7
 
 /*** Human ***/
 const char *human_name( void )
