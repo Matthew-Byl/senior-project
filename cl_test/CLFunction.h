@@ -115,7 +115,7 @@ cl::Kernel CLFunction<T>::generateKernel( std::string src, std::string kernel_na
 	{
 //		std::cout << "Setting argument " << i << " of type " << myArguments[i].getType() << std::endl;
 
-		printf( "Argument %d: %x\n", i, myBuffers[i] );
+//		printf( "Argument %d: %x\n", i, myBuffers[i] );
 		myCLKernel.setArg( i, *myBuffers[i] );
 	}
 

@@ -327,10 +327,13 @@ clock_t startm, stopm;
 #define STOP if ( (stopm = clock()) == -1) {printf("Error calling clock");exit(1);}
 #define PRINTTIME printf( "%6.3f seconds used by the processor.", ((double)stopm-startm)/CLOCKS_PER_SEC);
 
+#include <google/profiler.h>
+
 int main ( void )
 {
 	KalahPlayer minimax = minimax_player();
 
+	ProfilerStart( "opencl_player.perf" );
 	for ( int i = 7; i < 12; i++ )
 	{
 		for ( int j = 0; j < 6; j++ )
@@ -347,19 +350,21 @@ int main ( void )
 			
 			player.set_board( b );
 
-//			START;
-//			cout << "OpenCL: " << endl;
-			int ocl_move = player.makeMove();
-//			STOP;
-//			PRINTTIME;
-//			cout << endl;
+			START;
+			cout << "OpenCL: " << endl;
 
-//			START;
-//			cout << "Minimax: " << endl;
+			int ocl_move = player.makeMove();
+
+			STOP;
+			PRINTTIME;
+			cout << endl;
+
+			START;
+			cout << "Minimax: " << endl;
 			int min_move = minimax.make_move( &b );
-//			STOP;
-//			PRINTTIME;
-//			cout << endl;
+			STOP;
+			PRINTTIME;
+			cout << endl;
 
 			cerr << "OpenCL Move: " << ocl_move << endl;
 			cerr << "Minimax Move: " << min_move << endl;
@@ -370,6 +375,8 @@ int main ( void )
 			}
 		}
 	}
+
+			ProfilerStop();
 		
 /*
 	OpenCLPlayerTester tester;
