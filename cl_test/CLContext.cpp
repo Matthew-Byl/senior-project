@@ -3,7 +3,7 @@
 using namespace std;
 
 CLContext::CLContext()
-	: CLContext( 1, 0 )
+	: CLContext( 0, 0 )
 {
 
 }
