@@ -12,13 +12,35 @@ CLUnitArgument::CLUnitArgument(
 	bool copyTo,
 	bool copyBack
 	)
-	: mySize( size ), 
-	  myName( name ), 
-	  myCopy( copy ), 
-	  myIsArray( isArray ), 
-	  myCopyTo( copyTo ),
-	  myCopyBack( copyBack )
 {
+	initialize(
+		name,
+		size,
+		ptr,
+		copy,
+		isArray,
+		copyTo,
+		copyBack
+		);
+}
+
+void CLUnitArgument::initialize(
+	string name,
+	size_t size,
+	void *ptr,
+	bool copy,
+	bool isArray,
+	bool copyTo,
+	bool copyBack
+	)
+{
+	mySize = size;
+	myName = name;
+	myCopy = copy;
+	myIsArray = isArray;
+	myCopyTo = copyTo;
+	myCopyBack = copyBack;
+
 	if ( copy )
 		copy_data( size, ptr );
 	else

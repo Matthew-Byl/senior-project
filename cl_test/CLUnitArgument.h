@@ -24,11 +24,11 @@
 
 #define CTR( host, kernel )									\
 	CLUnitArgument( host val )								\
-		: CLUnitArgument( #kernel, val ) { }
+	{ initialize( #kernel, sizeof( host ), &val ); }
 
 #define PTR_CTR( host, kernel )										\
 	CLUnitArgument( host array, size_t elements, bool copyTo = true, bool copyBack = true ) \
-		: CLUnitArgument( #kernel, array, elements, copyTo, copyBack ) { }
+	{ initialize( #kernel, sizeof( host ) * elements, array, false, true, copyTo, copyBack ); }
 
 class CLUnitArgument
 {
@@ -79,6 +79,15 @@ public:
 	
 private:
 	void copy_data( size_t size, void *ptr );
+	void initialize(
+		std::string name, 
+		size_t size, 
+		void *ptr, 
+		bool copy = true,
+		bool isArray = false,
+		bool copyTo = true,
+		bool copyBack = true
+		);
 
 	bool myBufferInitialized;
 	void *myPtr;
@@ -93,16 +102,14 @@ private:
 
 template<class T>
 CLUnitArgument::CLUnitArgument( std::string name, T value )
-	: CLUnitArgument( name, sizeof( T ), &value )
 {
-
+	initialize( name, sizeof( T ), &value );
 }
 
 template<class T>
 CLUnitArgument::CLUnitArgument( std::string name, T *array, size_t elements, bool copyTo, bool copyBack )
-	: CLUnitArgument( name, sizeof( T ) * elements, array, false, true, copyTo, copyBack )
 {
-	
+	initialize( name, sizeof( T ) * elements, array, false, true, copyTo, copyBack );
 }
 
 // Allows us to make copies of arguments with their data
