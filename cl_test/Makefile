@@ -3,7 +3,7 @@ all: KernelGenerator.o CLUnitArgument.o CLContext.o CLKernel.o CLFunction.o main
 	ar rcs libCLTest.a KernelGenerator.o CLUnitArgument.o CLContext.o CLKernel.o CLFunction.o
 
 %.o: %.cpp *.h
-	clang++ -std=c++11 -I /opt/AMDAPP/include -Wall -g -c $< -o $@
+	clang++ -I /opt/AMDAPP/include -Wall -g -c $< -o $@
 
 clean:
 	rm -f *.a *.o main

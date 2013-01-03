@@ -17,11 +17,13 @@ public:
 				CLContext context = CLContext() )
 		: myContext( context ), 
 		  myFunction( function), 
-		  myKernel( kernel )
+		  myKernel( kernel ),
+		  kernelBuilt( false )
 		{
 		}
 	virtual ~CLFunction() { }
 
+#ifdef _CPP_11_
 	template<class ...Arguments>
 	void setArguments( Arguments... params )
 		{
@@ -36,13 +38,21 @@ public:
 			generateBuffers();
 		}
 
-	virtual T run();
-	T run( std::string type );
-
 	template<class ...Arguments>
 	T operator()( Arguments... params )
 		{
 			setArguments( params... );
+			return run();
+		}
+#endif
+
+	virtual T run();
+	T run( std::string type );
+
+	T operator()( std::vector<CLUnitArgument> arguments )
+		{
+			myArguments = arguments;
+			generateBuffers();
 			return run();
 		}
 	
@@ -53,7 +63,7 @@ protected:
 	std::string myFunction;
 	std::string myKernel;
 	cl::Kernel myCLKernel;
-	bool kernelBuilt = false;
+	bool kernelBuilt;
 
 	virtual void generateKernelSource( const std::string type, std::string &source, std::string &kernel_name );
 	void generateBuffers();

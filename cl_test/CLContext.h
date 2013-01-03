@@ -17,6 +17,7 @@ public:
 	cl::CommandQueue &getCommandQueue();
 	cl::Program buildProgram( std::string &src ) const;
 private:
+	void initialize( int platform, int device );
 	cl::Context myContext;
 	cl::CommandQueue myCommandQueue;
 	std::vector<cl::Device> myDevices;

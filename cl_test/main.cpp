@@ -43,9 +43,11 @@ int main( void )
 	CLKernel fill_numbers( "fill_numbers", src );
 	int numbers[100];
 	CLUnitArgument numbers_arg( numbers, 100 );
+	std::vector<CLUnitArgument> arguments;
+	arguments.push_back( numbers_arg );
 
 	fill_numbers.setGlobalDimensions( 100 );
-	fill_numbers( numbers_arg );
+	fill_numbers( arguments );
 
 	for ( int i = 0; i < 100; i++ )
 	{
