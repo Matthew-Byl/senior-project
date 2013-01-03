@@ -77,9 +77,9 @@ void CLFunction<T>::generateBuffers()
 {
 	myBuffers.clear();
 
-	for ( auto &it : myArguments )
+	for ( int i = 0; i < myArguments.size(); i++ )
 	{
-		myBuffers.push_back( it.getBuffer( myContext ) );
+		myBuffers.push_back( myArguments[i].getBuffer( myContext ) );
 	}
 }
 
@@ -88,9 +88,9 @@ void CLFunction<T>::copyBuffersToDevice()
 {
 	// Queue up copying those buffers.
 	cl::CommandQueue queue = myContext.getCommandQueue();
-	for ( auto &it : myArguments )
+	for ( int i = 0; i < myArguments.size(); i++ )
 	{
-		it.copyToDevice( queue );
+		myArguments[i].copyToDevice( queue );
 	}
 }
 
@@ -126,9 +126,10 @@ template<class T>
 void CLFunction<T>::copyBuffersFromDevice()
 {
 	cl::CommandQueue queue = myContext.getCommandQueue();
-    for ( auto &it : myArguments )
+	
+	for ( int i = 0; i < myArguments.size(); i++ )
     {
-		it.copyFromDevice( queue );
+		myArguments[i].copyFromDevice( queue );
     }
 }
 

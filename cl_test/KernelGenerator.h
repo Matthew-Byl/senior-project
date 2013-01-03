@@ -25,6 +25,8 @@ private:
 	std::string myFunction;
 	std::string myReturnType;
 	std::vector<CLUnitArgument> &myArguments;
+
+	std::string intToString( int i );
 };
 
 #endif

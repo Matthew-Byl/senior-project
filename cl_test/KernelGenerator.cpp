@@ -1,7 +1,7 @@
 #include "KernelGenerator.h"
 #include <iostream>
+#include <sstream>
 using namespace std;
-
 
 KernelGenerator::KernelGenerator( 
 	std::string function, 
@@ -12,6 +12,11 @@ KernelGenerator::KernelGenerator(
 
 }
 
+string KernelGenerator::intToString( int i )
+{
+    return static_cast<ostringstream*>( &(ostringstream() << i) )->str();
+}
+
 string KernelGenerator::generate()
 {
 	string ret = 
@@ -19,12 +24,10 @@ string KernelGenerator::generate()
 		"__kernel void _autogen_run_" + myFunction;
 	ret += "( ";
 
-	int i = 0;
-	for ( auto &it : myArguments )
+	for ( int i = 0; i < myArguments.size(); i++ )
 	{
 		// global *someType arg3,
-		ret += "__global " + it.getType() + " *arg" + to_string( i ) + ", ";
-		i++;
+		ret += "__global " + myArguments[i].getType() + " *arg" + intToString( i ) + ", ";
 	}
 
 	if ( myReturnType != "void" )
@@ -50,7 +53,7 @@ string KernelGenerator::generate()
 		if ( !myArguments[i].isArray() )
 			ret += "*";
 		
-		ret += "arg" + to_string( i ) + ", ";
+		ret += "arg" + intToString( i ) + ", ";
 	}	
 
 	// take off last comma.
