@@ -34,12 +34,13 @@ void CLRenderer::render(
 	CLUnitArgument world_arg( "Object", world, num_objects, true, false );
 	CLUnitArgument lights_arg( "Light", lights, num_lights, true, false );
 
-	rayTrace( 
-		pixbuf_arg,
-		world_arg,
-		lights_arg,
-		camera_position,
-		num_objects,
-		num_lights
-		);
+	vector<CLUnitArgument> args;
+	args.push_back( pixbuf_arg );
+	args.push_back( world_arg );
+	args.push_back( lights_arg );
+	args.push_back( camera_position );
+	args.push_back( num_objects );
+	args.push_back( num_lights );
+	
+	rayTrace( args );
 }

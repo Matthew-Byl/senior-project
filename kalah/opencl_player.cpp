@@ -204,22 +204,31 @@ int OpenCLPlayer::makeMove()
 		generate_boards.setGlobalDimensions( items, ipow( 6, PARALLEL_DEPTH ) );
 		generate_boards.setGlobalOffset( offset, 0 );
 		generate_boards.setLocalDimensions( 1, ipow( 6, PARALLEL_DEPTH ) ); // this needs to stay with x-dimension 1
-		generate_boards( start_boards, host_boards );
+		
+		vector<CLUnitArgument> generate_boards_args;
+		generate_boards_args.push_back( start_boards );
+		generate_boards_args.push_back( host_boards );
+		generate_boards( generate_boards_args );
 		
 		// Evaluate all boards, not just leaf nodes, so that if the game ends before
 		//  we get to a leaf node, the score will be correct.
 		evaluate_board.setGlobalDimensions( items, tree_array_size( 6, PARALLEL_DEPTH ), 14 );
-//		evaluate_board.setGlobalOffset( offset, 0, 0 );
-		evaluate_board( host_boards );
+		vector<CLUnitArgument> evaluate_boards_args;
+		evaluate_boards_args.push_back( host_boards );
+		evaluate_board( evaluate_boards_args );
 		
-		minimax.setGlobalDimensions( items, ipow( 6, PARALLEL_DEPTH - 1 ) ); // 6 ^ depth - 1
-//		minimax.setGlobalOffset( offset, 0 );
+		minimax.setGlobalDimensions( items, ipow( 6, PARALLEL_DEPTH - 1 ) ); // 6 ^ depth - 1;
 		minimax.setLocalDimensions( 1, ipow( 6, PARALLEL_DEPTH - 1 ) ); // this needs to stay with x-dimension 1.
-		minimax( host_boards );
+		vector<CLUnitArgument> minimax_args;
+		minimax_args.push_back( host_boards );
+		minimax( minimax_args );
 		
 		get_results.setGlobalDimensions( items );
 		get_results.setGlobalOffset( offset );
-		get_results( start_boards, host_boards );
+		vector<CLUnitArgument> get_results_args;
+		get_results_args.push_back( start_boards );
+		get_results_args.push_back( host_boards );
+		get_results( get_results_args );
 
 		offset += WORKGROUP_SIZE;
 	} while ( offset < num_leaf_nodes );
