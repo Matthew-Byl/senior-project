@@ -16,7 +16,7 @@ CLRenderer::CLRenderer(
 	: myPixelBuffer( pixel_buffer ), 
 	  myWidth( width ), 
 	  myHeight( height ),
-	  rayTrace( "raytrace", src, CLContext( 1, 0 ) ),
+	  rayTrace( "raytrace", src, CLContext( 0, 0 ) ),
 	  pixbuf_arg( "uchar", pixel_buffer, width * height * 4, false, true )
 {
 	rayTrace.setGlobalDimensions( myWidth, myHeight );

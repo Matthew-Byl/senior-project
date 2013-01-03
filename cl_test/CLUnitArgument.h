@@ -12,22 +12,22 @@
 //  else that makes it impossible for C++ to tell their types apart.
 #define CONSTRUCTORS( type )					\
   CTR( cl_##type, type );						\
-  PTR_CTR( cl_##type *, type );					\
+  PTR_CTR( cl_##type, type );					\
   CTR( cl_##type##2, type##2 );					\
-  PTR_CTR( cl_##type##2 *, type##2 );			\
+  PTR_CTR( cl_##type##2, type##2 );				\
   CTR( cl_##type##4, type##4 );					\
-  PTR_CTR( cl_##type##4 *, type##4 );			\
+  PTR_CTR( cl_##type##4, type##4 );				\
   CTR( cl_##type##8, type##8 );					\
-  PTR_CTR( cl_##type##8 *, type##8 );			\
+  PTR_CTR( cl_##type##8, type##8 );				\
   CTR( cl_##type##16, type##16 );				\
-  PTR_CTR( cl_##type##16 *, type##16 );			
+  PTR_CTR( cl_##type##16, type##16 );			
 
 #define CTR( host, kernel )									\
 	CLUnitArgument( host val )								\
 	{ initialize( #kernel, sizeof( host ), &val ); }
 
 #define PTR_CTR( host, kernel )										\
-	CLUnitArgument( host array, size_t elements, bool copyTo = true, bool copyBack = true ) \
+	CLUnitArgument( host *array, size_t elements, bool copyTo = true, bool copyBack = true ) \
 	{ initialize( #kernel, sizeof( host ) * elements, array, false, true, copyTo, copyBack ); }
 
 class CLUnitArgument

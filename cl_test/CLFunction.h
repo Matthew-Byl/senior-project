@@ -87,7 +87,7 @@ template<class T>
 void CLFunction<T>::copyBuffersToDevice()
 {
 	// Queue up copying those buffers.
-	auto queue = myContext.getCommandQueue();
+	cl::CommandQueue queue = myContext.getCommandQueue();
 	for ( auto &it : myArguments )
 	{
 		it.copyToDevice( queue );
@@ -125,7 +125,7 @@ cl::Kernel CLFunction<T>::generateKernel( std::string src, std::string kernel_na
 template<class T>
 void CLFunction<T>::copyBuffersFromDevice()
 {
-    auto queue = myContext.getCommandQueue();
+	cl::CommandQueue queue = myContext.getCommandQueue();
     for ( auto &it : myArguments )
     {
 		it.copyFromDevice( queue );
@@ -218,7 +218,7 @@ void CLFunction<T>::enqueueKernel(
 	}
 
 	// Queue up the kernel.
-	auto &queue = myContext.getCommandQueue();
+	cl::CommandQueue &queue = myContext.getCommandQueue();
 	queue.enqueueNDRangeKernel(
 		kernel,
 		globalOffsetRange,
@@ -240,7 +240,7 @@ T CLFunction<T>::run( std::string type )
 {
 	std::string src;
 	std::string kernelFunction;
-	auto queue = myContext.getCommandQueue();
+	cl::CommandQueue queue = myContext.getCommandQueue();
 
 	generateKernelSource( type, src, kernelFunction );
 
