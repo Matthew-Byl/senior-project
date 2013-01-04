@@ -198,11 +198,13 @@ int OpenCLPlayer::makeMove()
 	int items;
 	int iterations = 0;
 	int evaled = 0;
-	do {
-		if ( ( num_leaf_nodes - offset ) < WORKGROUP_SIZE )
-			items = num_leaf_nodes - offset;
-		else
-			items = WORKGROUP_SIZE;
+//	do {
+//		if ( ( num_leaf_nodes - offset ) < WORKGROUP_SIZE )
+//			items = num_leaf_nodes - offset;
+//		else
+//	items = WORKGROUP_SIZE;
+
+	items = num_leaf_nodes;
 
 		// Write a zero where we need one.
 		zero_evaluate_board.setGlobalDimensions( 1 );
@@ -220,7 +222,8 @@ int OpenCLPlayer::makeMove()
 		generate_boards_args.push_back( host_boards );
 		generate_boards( generate_boards_args );
 
-		evaled += myEvaluateBoards[0];
+		evaled = myEvaluateBoards[0];
+//		evaled += myEvaluateBoards[0];
 //		for ( int i = 0; i < 100; i++ )
 //			cout << myEvaluateBoards[i] << " ";
 //		cout << endl;
@@ -245,9 +248,9 @@ int OpenCLPlayer::makeMove()
 		get_results_args.push_back( host_boards );
 		get_results( get_results_args );
 
-		offset += WORKGROUP_SIZE;
+//		offset += WORKGROUP_SIZE;
 		iterations++;
-	} while ( offset < num_leaf_nodes );
+//	} while ( offset < num_leaf_nodes );
 
 	cout << "Number of boards to evaluate: " << evaled << endl;
 	cout << "Did " << iterations << " iterations." << endl;

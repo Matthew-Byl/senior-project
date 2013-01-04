@@ -69,7 +69,7 @@ __kernel void zero_evaluate_board( global int *evaluate_boards )
 //  to a depth of 3 with this approach (when there will be 216 leaf nodes).
 __kernel void generate_boards( __global Board *host_start, __global int *evaluate_boards, __global Board *board_array )
 {
-	int tree = get_global_id( 0 ) % WORKGROUP_SIZE;
+	int tree = get_global_id( 0 );// % WORKGROUP_SIZE;
 	int tree_offset = tree_size() * tree;
 
 //	printf( "Tree_offset: %d\n", tree_offset );
@@ -246,7 +246,7 @@ __kernel void minimax( __global Board *board_array )
 __kernel void get_results( __global Board *host_start, __global Board *board_array )
 {
 	int tree = get_global_id( 0 );
-	int tree_offset = tree_size() * ( tree % WORKGROUP_SIZE );
+	int tree_offset = tree_size() * ( tree /* % WORKGROUP_SIZE */ );
 
 	host_start[tree].score = board_array[tree_offset].score;
 }
