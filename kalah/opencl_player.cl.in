@@ -67,24 +67,18 @@ __kernel void zero_evaluate_board( global int *evaluate_boards )
 //  group for the synchronization to work.
 // AMD OpenCL allows only 256 work-items per work-group, so we are limited
 //  to a depth of 3 with this approach (when there will be 216 leaf nodes).
-__kernel void generate_boards( __global Board *host_start, __global int *evaluate_boards, __global Board *board_array )
+
+// global: tree x (216)
+// local: 1 x 216
+__kernel void opencl_player( __global Board *host_start )
 {
-	int tree = get_global_id( 0 );// % WORKGROUP_SIZE;
-	int tree_offset = tree_size() * tree;
+	// does this need a literal size? Probably.
+	__local Board board_array[258];
 
-//	printf( "Tree_offset: %d\n", tree_offset );
-
+	int tree = get_global_id( 0 );
 	int local_id = get_local_id( 1 );
 	int move = local_id % 6;
 	int move_offset;
-
-/*
-	if ( get_global_id( 0 ) == 0 && get_global_id( 1 ) == 0 )
-	{
-		// This goes here, for lack of a better place.
-		evaluate_boards[0] = 0;
-	}
-*/
 
 	// If this whole tree isn't meaningful, don't do anything.
 	if ( !host_start[tree].legal_move )
@@ -93,12 +87,9 @@ __kernel void generate_boards( __global Board *host_start, __global int *evaluat
 	// Put in the root node.
 	if ( get_global_id( 1 ) == 0 )
 	{
-		board_array[tree_offset] = host_start[tree];
-
-//		if ( tree == 2 )
-//			printf( "Tree: %d, tree_offset: %d, global_id: %d\n", tree, tree_offset, get_global_id( 0 ) );
+		board_array[0] = host_start[tree];
 	}
-	barrier( CLK_GLOBAL_MEM_FENCE );
+	barrier( CLK_LOCAL_MEM_FENCE );
 
 	Board m_board;
 	int power_of_six = 6;
@@ -109,10 +100,7 @@ __kernel void generate_boards( __global Board *host_start, __global int *evaluat
 		{
 			// Integer division rounds down.
 			int parent = tree_array_parent( 6, level_start + local_id );
-//			printf( "Tree: %d, Current: %d, Parent: %d, move: %d\n", tree_offset, level_start + local_id, parent, move );
-			m_board = board_array[tree_offset + parent];
-
-//			printf( "Tree offset: %d, parent: %d, move: %d\n", tree_offset, parent + tree_offset, move );
+			m_board = board_array[parent];
 
 			// Calculate the move offset based on whose turn it is.
 			if ( m_board.player_to_move == TOP )
@@ -127,10 +115,11 @@ __kernel void generate_boards( __global Board *host_start, __global int *evaluat
 				board_make_move( &m_board, move + move_offset );
 
 				// If we are at the bottom of the tree, this is a leaf node.
+/*
 				if ( i == ( PARALLEL_DEPTH - 1 ) )
 				{
 //					printf( "Adding leaf!\n" );
-					add_evaluate_board( evaluate_boards, tree_offset + level_start + local_id );
+					add_evaluate_board( evaluate_boards, ree_offset + level_start + local_id );
 				}
 				// Or if the game is newly over. This won't add children of game-over boards because
 				//  m_board.legal_move would have been false.
@@ -140,9 +129,11 @@ __kernel void generate_boards( __global Board *host_start, __global int *evaluat
 					add_evaluate_board( evaluate_boards, tree_offset + level_start + local_id );
 					m_board.legal_move = FALSE;
 				}
+*/
 
-				board_array[tree_offset + level_start + local_id] = m_board;
+
 			}
+/*
 			else
 			{
 				// Set m_board.legal_move to FALSE, but just by copying the board,
@@ -151,15 +142,83 @@ __kernel void generate_boards( __global Board *host_start, __global int *evaluat
 				// Don't bother copying all the memory, just what we want.
 				board_array[tree_offset + level_start + local_id].legal_move = FALSE;
 			}
+*/
+			board_array[level_start + local_id] = m_board;
+
 		}
 
 		level_start += power_of_six;
 		power_of_six *= 6;
 
-		barrier( CLK_GLOBAL_MEM_FENCE );
+		barrier( CLK_LOCAL_MEM_FENCE );
 	}
+
+	// Evaluate boards.
+	int weight;
+	for ( int i = 0; i < 14; i++ )
+	{
+		if ( i == 6 || i == 13 )
+			weight = 5;
+		else
+			weight = 1;
+
+		board_array[local_id].score += board_array[local_id].board[i] * weight;
+	}
+	barrier( CLK_LOCAL_MEM_FENCE );
+
+	// Minimax
+	power_of_six = (int) pow( 6.0f, PARALLEL_DEPTH - 2 );
+	level_start = leaf_start();
+
+	for ( int i = PARALLEL_DEPTH - 2; i >= 0; i-- )
+	{
+		level_start -= power_of_six;
+
+//		printf( "level_start: %d, power_of_six: %d\n", level_start, power_of_six );
+		if ( local_id < power_of_six )
+		{
+			// The board in board_array.
+			int board_offset = level_start + local_id;
+			int child_offset = tree_array_first_child( 6, board_offset );
+			PlayerPosition playerToMove;
+			int score;
+
+			playerToMove = board_array[board_offset].player_to_move;
+			if ( playerToMove == TOP )
+				score = INT_MIN;
+			else
+				score = INT_MAX;
+			
+//			printf( "Parent offset: %d, child offset: %d, tree offset: %d\n", board_offset, child_offset, tree_offset );
+			
+			int has_legal_move = FALSE;
+			for ( int i = 0; i < 6; i++ )
+			{
+				Board child = board_array[child_offset + i];
+				if ( child.legal_move 
+					 && ( ( playerToMove == TOP && child.score > score )
+						  || ( playerToMove == BOTTOM && child.score < score ) ) )
+				{
+					has_legal_move = TRUE;
+					score = child.score;
+				}
+			}
+			
+			if ( has_legal_move )
+				board_array[board_offset].score = score;
+			// else leave it with the evaluated score.
+		}
+
+		power_of_six /= 6;
+		barrier( CLK_LOCAL_MEM_FENCE );
+	}
+
+	// Store back in global memory.
+	host_start[tree].score = board_array[0].score;
 }
 
+
+#if 0
 // Don't use local work size at all for this kernel.
 // remember: tree x board x component
 //
@@ -250,3 +309,4 @@ __kernel void get_results( __global Board *host_start, __global Board *board_arr
 
 	host_start[tree].score = board_array[tree_offset].score;
 }
+#endif

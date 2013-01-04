@@ -48,26 +48,28 @@ class OpenCLPlayer
 public:
 	OpenCLPlayer( int sequentialDepth, string src )
 		: mySequentialDepth( sequentialDepth ),
-		  myBoardsSize( WORKGROUP_SIZE * tree_array_size( 6, PARALLEL_DEPTH ) ),
-		  myBoards( new Board[myBoardsSize] ), // @TODO: this dependent on the work size below.
+//		  myBoardsSize( get_leaf_nodes( mySequentialDepth ) * tree_array_size( 6, PARALLEL_DEPTH ) ),
+//		  myBoards( new Board[myBoardsSize] ), // @TODO: this dependent on the work size below.
 		  myStartBoards( new Board[ get_leaf_nodes( mySequentialDepth ) ] ),
-		  myEvaluateBoards( new int[ myBoardsSize + get_leaf_nodes( mySequentialDepth ) ] ),
-		  zero_evaluate_board( "zero_evaluate_board", src, myContext ),
-		  generate_boards( "generate_boards", src, myContext ),
-		  evaluate_board( "evaluate_board", src, myContext ),
-		  minimax( "minimax", src, myContext ),
-		  get_results( "get_results", src, myContext ),
-		  host_boards( "Board", myBoards, myBoardsSize, false, false ),
-		  start_boards( "Board", myStartBoards, get_leaf_nodes( mySequentialDepth ) ),
-		  evaluate_boards( "int", myEvaluateBoards, myBoardsSize + get_leaf_nodes( mySequentialDepth ), false, true )
+//		  myEvaluateBoards( new int[ myBoardsSize + get_leaf_nodes( mySequentialDepth ) ] ),
+//		  zero_evaluate_board( "zero_evaluate_board", src, myContext ),
+//		  generate_boards( "generate_boards", src, myContext ),
+//		  evaluate_board( "evaluate_board", src, myContext ),
+//		  minimax( "minimax", src, myContext ),
+//		  get_results( "get_results", src, myContext ),
+//		  host_boards( "Board", myBoards, myBoardsSize, false, false ),
+		  opencl_player( "opencl_player", src, myContext ),
+		  start_boards( "Board", myStartBoards, get_leaf_nodes( mySequentialDepth ) )
+
+//		  evaluate_boards( "int", myEvaluateBoards, myBoardsSize + get_leaf_nodes( mySequentialDepth ), false, true )
 		{
-			host_boards.makePersistent( myContext );
-			evaluate_boards.makePersistent( myContext );
+//			host_boards.makePersistent( myContext );
+//			evaluate_boards.makePersistent( myContext );
 		};
 
 	~OpenCLPlayer()
 		{
-			delete[] myBoards;
+//			delete[] myBoards;
 		};
 
 	int leaf_start();
@@ -87,19 +89,20 @@ private:
 	int mySequentialDepth;
 	int myBoardsSize;
 	Board myStartBoard;
-	Board *myBoards;
+//	Board *myBoards;
 	Board *myStartBoards;
-	cl_int *myEvaluateBoards;
+//	cl_int *myEvaluateBoards;
 
-	CLKernel zero_evaluate_board;
-	CLKernel generate_boards;
-	CLKernel evaluate_board;
-	CLKernel minimax;
-	CLKernel get_results;
+//	CLKernel zero_evaluate_board;
+//	CLKernel generate_boards;
+//	CLKernel evaluate_board;
+//	CLKernel minimax;
+//	CLKernel get_results;
+	CLKernel opencl_player;
 
-	CLUnitArgument host_boards;
+//	CLUnitArgument host_boards;
 	CLUnitArgument start_boards;
-	CLUnitArgument evaluate_boards;
+//	CLUnitArgument evaluate_boards;
 };
 
 void OpenCLPlayer::set_board( Board b )
@@ -206,6 +209,7 @@ int OpenCLPlayer::makeMove()
 
 	items = num_leaf_nodes;
 
+/*
 		// Write a zero where we need one.
 		zero_evaluate_board.setGlobalDimensions( 1 );
 		vector<CLUnitArgument> zero_evaluate_board_args;
@@ -247,12 +251,19 @@ int OpenCLPlayer::makeMove()
 		get_results_args.push_back( start_boards );
 		get_results_args.push_back( host_boards );
 		get_results( get_results_args );
+*/
+
+	vector<CLUnitArgument> args;
+	args.push_back( start_boards );
+	opencl_player.setGlobalDimensions( items, 216 );
+	opencl_player.setLocalDimensions( 1, 216 );
+	opencl_player( args );
 
 //		offset += WORKGROUP_SIZE;
 		iterations++;
 //	} while ( offset < num_leaf_nodes );
 
-	cout << "Number of boards to evaluate: " << evaled << endl;
+//	cout << "Number of boards to evaluate: " << evaled << endl;
 	cout << "Did " << iterations << " iterations." << endl;
 
 	// Run minimax on the start boards.
