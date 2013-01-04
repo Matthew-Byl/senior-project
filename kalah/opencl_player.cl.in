@@ -46,28 +46,29 @@ int leaf_start ( void )
 	return tree_array_size( 6, PARALLEL_DEPTH - 2 );
 }
 
-/*
-void add_evaluate_board( volatile __global int *evaluate_boards, int board )
-{
-//	if ( evaluate_boards[0] < 100 )
-//		printf( "Adding board %d\n", board );
-
-	int array_idx = atomic_inc( &evaluate_boards[0] ) + 1;
-	evaluate_boards[array_idx] = board;
-}
-
-
-__kernel void zero_evaluate_board( global int *evaluate_boards )
-{
-	evaluate_boards[0] = 0;
-}
-*/
-
 // (a) generate the boards in log(n) time.
 // Note that to do this in parallel, every thread must be in the same local
 //  group for the synchronization to work.
 // AMD OpenCL allows only 256 work-items per work-group, so we are limited
 //  to a depth of 3 with this approach (when there will be 216 leaf nodes).
+
+void evaluate_board( int board, __local Board *board_array )
+{
+	int weight;
+
+	for ( int i = 0; i < 14; i++ )
+	{
+		if ( i == 6 || i == 13 )
+			weight = 5;
+		else
+			weight = 1;
+
+		if ( i < 7 )
+			weight = -weight;
+
+		board_array[board].score += board_array[board].board[i] * weight;
+	}
+}
 
 // global: tree x (216)
 // local: 1 x 216
@@ -114,7 +115,6 @@ __kernel void opencl_player( __global Board *host_start )
 				 && board_legal_move( &m_board, move + move_offset ) )
 			{
 				board_make_move( &m_board, move + move_offset );
-//				m_board.legal_move = TRUE;
 			}
 			else
 			{
@@ -131,38 +131,11 @@ __kernel void opencl_player( __global Board *host_start )
 	}
 
 	// Evaluate boards.
-	int weight;
-	for ( int i = 0; i < 14; i++ )
-	{
-		if ( i == 6 || i == 13 )
-			weight = 5;
-		else
-			weight = 1;
-
-		if ( i < 7 )
-			weight = -weight;
-
-		board_array[local_id].score += board_array[local_id].board[i] * weight;
-	}
-//	printf( "local_id: %d, score: %d, legal_move: %d\n", local_id, board_array[local_id].score, board_array[local_id].legal_move );
-
-	// Since 256 is the maximum local work dimension...
+	evaluate_board( local_id, board_array);
+	// Since the maximum local work size is 256, we can't create enough threads
+	//  to do them all in parallel, so some have to go twice.
 	if ( local_id < 43 )
-	{
-		for ( int i = 0; i < 14; i++ )
-		{
-			if ( i == 6 || i == 13 )
-				weight = 5;
-			else
-				weight = 1;
-
-			if ( i < 7 )
-				weight = -weight;
-			
-			board_array[local_id + 216].score += board_array[local_id + 216].board[i] * weight;
-		}
-//		printf( "local_id: %d, score: %d, legal move: %d\n", local_id + 216, board_array[local_id + 216].score, board_array[local_id + 216].legal_move );
-	}
+		evaluate_board( local_id + 216, board_array);
 	barrier( CLK_LOCAL_MEM_FENCE );
 
 	// Minimax
@@ -172,7 +145,6 @@ __kernel void opencl_player( __global Board *host_start )
 	for ( int i = PARALLEL_DEPTH - 2; i >= 0; i-- )
 	{
 		level_start -= power_of_six;
-//		printf( "level_start: %d, power_of_six: %d\n", level_start, power_of_six );
 		if ( local_id < power_of_six )
 		{
 			// The board in board_array.
@@ -186,8 +158,6 @@ __kernel void opencl_player( __global Board *host_start )
 				score = INT_MIN;
 			else
 				score = INT_MAX;
-			
-//			printf( "Parent offset: %d, child offset: %d, tree offset: %d\n", board_offset, child_offset );
 			
 			int has_legal_move = FALSE;
 			for ( int i = 0; i < 6; i++ )
@@ -215,97 +185,3 @@ __kernel void opencl_player( __global Board *host_start )
 	if ( get_global_id( 1 ) == 0 )
 		host_start[tree].score = board_array[0].score;
 }
-
-
-#if 0
-// Don't use local work size at all for this kernel.
-// remember: tree x board x component
-//
-// @XXX: precondition: score = 0 for all boards!
-__kernel void evaluate_board( __global int *evaluate_boards, __global Board *board_array )
-{
-	// The index of our board in board_array
-	int offset = evaluate_boards[ get_global_id( 0 ) + 1 ];
-
-	// Kalahs count 5 times as much.
-	int weight = 1;
-	int board_space = get_global_id( 1 );
-	if ( board_space == 6
-		 || board_space == 13 )
-		weight = 5;
-		
-	if ( board_space < 7 )
-		weight = -weight;
-
-	atomic_add( &board_array[offset].score, weight * board_array[offset].board[board_space] );
-}
-
-// almost exactly like the first one.
-//  dimensions: tree x board
-//  We only will use the # of threads of the l
-//
-// Strategies: use fewer threads, with a loop -> choose this one, because fewer global memory accesses.
-//  use more threads, with an atomic min/max.
-__kernel void minimax( __global Board *board_array )
-{
-//	printf( "global id: %d %d\n", get_global_id( 0 ), get_global_id( 1 ) );
-
-	int tree = get_global_id( 0 );
-	int tree_offset = tree_size() * tree;
-	int local_id = get_global_id( 1 );
-
-	int power_of_six = (int) pow( 6.0f, PARALLEL_DEPTH - 2 );
-	int level_start = leaf_start();
-
-	for ( int i = PARALLEL_DEPTH - 2; i >= 0; i-- )
-	{
-		level_start -= power_of_six;
-
-//		printf( "level_start: %d, power_of_six: %d\n", level_start, power_of_six );
-		if ( local_id < power_of_six )
-		{
-			// The board in board_array.
-			int board_offset = level_start + get_global_id( 1 );
-			int child_offset = tree_array_first_child( 6, board_offset );
-			PlayerPosition playerToMove;
-			int score;
-
-			playerToMove = board_array[tree_offset + board_offset].player_to_move;
-			if ( playerToMove == TOP )
-				score = INT_MIN;
-			else
-				score = INT_MAX;
-			
-//			printf( "Parent offset: %d, child offset: %d, tree offset: %d\n", board_offset, child_offset, tree_offset );
-			
-			int has_legal_move = FALSE;
-			for ( int i = 0; i < 6; i++ )
-			{
-				Board child = board_array[tree_offset + child_offset + i];
-				if ( child.legal_move 
-					 && ( ( playerToMove == TOP && child.score > score )
-						  || ( playerToMove == BOTTOM && child.score < score ) ) )
-				{
-					has_legal_move = TRUE;
-					score = child.score;
-				}
-			}
-			
-			if ( has_legal_move )
-				board_array[tree_offset + board_offset].score = score;
-			// else leave it with the evaluated score.
-		}
-
-		power_of_six /= 6;
-		barrier( CLK_GLOBAL_MEM_FENCE );
-	}
-}
-
-__kernel void get_results( __global Board *host_start, __global Board *board_array )
-{
-	int tree = get_global_id( 0 );
-	int tree_offset = tree_size() * ( tree /* % WORKGROUP_SIZE */ );
-
-	host_start[tree].score = board_array[tree_offset].score;
-}
-#endif

@@ -172,33 +172,35 @@ int OpenCLPlayer::makeMove()
 	}
 	cout << "================" << endl;
 */
-
-	// Assume the maximum local dimension is 512.
-	int offset = 0;
-	int items;
-	int iterations = 0;
+	if ( num_leaf_nodes )
+	{
+		// Assume the maximum local dimension is 512.
+		int offset = 0;
+		int items;
+		int iterations = 0;
 //	int evaled = 0;
-	do {
-		cout << "Running iteration " << iterations << ", offset " << offset << endl;
-
-		if ( ( num_leaf_nodes - offset ) < WORKGROUP_SIZE )
-			items = num_leaf_nodes - offset;
-		else
-			items = WORKGROUP_SIZE;
-
-		vector<CLUnitArgument> args;
-		args.push_back( start_boards );
-		opencl_player.setGlobalDimensions( items, 216 );
-		opencl_player.setGlobalOffset( offset, 0 );
-		opencl_player.setLocalDimensions( 1, 216 );
-		opencl_player( args );
+		do {
+			cout << "Running iteration " << iterations << ", offset " << offset << endl;
+			
+			if ( ( num_leaf_nodes - offset ) < WORKGROUP_SIZE )
+				items = num_leaf_nodes - offset;
+			else
+				items = WORKGROUP_SIZE;
+			
+			vector<CLUnitArgument> args;
+			args.push_back( start_boards );
+			opencl_player.setGlobalDimensions( items, 216 );
+			opencl_player.setGlobalOffset( offset, 0 );
+			opencl_player.setLocalDimensions( 1, 216 );
+			opencl_player( args );
+			
+			offset += WORKGROUP_SIZE;
+			iterations++;
+		} while ( offset < num_leaf_nodes );
 		
-		offset += WORKGROUP_SIZE;
-		iterations++;
-	} while ( offset < num_leaf_nodes );
-
 //	cout << "Number of boards to evaluate: " << evaled << endl;
-	cout << "Did " << iterations << " iterations." << endl;
+		cout << "Did " << iterations << " iterations." << endl;
+	}
 
 	// Copy back from device.
 //	start_boards.copyFromDevice( myContext.getCommandQueue() );
@@ -277,14 +279,73 @@ string src((std::istreambuf_iterator<char>(t)),
 		   std::istreambuf_iterator<char>());
 OpenCLPlayer player( SEQUENTIAL_DEPTH, src );
 
+
+// depth will increase.
+MinimaxResult opencl_player_pre_minimax( Board *b, int depth )
+{
+	MinimaxResult ret;
+
+	if ( depth == PRE_DEPTH )
+	{
+		ret.move = -1;
+
+		player.set_board( *b );
+		ret.score = player.makeMove();
+
+		return ret;
+	}
+	else if ( board_game_over( b ) )
+	{
+		ret.score = player.minimax_eval( *b );
+		ret.move = -1;
+
+		return ret;
+	}
+	
+	MinimaxResult rec_result;
+	int move_offset;
+	if ( b->player_to_move == TOP )
+	{
+		ret.score = INT_MIN;
+		move_offset = 7;
+	}
+	else
+	{
+		ret.score = INT_MAX;
+		move_offset = 0;
+	}
+
+	for ( int i = 0; i < 7; i++ )
+	{
+		if ( board_legal_move( b, i + move_offset ) )
+		{
+			Board moved_board;
+			moved_board = *b;
+			board_make_move( &moved_board, i + move_offset );
+
+			rec_result = opencl_player_pre_minimax( &moved_board, depth + 1 );
+
+			if ( ( b->player_to_move == TOP && rec_result.score > ret.score )
+				 || ( b->player_to_move == BOTTOM && rec_result.score < ret.score ) )
+			{
+				ret.move = i + move_offset;
+				ret.score = rec_result.score;
+			}
+		}
+	}
+
+	return ret;
+}
+
 extern "C" int opencl_player_move( Board *b )
 {
 	ifstream t("opencl_player.cl");
     string src((std::istreambuf_iterator<char>(t)),
                std::istreambuf_iterator<char>());
+	
+	MinimaxResult ret = opencl_player_pre_minimax( b, 0 );
 
-	player.set_board( *b );
-	return player.makeMove();
+	return ret.move;
 }
 
 KalahPlayer opencl_minimax_player( void )
