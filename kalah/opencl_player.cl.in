@@ -87,8 +87,8 @@ __kernel void generate_boards( __global Board *host_start, __global int *evaluat
 */
 
 	// If this whole tree isn't meaningful, don't do anything.
-//	if ( !board_array[tree_offset].legal_move )
-//		return;
+	if ( !host_start[tree].legal_move )
+		return;
 
 	// Put in the root node.
 	if ( get_global_id( 1 ) == 0 )
