@@ -208,7 +208,7 @@ int OpenCLPlayer::makeMove()
 		else
 			items = WORKGROUP_SIZE;
 
-		zero_evaluate_board.setGlobalDimensions( items * tree_array_size( 6, PARALLEL_DEPTH ) );
+		zero_evaluate_board.setGlobalDimensions( items );
 		vector<CLUnitArgument> zero_evaluate_board_args;
 		zero_evaluate_board_args.push_back( evaluate_boards );
 		zero_evaluate_board( zero_evaluate_board_args );

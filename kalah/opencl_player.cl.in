@@ -49,7 +49,10 @@ int leaf_start ( void )
 
 __kernel void zero_evaluate_board( __global int *evaluate_boards )
 {
-	evaluate_boards[get_global_id( 0 )] = 0;
+	int tree = get_global_id( 0 ) % WORKGROUP_SIZE;
+	int tree_offset = ( tree_size() + 1 ) * tree;
+
+	evaluate_boards[tree_offset] = 0;
 }
 
 void add_evaluate_board( __global int *evaluate_boards, int board )
