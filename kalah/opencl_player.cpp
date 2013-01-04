@@ -5,7 +5,7 @@ extern "C" {
 #include "simple_players.h"
 }
 
-#define SEQUENTIAL_DEPTH 2
+#define SEQUENTIAL_DEPTH 3
 #define PARALLEL_DEPTH 3 // This has to match the value MINIMAX_DEPTH in the kernel. @TODO: consistency
 // Actual tree depth:
 //  MINIMAX_DEPTH = SEQUENTIAL_DEPTH + PARALLEL_DEPTH - 1
@@ -57,16 +57,17 @@ public:
 		  myBoards( new Board[myBoardsSize] ), // @TODO: this dependent on the work size below.
 		  myStartBoards( new Board[ get_leaf_nodes( mySequentialDepth ) ] ),
 		  myEvaluateBoards( new int[ myBoardsSize + get_leaf_nodes( mySequentialDepth ) ] ),
-//		  zero_evaluate_board( "zero_evaluate_board", src, myContext ),
+		  zero_evaluate_board( "zero_evaluate_board", src, myContext ),
 		  generate_boards( "generate_boards", src, myContext ),
 		  evaluate_board( "evaluate_board", src, myContext ),
 		  minimax( "minimax", src, myContext ),
 		  get_results( "get_results", src, myContext ),
 		  host_boards( "Board", myBoards, myBoardsSize, false, false ),
 		  start_boards( "Board", myStartBoards, get_leaf_nodes( mySequentialDepth ) ),
-		  evaluate_boards( "int", myEvaluateBoards, myBoardsSize + get_leaf_nodes( mySequentialDepth ) )
+		  evaluate_boards( "int", myEvaluateBoards, myBoardsSize + get_leaf_nodes( mySequentialDepth ), false, true )
 		{
 			host_boards.makePersistent( myContext );
+			evaluate_boards.makePersistent( myContext );
 		};
 
 	~OpenCLPlayer()
@@ -95,7 +96,7 @@ private:
 	Board *myStartBoards;
 	cl_int *myEvaluateBoards;
 
-//	CLKernel zero_evaluate_board;
+	CLKernel zero_evaluate_board;
 	CLKernel generate_boards;
 	CLKernel evaluate_board;
 	CLKernel minimax;
@@ -202,6 +203,7 @@ int OpenCLPlayer::makeMove()
 	int offset = 0;
 	int items;
 	int iterations = 0;
+	int evaled = 0;
 	do {
 		if ( ( num_leaf_nodes - offset ) < WORKGROUP_SIZE )
 			items = num_leaf_nodes - offset;
@@ -209,10 +211,10 @@ int OpenCLPlayer::makeMove()
 			items = WORKGROUP_SIZE;
 
 		// Write a zero where we need one.
-//		zero_evaluate_board.setGlobalDimensions( 1 );
-//		vector<CLUnitArgument> zero_evaluate_board_args;
-//		zero_evaluate_board_args.push_back( evaluate_boards );
-//		zero_evaluate_board( zero_evaluate_board_args );
+		zero_evaluate_board.setGlobalDimensions( 1 );
+		vector<CLUnitArgument> zero_evaluate_board_args;
+		zero_evaluate_board_args.push_back( evaluate_boards );
+		zero_evaluate_board( zero_evaluate_board_args );
 
 		generate_boards.setGlobalDimensions( items, ipow( 6, PARALLEL_DEPTH ) );
 		generate_boards.setGlobalOffset( offset, 0 );
@@ -224,12 +226,10 @@ int OpenCLPlayer::makeMove()
 		generate_boards_args.push_back( host_boards );
 		generate_boards( generate_boards_args );
 
-/*		
-		cout << "Number of boards to evaluate: " << myEvaluateBoards[0] << endl;
+		evaled += myEvaluateBoards[0];
 		for ( int i = 0; i < 100; i++ )
 			cout << myEvaluateBoards[i] << " ";
 		cout << endl;
-*/
 		
 		vector<CLUnitArgument> evaluate_boards_args;
 		evaluate_boards_args.push_back( evaluate_boards );
@@ -255,6 +255,7 @@ int OpenCLPlayer::makeMove()
 		iterations++;
 	} while ( offset < num_leaf_nodes );
 
+	cout << "Number of boards to evaluate: " << evaled << endl;
 	cout << "Did " << iterations << " iterations." << endl;
 
 	// Run minimax on the start boards.
@@ -385,29 +386,29 @@ int main ( void )
 			
 			player.set_board( b );
 
-//			START;
-//			cout << "OpenCL: " << endl;
+			START;
+			cout << "OpenCL: " << endl;
 
 			int ocl_move = player.makeMove();
 
-//			STOP;
-//			PRINTTIME;
-//			cout << endl;
+			STOP;
+			PRINTTIME;
+			cout << endl;
 
-//			START;
-//			cout << "Minimax: " << endl;
+			START;
+			cout << "Minimax: " << endl;
 			int min_move = minimax.make_move( &b );
-//			STOP;
-//			PRINTTIME;
-//			cout << endl;
+			STOP;
+			PRINTTIME;
+			cout << endl;
 
 //			cerr << "OpenCL Move: " << ocl_move << endl;
 //			cerr << "Minimax Move: " << min_move << endl;
 
 			if ( ocl_move != min_move )
 			{
-			cout << "OpenCL Move: " << ocl_move << endl;
-			cout << "Minimax Move: " << min_move << endl;
+			cerr << "OpenCL Move: " << ocl_move << endl;
+			cerr << "Minimax Move: " << min_move << endl;
 
 		   			}
 		}

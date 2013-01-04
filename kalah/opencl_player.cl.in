@@ -35,7 +35,7 @@
 
 // The number of layers, including the root and bottom layers.
 #define MINIMAX_DEPTH 3
-#define WORKGROUP_SIZE 32768
+#define WORKGROUP_SIZE 65536
 
 int tree_size ( void )
 {
@@ -47,18 +47,21 @@ int leaf_start ( void )
 	return tree_array_size( 6, MINIMAX_DEPTH - 2 );
 }
 
-void add_evaluate_board( __global int *evaluate_boards, int board )
+void add_evaluate_board( volatile __global int *evaluate_boards, int board )
 {
+//	if ( evaluate_boards[0] < 100 )
+//		printf( "Adding board %d\n", board );
+
 	int array_idx = atomic_inc( &evaluate_boards[0] ) + 1;
 	evaluate_boards[array_idx] = board;
 }
 
-/*
+
 __kernel void zero_evaluate_board( global int *evaluate_boards )
 {
 	evaluate_boards[0] = 0;
 }
-*/
+
 
 // (a) generate the boards in log(n) time.
 // Note that to do this in parallel, every thread must be in the same local
@@ -76,12 +79,21 @@ __kernel void generate_boards( __global Board *host_start, __global int *evaluat
 	int move = local_id % 6;
 	int move_offset;
 
-	// Put in the root node.
-	if ( get_global_id( 1 ) == 0 )
+/*
+	if ( get_global_id( 0 ) == 0 && get_global_id( 1 ) == 0 )
 	{
 		// This goes here, for lack of a better place.
 		evaluate_boards[0] = 0;
+	}
+*/
 
+	// If this whole tree isn't meaningful, don't do anything.
+//	if ( !board_array[tree_offset].legal_move )
+//		return;
+
+	// Put in the root node.
+	if ( get_global_id( 1 ) == 0 )
+	{
 		board_array[tree_offset] = host_start[tree];
 
 //		if ( tree == 2 )
@@ -110,30 +122,36 @@ __kernel void generate_boards( __global Board *host_start, __global int *evaluat
 				move_offset = 0;
 
 			// Make the move.
-			int has_legal_move = FALSE;
 			if ( m_board.legal_move 
 				 && board_legal_move( &m_board, move + move_offset ) )
 			{
-				has_legal_move = TRUE;
 				board_make_move( &m_board, move + move_offset );
+
+				// If we are at the bottom of the tree, this is a leaf node.
+				if ( i == ( MINIMAX_DEPTH - 1 ) )
+				{
+//					printf( "Adding leaf!\n" );
+					add_evaluate_board( evaluate_boards, tree_offset + level_start + local_id );
+				}
+				// Or if the game is newly over. This won't add children of game-over boards because
+				//  m_board.legal_move would have been false.
+				else if ( board_game_over( &m_board ) )
+				{
+//					printf( "Adding game over!\n" );
+					add_evaluate_board( evaluate_boards, tree_offset + level_start + local_id );
+					m_board.legal_move = FALSE;
+				}
+
+				board_array[tree_offset + level_start + local_id] = m_board;
 			}
 			else
 			{
-				m_board.legal_move = FALSE;
-			}
+				// Set m_board.legal_move to FALSE, but just by copying the board,
+				//  this is the case.
 
-			// If our parent board was a legal move, but all its children
-			//  weren't, then we're a leaf node and need to be evaluated.
-			if ( m_board.legal_move && !has_legal_move )
-			{
-				add_evaluate_board( evaluate_boards, tree_offset + parent );
+				// Don't bother copying all the memory, just what we want.
+				board_array[tree_offset + level_start + local_id].legal_move = FALSE;
 			}
-			else if ( m_board.legal_move && i == ( MINIMAX_DEPTH - 1 ) )
-			{
-				add_evaluate_board( evaluate_boards, tree_offset + level_start + local_id );
-			}
-
-			board_array[tree_offset + level_start + local_id] = m_board;
 		}
 
 		level_start += power_of_six;
