@@ -114,7 +114,7 @@ __kernel void opencl_player( __global Board *host_start )
 				 && board_legal_move( &m_board, move + move_offset ) )
 			{
 				board_make_move( &m_board, move + move_offset );
-				m_board.legal_move = TRUE;
+//				m_board.legal_move = TRUE;
 			}
 			else
 			{
