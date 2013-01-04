@@ -159,7 +159,8 @@ int OpenCLPlayer::makeMove()
 	generate_start_boards();
 
 	// C++ guarantees vector elements are stored contiguously.
-	CLUnitArgument start_boards( "Board", &myStartBoards[0], myStartBoards.size() );
+	CLUnitArgument start_boards( "Board", &myStartBoards[0], myStartBoards.size(), false, true );
+	start_boards.makePersistent( myContext );
 	int num_leaf_nodes = myStartBoards.size();
 
 /*
@@ -198,6 +199,9 @@ int OpenCLPlayer::makeMove()
 
 //	cout << "Number of boards to evaluate: " << evaled << endl;
 	cout << "Did " << iterations << " iterations." << endl;
+
+	// Copy back from device.
+//	start_boards.copyFromDevice( myContext.getCommandQueue() );
 
 	// Run minimax on the start boards.
 	minimax_idx = 0;
