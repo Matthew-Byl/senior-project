@@ -5,10 +5,7 @@ extern "C" {
 #include "simple_players.h"
 }
 
-#define SEQUENTIAL_DEPTH 3
-#define PARALLEL_DEPTH 3 // This has to match the value MINIMAX_DEPTH in the kernel. @TODO: consistency
-// Actual tree depth:
-//  MINIMAX_DEPTH = SEQUENTIAL_DEPTH + PARALLEL_DEPTH - 1
+#include "depths.h"
 
 /*
  * Things to fix:
@@ -46,14 +43,12 @@ typedef struct {
 	int score;
 } MinimaxResult;
 
-#define _WG_SIZE 65536
-
 class OpenCLPlayer
 {
 public:
 	OpenCLPlayer( int sequentialDepth, string src )
 		: mySequentialDepth( sequentialDepth ),
-		  myBoardsSize( _WG_SIZE * tree_array_size( 6, PARALLEL_DEPTH ) ),
+		  myBoardsSize( WORKGROUP_SIZE * tree_array_size( 6, PARALLEL_DEPTH ) ),
 		  myBoards( new Board[myBoardsSize] ), // @TODO: this dependent on the work size below.
 		  myStartBoards( new Board[ get_leaf_nodes( mySequentialDepth ) ] ),
 		  myEvaluateBoards( new int[ myBoardsSize + get_leaf_nodes( mySequentialDepth ) ] ),
@@ -199,7 +194,6 @@ int OpenCLPlayer::makeMove()
 */
 
 	// Assume the maximum local dimension is 512.
-	const int WORKGROUP_SIZE = _WG_SIZE;
 	int offset = 0;
 	int items;
 	int iterations = 0;
@@ -227,9 +221,9 @@ int OpenCLPlayer::makeMove()
 		generate_boards( generate_boards_args );
 
 		evaled += myEvaluateBoards[0];
-		for ( int i = 0; i < 100; i++ )
-			cout << myEvaluateBoards[i] << " ";
-		cout << endl;
+//		for ( int i = 0; i < 100; i++ )
+//			cout << myEvaluateBoards[i] << " ";
+//		cout << endl;
 		
 		vector<CLUnitArgument> evaluate_boards_args;
 		evaluate_boards_args.push_back( evaluate_boards );

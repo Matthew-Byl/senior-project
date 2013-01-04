@@ -17,9 +17,11 @@
 #endif
 
 #ifdef HOST
-#define CL_INT cl_int
+#define CL_INT cl_int 
+#define CL_CHAR cl_int 
 #else /* OpenCL */
 #define CL_INT int
+#define CL_CHAR char
 #endif
 
 #endif

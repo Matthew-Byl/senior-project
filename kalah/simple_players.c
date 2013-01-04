@@ -1,10 +1,9 @@
 #include "simple_players.h"
+#include "depths.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
-
-#define MINIMAX_DEPTH 5
 
 /*** Human ***/
 const char *human_name( void )

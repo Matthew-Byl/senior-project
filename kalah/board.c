@@ -73,7 +73,7 @@ int board_legal_move( Board *b, int move )
 void board_copy( Board *src, Board *dest )
 {
 #ifndef _OPENCL_
-	memcpy( dest->board, src->board, sizeof( int ) * BOARD_SIZE );
+	memcpy( dest->board, src->board, sizeof( CL_CHAR ) * BOARD_SIZE );
 #else
 	for ( int i = 0; i < BOARD_SIZE; i++ )
 		dest->board[i] = src->board[i];

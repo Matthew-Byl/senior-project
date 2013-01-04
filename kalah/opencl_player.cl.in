@@ -1,6 +1,7 @@
 #define _OPENCL_
 #include "board.c"
 #include "tree_array.c"
+#include "depths.h"
 
 /*
  * Plan:
@@ -34,17 +35,15 @@
 //   then the score is wonky.
 
 // The number of layers, including the root and bottom layers.
-#define MINIMAX_DEPTH 3
-#define WORKGROUP_SIZE 65536
 
 int tree_size ( void )
 {
-	return tree_array_size( 6, MINIMAX_DEPTH - 1 );
+	return tree_array_size( 6, PARALLEL_DEPTH - 1 );
 }
 
 int leaf_start ( void )
 {
-	return tree_array_size( 6, MINIMAX_DEPTH - 2 );
+	return tree_array_size( 6, PARALLEL_DEPTH - 2 );
 }
 
 void add_evaluate_board( volatile __global int *evaluate_boards, int board )
@@ -104,7 +103,7 @@ __kernel void generate_boards( __global Board *host_start, __global int *evaluat
 	Board m_board;
 	int power_of_six = 6;
 	int level_start = 1;
-	for ( int i = 1; i < MINIMAX_DEPTH; i++ )
+	for ( int i = 1; i < PARALLEL_DEPTH; i++ )
 	{
 		if ( local_id < power_of_six )
 		{
@@ -128,7 +127,7 @@ __kernel void generate_boards( __global Board *host_start, __global int *evaluat
 				board_make_move( &m_board, move + move_offset );
 
 				// If we are at the bottom of the tree, this is a leaf node.
-				if ( i == ( MINIMAX_DEPTH - 1 ) )
+				if ( i == ( PARALLEL_DEPTH - 1 ) )
 				{
 //					printf( "Adding leaf!\n" );
 					add_evaluate_board( evaluate_boards, tree_offset + level_start + local_id );
@@ -197,10 +196,10 @@ __kernel void minimax( __global Board *board_array )
 	int tree_offset = tree_size() * tree;
 	int local_id = get_global_id( 1 );
 
-	int power_of_six = (int) pow( 6.0f, MINIMAX_DEPTH - 2 );
+	int power_of_six = (int) pow( 6.0f, PARALLEL_DEPTH - 2 );
 	int level_start = leaf_start();
 
-	for ( int i = MINIMAX_DEPTH - 2; i >= 0; i-- )
+	for ( int i = PARALLEL_DEPTH - 2; i >= 0; i-- )
 	{
 		level_start -= power_of_six;
 

@@ -14,17 +14,16 @@
 #define TOP_KALAH 13
 #define BOTTOM_KALAH 6
 
-typedef enum {
-	TOP,
-	BOTTOM,
-	NOBODY
-} PlayerPosition;
+typedef CL_CHAR PlayerPosition;
+#define TOP 0
+#define	BOTTOM 1
+#define	NOBODY 2
 
 typedef struct {
-	CL_INT board[BOARD_SIZE];
+	CL_CHAR board[BOARD_SIZE];
 	PlayerPosition player_to_move;
 	CL_INT score;
-	CL_INT legal_move;
+	CL_CHAR legal_move;
 } Board;
 
 void board_initialize( Board *b, PlayerPosition to_move );
