@@ -5,7 +5,7 @@ extern "C" {
 #include "simple_players.h"
 }
 
-#define SEQUENTIAL_DEPTH 5
+#define SEQUENTIAL_DEPTH 2
 #define PARALLEL_DEPTH 3 // This has to match the value MINIMAX_DEPTH in the kernel. @TODO: consistency
 // Actual tree depth:
 //  MINIMAX_DEPTH = SEQUENTIAL_DEPTH + PARALLEL_DEPTH - 1
@@ -46,7 +46,7 @@ typedef struct {
 	int score;
 } MinimaxResult;
 
-#define _WG_SIZE 32768
+#define _WG_SIZE 65536
 
 class OpenCLPlayer
 {
@@ -56,12 +56,15 @@ public:
 		  myBoardsSize( _WG_SIZE * tree_array_size( 6, PARALLEL_DEPTH ) ),
 		  myBoards( new Board[myBoardsSize] ), // @TODO: this dependent on the work size below.
 		  myStartBoards( new Board[ get_leaf_nodes( mySequentialDepth ) ] ),
+		  myEvaluateBoards( new int[ myBoardsSize + get_leaf_nodes( mySequentialDepth ) ] ),
+		  zero_evaluate_board( "zero_evaluate_board", src, myContext ),
 		  generate_boards( "generate_boards", src, myContext ),
 		  evaluate_board( "evaluate_board", src, myContext ),
 		  minimax( "minimax", src, myContext ),
 		  get_results( "get_results", src, myContext ),
 		  host_boards( "Board", myBoards, myBoardsSize, false, false ),
-		  start_boards( "Board", myStartBoards, get_leaf_nodes( mySequentialDepth ) )
+		  start_boards( "Board", myStartBoards, get_leaf_nodes( mySequentialDepth ) ),
+		  evaluate_boards( "int", myEvaluateBoards, myBoardsSize + get_leaf_nodes( mySequentialDepth ) )
 		{
 			host_boards.makePersistent( myContext );
 		};
@@ -90,7 +93,9 @@ private:
 	Board myStartBoard;
 	Board *myBoards;
 	Board *myStartBoards;
+	cl_int *myEvaluateBoards;
 
+	CLKernel zero_evaluate_board;
 	CLKernel generate_boards;
 	CLKernel evaluate_board;
 	CLKernel minimax;
@@ -98,6 +103,7 @@ private:
 
 	CLUnitArgument host_boards;
 	CLUnitArgument start_boards;
+	CLUnitArgument evaluate_boards;
 };
 
 void OpenCLPlayer::set_board( Board b )
@@ -195,11 +201,17 @@ int OpenCLPlayer::makeMove()
 	const int WORKGROUP_SIZE = _WG_SIZE;
 	int offset = 0;
 	int items;
+	int iterations = 0;
 	do {
 		if ( ( num_leaf_nodes - offset ) < WORKGROUP_SIZE )
 			items = num_leaf_nodes - offset;
 		else
 			items = WORKGROUP_SIZE;
+
+		zero_evaluate_board.setGlobalDimensions( items * tree_array_size( 6, PARALLEL_DEPTH ) );
+		vector<CLUnitArgument> zero_evaluate_board_args;
+		zero_evaluate_board_args.push_back( evaluate_boards );
+		zero_evaluate_board( zero_evaluate_board_args );
 
 		generate_boards.setGlobalDimensions( items, ipow( 6, PARALLEL_DEPTH ) );
 		generate_boards.setGlobalOffset( offset, 0 );
@@ -207,9 +219,26 @@ int OpenCLPlayer::makeMove()
 		
 		vector<CLUnitArgument> generate_boards_args;
 		generate_boards_args.push_back( start_boards );
+		generate_boards_args.push_back( evaluate_boards );
 		generate_boards_args.push_back( host_boards );
 		generate_boards( generate_boards_args );
 		
+		int tree_size = tree_array_size( 6, 2 ) + 1;
+		int total = 0;
+		for ( int i = 0; i < items; i++ )
+		{
+			cout << myEvaluateBoards[tree_size * i] << " ";
+			total += myEvaluateBoards[tree_size * i];
+		}
+		cout << endl;
+		cout << "Total: " << total << endl;
+
+		for ( int i = 0; i < tree_size; i++ )
+		{
+			cout << myEvaluateBoards[ (tree_size * 10) + i ] << " ";
+		}
+		cout << endl;
+
 		// Evaluate all boards, not just leaf nodes, so that if the game ends before
 		//  we get to a leaf node, the score will be correct.
 		evaluate_board.setGlobalDimensions( items, tree_array_size( 6, PARALLEL_DEPTH ), 14 );
@@ -231,7 +260,10 @@ int OpenCLPlayer::makeMove()
 		get_results( get_results_args );
 
 		offset += WORKGROUP_SIZE;
+		iterations++;
 	} while ( offset < num_leaf_nodes );
+
+	cout << "Did " << iterations << " iterations." << endl;
 
 	// Run minimax on the start boards.
 	MinimaxResult move = run_minimax( myStartBoard, 0, mySequentialDepth );

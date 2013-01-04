@@ -47,12 +47,26 @@ int leaf_start ( void )
 	return tree_array_size( 6, MINIMAX_DEPTH - 2 );
 }
 
+__kernel void zero_evaluate_board( __global int *evaluate_boards )
+{
+	evaluate_boards[get_global_id( 0 )] = 0;
+}
+
+void add_evaluate_board( __global int *evaluate_boards, int board )
+{
+	int tree = get_global_id( 0 ) % WORKGROUP_SIZE;
+	int tree_offset = ( tree_size() + 1 ) * tree;
+
+	int array_idx = atomic_inc( &evaluate_boards[tree_offset] ) + 1;
+	evaluate_boards[tree_offset + array_idx] = board;
+}
+
 // (a) generate the boards in log(n) time.
 // Note that to do this in parallel, every thread must be in the same local
 //  group for the synchronization to work.
 // AMD OpenCL allows only 256 work-items per work-group, so we are limited
 //  to a depth of 3 with this approach (when there will be 216 leaf nodes).
-__kernel void generate_boards( __global Board *host_start, __global Board *board_array )
+__kernel void generate_boards( __global Board *host_start, __global int *evaluate_boards, __global Board *board_array )
 {
 	int tree = get_global_id( 0 ) % WORKGROUP_SIZE;
 	int tree_offset = tree_size() * tree;
@@ -94,13 +108,28 @@ __kernel void generate_boards( __global Board *host_start, __global Board *board
 				move_offset = 0;
 
 			// Make the move.
+			int has_legal_move = FALSE;
 			if ( m_board.legal_move 
 				 && board_legal_move( &m_board, move + move_offset ) )
 			{
+				has_legal_move = TRUE;
 				board_make_move( &m_board, move + move_offset );
 			}
 			else
+			{
 				m_board.legal_move = FALSE;
+			}
+
+			// If our parent board was a legal move, but all its children
+			//  weren't, then we're a leaf node and need to be evaluated.
+			if ( m_board.legal_move && !has_legal_move )
+			{
+				add_evaluate_board( evaluate_boards, tree_offset + parent );
+			}
+			else if ( m_board.legal_move && i == ( MINIMAX_DEPTH - 1 ) )
+			{
+				add_evaluate_board( evaluate_boards, tree_offset + level_start + local_id );
+			}
 
 			board_array[tree_offset + level_start + local_id] = m_board;
 		}

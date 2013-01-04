@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <limits.h>
 
-#define MINIMAX_DEPTH 7
+#define MINIMAX_DEPTH 4
 
 /*** Human ***/
 const char *human_name( void )
@@ -81,6 +81,7 @@ const char *minimax_name( void )
 	return "Minimax";
 }
 
+int num_evaled;
 int minimax_eval( Board *b )
 {
 	// Kalah counts double, but stones count too.
@@ -93,6 +94,7 @@ int minimax_eval( Board *b )
 	for ( int i = 7; i <= 12; i++ )
 		score += b->board[i];
 
+	num_evaled++;
 	return score;
 }
 
@@ -172,7 +174,9 @@ MinimaxResult minimax_move( Board *b, int depth )
 
 int minimax_make_move( Board *b )
 {
+	num_evaled = 0;
 	MinimaxResult res = minimax_move( b, MINIMAX_DEPTH );
+	printf( "Number of boards evaluated: %d\n", num_evaled );
 
 //	printf( "Best move has score %d\n", res.score );
 
