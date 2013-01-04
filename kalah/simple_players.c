@@ -175,7 +175,7 @@ int minimax_make_move( Board *b )
 {
 	num_evaled = 0;
 	MinimaxResult res = minimax_move( b, MINIMAX_DEPTH );
-	printf( "Number of boards evaluated: %d\n", num_evaled );
+//	printf( "Number of boards evaluated: %d\n", num_evaled );
 
 //	printf( "Best move has score %d\n", res.score );
 

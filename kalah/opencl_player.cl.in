@@ -74,7 +74,7 @@ __kernel void zero_evaluate_board( global int *evaluate_boards )
 __kernel void opencl_player( __global Board *host_start )
 {
 	// does this need a literal size? Probably.
-	__local Board board_array[258];
+	__local Board board_array[259];
 
 	int tree = get_global_id( 0 );
 	int local_id = get_local_id( 1 );
@@ -114,6 +114,11 @@ __kernel void opencl_player( __global Board *host_start )
 				 && board_legal_move( &m_board, move + move_offset ) )
 			{
 				board_make_move( &m_board, move + move_offset );
+				m_board.legal_move = TRUE;
+			}
+			else
+			{
+				m_board.legal_move = FALSE;
 			}
 
 			board_array[level_start + local_id] = m_board;
@@ -139,10 +144,10 @@ __kernel void opencl_player( __global Board *host_start )
 
 		board_array[local_id].score += board_array[local_id].board[i] * weight;
 	}
-	barrier( CLK_LOCAL_MEM_FENCE );
+//	printf( "local_id: %d, score: %d, legal_move: %d\n", local_id, board_array[local_id].score, board_array[local_id].legal_move );
 
 	// Since 256 is the maximum local work dimension...
-	if ( local_id < 42 )
+	if ( local_id < 43 )
 	{
 		for ( int i = 0; i < 14; i++ )
 		{
@@ -156,6 +161,7 @@ __kernel void opencl_player( __global Board *host_start )
 			
 			board_array[local_id + 216].score += board_array[local_id + 216].board[i] * weight;
 		}
+//		printf( "local_id: %d, score: %d, legal move: %d\n", local_id + 216, board_array[local_id + 216].score, board_array[local_id + 216].legal_move );
 	}
 	barrier( CLK_LOCAL_MEM_FENCE );
 
@@ -166,7 +172,6 @@ __kernel void opencl_player( __global Board *host_start )
 	for ( int i = PARALLEL_DEPTH - 2; i >= 0; i-- )
 	{
 		level_start -= power_of_six;
-
 //		printf( "level_start: %d, power_of_six: %d\n", level_start, power_of_six );
 		if ( local_id < power_of_six )
 		{
@@ -182,7 +187,7 @@ __kernel void opencl_player( __global Board *host_start )
 			else
 				score = INT_MAX;
 			
-//			printf( "Parent offset: %d, child offset: %d, tree offset: %d\n", board_offset, child_offset, tree_offset );
+//			printf( "Parent offset: %d, child offset: %d, tree offset: %d\n", board_offset, child_offset );
 			
 			int has_legal_move = FALSE;
 			for ( int i = 0; i < 6; i++ )
