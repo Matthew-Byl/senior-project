@@ -197,74 +197,31 @@ int OpenCLPlayer::makeMove()
 */
 
 	// Assume the maximum local dimension is 512.
-//	int offset = 0;
-//	int items;
-//	int iterations = 0;
+	int offset = 0;
+	int items;
+	int iterations = 0;
 //	int evaled = 0;
-//	do {
-//		if ( ( num_leaf_nodes - offset ) < WORKGROUP_SIZE )
-//			items = num_leaf_nodes - offset;
-//		else
-//	items = WORKGROUP_SIZE;
+	do {
+		cout << "Running iteration " << iterations << ", offset " << offset << endl;
 
-//	items = num_leaf_nodes;
+		if ( ( num_leaf_nodes - offset ) < WORKGROUP_SIZE )
+			items = num_leaf_nodes - offset;
+		else
+			items = WORKGROUP_SIZE;
 
-/*
-		// Write a zero where we need one.
-		zero_evaluate_board.setGlobalDimensions( 1 );
-		vector<CLUnitArgument> zero_evaluate_board_args;
-		zero_evaluate_board_args.push_back( evaluate_boards );
-		zero_evaluate_board( zero_evaluate_board_args );
-
-		generate_boards.setGlobalDimensions( items, ipow( 6, PARALLEL_DEPTH ) );
-		generate_boards.setGlobalOffset( offset, 0 );
-		generate_boards.setLocalDimensions( 1, ipow( 6, PARALLEL_DEPTH ) ); // this needs to stay with x-dimension 1
+		vector<CLUnitArgument> args;
+		args.push_back( start_boards );
+		opencl_player.setGlobalDimensions( items, 216 );
+		opencl_player.setGlobalOffset( offset, 0 );
+		opencl_player.setLocalDimensions( 1, 216 );
+		opencl_player( args );
 		
-		vector<CLUnitArgument> generate_boards_args;
-		generate_boards_args.push_back( start_boards );
-		generate_boards_args.push_back( evaluate_boards );
-		generate_boards_args.push_back( host_boards );
-		generate_boards( generate_boards_args );
-
-		evaled = myEvaluateBoards[0];
-//		evaled += myEvaluateBoards[0];
-//		for ( int i = 0; i < 100; i++ )
-//			cout << myEvaluateBoards[i] << " ";
-//		cout << endl;
-		
-		vector<CLUnitArgument> evaluate_boards_args;
-		evaluate_boards_args.push_back( evaluate_boards );
-		evaluate_boards_args.push_back( host_boards );
-		// More selectively evaluate boards.
-		evaluate_board.setGlobalDimensions( myEvaluateBoards[0], 14 );
-		evaluate_board( evaluate_boards_args );
-		
-		minimax.setGlobalDimensions( items, ipow( 6, PARALLEL_DEPTH - 1 ) ); // 6 ^ depth - 1;
-		minimax.setLocalDimensions( 1, ipow( 6, PARALLEL_DEPTH - 1 ) ); // this needs to stay with x-dimension 1.
-		vector<CLUnitArgument> minimax_args;
-		minimax_args.push_back( host_boards );
-		minimax( minimax_args );
-		
-		get_results.setGlobalDimensions( items );
-		get_results.setGlobalOffset( offset );
-		vector<CLUnitArgument> get_results_args;
-		get_results_args.push_back( start_boards );
-		get_results_args.push_back( host_boards );
-		get_results( get_results_args );
-*/
-
-	vector<CLUnitArgument> args;
-	args.push_back( start_boards );
-	opencl_player.setGlobalDimensions( num_leaf_nodes, 216 );
-	opencl_player.setLocalDimensions( 1, 216 );
-	opencl_player( args );
-
-//		offset += WORKGROUP_SIZE;
-//		iterations++;
-//	} while ( offset < num_leaf_nodes );
+		offset += WORKGROUP_SIZE;
+		iterations++;
+	} while ( offset < num_leaf_nodes );
 
 //	cout << "Number of boards to evaluate: " << evaled << endl;
-//	cout << "Did " << iterations << " iterations." << endl;
+	cout << "Did " << iterations << " iterations." << endl;
 
 	// Run minimax on the start boards.
 	MinimaxResult move = run_minimax( myStartBoard, 0, mySequentialDepth );
