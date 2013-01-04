@@ -48,23 +48,8 @@ class OpenCLPlayer
 public:
 	OpenCLPlayer( int sequentialDepth, string src )
 		: mySequentialDepth( sequentialDepth ),
-//		  myBoardsSize( get_leaf_nodes( mySequentialDepth ) * tree_array_size( 6, PARALLEL_DEPTH ) ),
-//		  myBoards( new Board[myBoardsSize] ), // @TODO: this dependent on the work size below.
-		  myStartBoards( new Board[ get_leaf_nodes( mySequentialDepth ) ] ),
-//		  myEvaluateBoards( new int[ myBoardsSize + get_leaf_nodes( mySequentialDepth ) ] ),
-//		  zero_evaluate_board( "zero_evaluate_board", src, myContext ),
-//		  generate_boards( "generate_boards", src, myContext ),
-//		  evaluate_board( "evaluate_board", src, myContext ),
-//		  minimax( "minimax", src, myContext ),
-//		  get_results( "get_results", src, myContext ),
-//		  host_boards( "Board", myBoards, myBoardsSize, false, false ),
-		  opencl_player( "opencl_player", src, myContext ),
-		  start_boards( "Board", myStartBoards, get_leaf_nodes( mySequentialDepth ) )
-
-//		  evaluate_boards( "int", myEvaluateBoards, myBoardsSize + get_leaf_nodes( mySequentialDepth ), false, true )
+		  opencl_player( "opencl_player", src, myContext )
 		{
-//			host_boards.makePersistent( myContext );
-//			evaluate_boards.makePersistent( myContext );
 		};
 
 	~OpenCLPlayer()
@@ -76,8 +61,8 @@ public:
 	int get_leaf_nodes( int sequentialDepth );
 	int get_board_array_size( int sequentialDepth );
 
-	void generate_board( Board parent, int idx, int depth );
-	MinimaxResult run_minimax( Board &parent, int idx, int depth );
+	void generate_board( Board parent, int depth );
+	MinimaxResult run_minimax( Board &parent, int depth );
 	void generate_start_boards();
 	int makeMove();
 	int minimax_eval( Board b );
@@ -85,24 +70,16 @@ public:
 	void set_board( Board b );
 
 private:
+	int minimax_idx;
+
 	CLContext myContext;
 	int mySequentialDepth;
 	int myBoardsSize;
 	Board myStartBoard;
-//	Board *myBoards;
-	Board *myStartBoards;
-//	cl_int *myEvaluateBoards;
-
-//	CLKernel zero_evaluate_board;
-//	CLKernel generate_boards;
-//	CLKernel evaluate_board;
-//	CLKernel minimax;
-//	CLKernel get_results;
 	CLKernel opencl_player;
+//	CLUnitArgument start_boards;
 
-//	CLUnitArgument host_boards;
-	CLUnitArgument start_boards;
-//	CLUnitArgument evaluate_boards;
+	vector<Board> myStartBoards;
 };
 
 void OpenCLPlayer::set_board( Board b )
@@ -128,15 +105,14 @@ int OpenCLPlayer::leaf_start()
 	return tree_array_size( 6, mySequentialDepth - 1 );
 }
 
-void OpenCLPlayer::generate_board( Board parent, int idx, int depth )
+void OpenCLPlayer::generate_board( Board parent, int depth )
 {
 	if ( depth == 0 )
 	{
-		myStartBoards[idx - leaf_start()] = parent;
+		myStartBoards.push_back( parent );
 		return;
 	}
 	
-	int child_idx = tree_array_first_child( 6, idx );
 	for ( int i = 0; i < 6; i++ )
 	{
 		int move_offset = 0;
@@ -148,19 +124,15 @@ void OpenCLPlayer::generate_board( Board parent, int idx, int depth )
 		if ( board_legal_move( &m_board, i + move_offset ) )
 		{
 			board_make_move( &m_board, i + move_offset );
+			generate_board( m_board, depth - 1 );
 		}
-		else
-		{
-			m_board.legal_move = FALSE;
-		}
-		
-		generate_board( m_board, child_idx + i, depth - 1 );
 	}
 }
 
 void OpenCLPlayer::generate_start_boards()
 {
-	generate_board( myStartBoard, 0, mySequentialDepth );
+	myStartBoards.clear();
+	generate_board( myStartBoard, mySequentialDepth );
 };
 
 int OpenCLPlayer::minimax_eval( Board b )
@@ -180,11 +152,15 @@ int OpenCLPlayer::makeMove()
 {
 	// @todo: we might exceed a dimension (like when n=7), so run kernels multiple times with a global offset.
 
-	int num_leaf_nodes = get_leaf_nodes( mySequentialDepth );
+//	int num_leaf_nodes = get_leaf_nodes( mySequentialDepth );
 //			cout << "Leaf nodes: " << num_leaf_nodes << endl;
 
 	// Create start boards
 	generate_start_boards();
+
+	// C++ guarantees vector elements are stored contiguously.
+	CLUnitArgument start_boards( "Board", &myStartBoards[0], myStartBoards.size() );
+	int num_leaf_nodes = myStartBoards.size();
 
 /*
 	cout << "LEAF NODES: " << endl;
@@ -224,14 +200,15 @@ int OpenCLPlayer::makeMove()
 	cout << "Did " << iterations << " iterations." << endl;
 
 	// Run minimax on the start boards.
-	MinimaxResult move = run_minimax( myStartBoard, 0, mySequentialDepth );
+	minimax_idx = 0;
+	MinimaxResult move = run_minimax( myStartBoard, mySequentialDepth );
 
 	assert( board_legal_move( &myStartBoard, move.move ) );
 
 	return move.move;
 }
 
-MinimaxResult OpenCLPlayer::run_minimax( Board &parent, int idx, int depth )
+MinimaxResult OpenCLPlayer::run_minimax( Board &parent, int depth )
 {
 	MinimaxResult best_result;
 	best_result.move = -1;
@@ -240,7 +217,9 @@ MinimaxResult OpenCLPlayer::run_minimax( Board &parent, int idx, int depth )
 	{
 		MinimaxResult mr;
 
-		mr.score = myStartBoards[idx - leaf_start()].score;
+		mr.score = myStartBoards[minimax_idx].score;
+		minimax_idx++;
+
 		mr.move = -1;
 
 		return mr;
@@ -258,7 +237,6 @@ MinimaxResult OpenCLPlayer::run_minimax( Board &parent, int idx, int depth )
 		best_result.score = INT_MAX;
 	}
 
-	int child_idx = tree_array_first_child( 6, idx );
 	MinimaxResult rec_result;
 	bool has_legal_move = false;
 	for ( int i = 0; i < 6; i++ )
@@ -270,7 +248,7 @@ MinimaxResult OpenCLPlayer::run_minimax( Board &parent, int idx, int depth )
 
 			board_make_move( &moved_board, i + move_offset );
 					
-			rec_result = run_minimax( moved_board, child_idx + i, depth - 1 );
+			rec_result = run_minimax( moved_board, depth - 1 );
 					
 			if ( ( parent.player_to_move == TOP && rec_result.score > best_result.score )
 				 || ( parent.player_to_move == BOTTOM && rec_result.score < best_result.score ) )
