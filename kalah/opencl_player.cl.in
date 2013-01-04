@@ -47,22 +47,18 @@ int leaf_start ( void )
 	return tree_array_size( 6, MINIMAX_DEPTH - 2 );
 }
 
-__kernel void zero_evaluate_board( __global int *evaluate_boards )
-{
-	int tree = get_global_id( 0 ) % WORKGROUP_SIZE;
-	int tree_offset = ( tree_size() + 1 ) * tree;
-
-	evaluate_boards[tree_offset] = 0;
-}
-
 void add_evaluate_board( __global int *evaluate_boards, int board )
 {
-	int tree = get_global_id( 0 ) % WORKGROUP_SIZE;
-	int tree_offset = ( tree_size() + 1 ) * tree;
-
-	int array_idx = atomic_inc( &evaluate_boards[tree_offset] ) + 1;
-	evaluate_boards[tree_offset + array_idx] = board;
+	int array_idx = atomic_inc( &evaluate_boards[0] ) + 1;
+	evaluate_boards[array_idx] = board;
 }
+
+/*
+__kernel void zero_evaluate_board( global int *evaluate_boards )
+{
+	evaluate_boards[0] = 0;
+}
+*/
 
 // (a) generate the boards in log(n) time.
 // Note that to do this in parallel, every thread must be in the same local
@@ -83,6 +79,9 @@ __kernel void generate_boards( __global Board *host_start, __global int *evaluat
 	// Put in the root node.
 	if ( get_global_id( 1 ) == 0 )
 	{
+		// This goes here, for lack of a better place.
+		evaluate_boards[0] = 0;
+
 		board_array[tree_offset] = host_start[tree];
 
 //		if ( tree == 2 )
@@ -148,22 +147,14 @@ __kernel void generate_boards( __global Board *host_start, __global int *evaluat
 // remember: tree x board x component
 //
 // @XXX: precondition: score = 0 for all boards!
-__kernel void evaluate_board( __global Board *board_array )
+__kernel void evaluate_board( __global int *evaluate_boards, __global Board *board_array )
 {
-	// Where the tree the board is in is found
-	int tree_offset = tree_size() * get_global_id( 0 );
-
-	// The index of our board in that tree
-	int board_offset = get_global_id( 1 );
-
-//	printf( "Board_offset: %d\n", board_offset );
-
-	// The index of our board in board_array.
-	int offset = tree_offset + board_offset;
+	// The index of our board in board_array
+	int offset = evaluate_boards[ get_global_id( 0 ) + 1 ];
 
 	// Kalahs count 5 times as much.
 	int weight = 1;
-	int board_space = get_global_id( 2 );
+	int board_space = get_global_id( 1 );
 	if ( board_space == 6
 		 || board_space == 13 )
 		weight = 5;

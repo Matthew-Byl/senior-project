@@ -57,7 +57,7 @@ public:
 		  myBoards( new Board[myBoardsSize] ), // @TODO: this dependent on the work size below.
 		  myStartBoards( new Board[ get_leaf_nodes( mySequentialDepth ) ] ),
 		  myEvaluateBoards( new int[ myBoardsSize + get_leaf_nodes( mySequentialDepth ) ] ),
-		  zero_evaluate_board( "zero_evaluate_board", src, myContext ),
+//		  zero_evaluate_board( "zero_evaluate_board", src, myContext ),
 		  generate_boards( "generate_boards", src, myContext ),
 		  evaluate_board( "evaluate_board", src, myContext ),
 		  minimax( "minimax", src, myContext ),
@@ -95,7 +95,7 @@ private:
 	Board *myStartBoards;
 	cl_int *myEvaluateBoards;
 
-	CLKernel zero_evaluate_board;
+//	CLKernel zero_evaluate_board;
 	CLKernel generate_boards;
 	CLKernel evaluate_board;
 	CLKernel minimax;
@@ -208,10 +208,11 @@ int OpenCLPlayer::makeMove()
 		else
 			items = WORKGROUP_SIZE;
 
-		zero_evaluate_board.setGlobalDimensions( items );
-		vector<CLUnitArgument> zero_evaluate_board_args;
-		zero_evaluate_board_args.push_back( evaluate_boards );
-		zero_evaluate_board( zero_evaluate_board_args );
+		// Write a zero where we need one.
+//		zero_evaluate_board.setGlobalDimensions( 1 );
+//		vector<CLUnitArgument> zero_evaluate_board_args;
+//		zero_evaluate_board_args.push_back( evaluate_boards );
+//		zero_evaluate_board( zero_evaluate_board_args );
 
 		generate_boards.setGlobalDimensions( items, ipow( 6, PARALLEL_DEPTH ) );
 		generate_boards.setGlobalOffset( offset, 0 );
@@ -222,28 +223,19 @@ int OpenCLPlayer::makeMove()
 		generate_boards_args.push_back( evaluate_boards );
 		generate_boards_args.push_back( host_boards );
 		generate_boards( generate_boards_args );
+
+/*		
+		cout << "Number of boards to evaluate: " << myEvaluateBoards[0] << endl;
+		for ( int i = 0; i < 100; i++ )
+			cout << myEvaluateBoards[i] << " ";
+		cout << endl;
+*/
 		
-		int tree_size = tree_array_size( 6, 2 ) + 1;
-		int total = 0;
-		for ( int i = 0; i < items; i++ )
-		{
-			cout << myEvaluateBoards[tree_size * i] << " ";
-			total += myEvaluateBoards[tree_size * i];
-		}
-		cout << endl;
-		cout << "Total: " << total << endl;
-
-		for ( int i = 0; i < tree_size; i++ )
-		{
-			cout << myEvaluateBoards[ (tree_size * 10) + i ] << " ";
-		}
-		cout << endl;
-
-		// Evaluate all boards, not just leaf nodes, so that if the game ends before
-		//  we get to a leaf node, the score will be correct.
-		evaluate_board.setGlobalDimensions( items, tree_array_size( 6, PARALLEL_DEPTH ), 14 );
 		vector<CLUnitArgument> evaluate_boards_args;
+		evaluate_boards_args.push_back( evaluate_boards );
 		evaluate_boards_args.push_back( host_boards );
+		// More selectively evaluate boards.
+		evaluate_board.setGlobalDimensions( myEvaluateBoards[0], 14 );
 		evaluate_board( evaluate_boards_args );
 		
 		minimax.setGlobalDimensions( items, ipow( 6, PARALLEL_DEPTH - 1 ) ); // 6 ^ depth - 1;

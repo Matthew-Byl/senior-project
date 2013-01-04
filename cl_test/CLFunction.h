@@ -242,7 +242,7 @@ void CLFunction<T>::enqueueKernel(
 	// This is needed in case the queue supports running things
 	//  out of order, the next kernel depends on this one being done,
 	//  and no buffers are read back synchronously to the device.
-	queue.enqueueBarrier();
+//	queue.enqueueBarrier();
 }
 
 /// @todo: specialize for void, when we return nothing; i.e. run a kernel.
