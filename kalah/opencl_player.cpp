@@ -180,7 +180,7 @@ int OpenCLPlayer::makeMove()
 		int iterations = 0;
 //	int evaled = 0;
 		do {
-			cout << "Running iteration " << iterations << ", offset " << offset << endl;
+//			cout << "Running iteration " << iterations << ", offset " << offset << endl;
 			
 			if ( ( num_leaf_nodes - offset ) < WORKGROUP_SIZE )
 				items = num_leaf_nodes - offset;
@@ -199,7 +199,7 @@ int OpenCLPlayer::makeMove()
 		} while ( offset < num_leaf_nodes );
 		
 //	cout << "Number of boards to evaluate: " << evaled << endl;
-		cout << "Did " << iterations << " iterations." << endl;
+//		cout << "Did " << iterations << " iterations." << endl;
 	}
 
 	// Copy back from device.
@@ -211,7 +211,8 @@ int OpenCLPlayer::makeMove()
 
 	assert( board_legal_move( &myStartBoard, move.move ) );
 
-	return move.move;
+	// To make it an independent player, return move.move.
+	return move.score;
 }
 
 MinimaxResult OpenCLPlayer::run_minimax( Board &parent, int depth )
@@ -289,8 +290,11 @@ MinimaxResult opencl_player_pre_minimax( Board *b, int depth )
 	{
 		ret.move = -1;
 
+//		board_print( b );
+
 		player.set_board( *b );
 		ret.score = player.makeMove();
+//		cout << ret.score << endl;
 
 		return ret;
 	}
@@ -301,40 +305,59 @@ MinimaxResult opencl_player_pre_minimax( Board *b, int depth )
 
 		return ret;
 	}
-	
+
 	MinimaxResult rec_result;
-	int move_offset;
+	MinimaxResult best_result;
+	best_result.move = -1;
+
 	if ( b->player_to_move == TOP )
 	{
-		ret.score = INT_MIN;
-		move_offset = 7;
+		// MAX
+		best_result.score = INT_MIN;
+
+		for ( int i = 7; i < 13; i++ )
+		{
+			if ( board_legal_move( b, i ) )
+			{
+				Board moved_board;
+				board_copy( b, &moved_board );
+				board_make_move( &moved_board, i );
+
+				rec_result = opencl_player_pre_minimax( &moved_board, depth + 1 );
+
+				if ( rec_result.score > best_result.score )
+				{
+					best_result.move = i;
+					best_result.score = rec_result.score;
+				}
+			}
+		}
 	}
 	else
 	{
-		ret.score = INT_MAX;
-		move_offset = 0;
-	}
+		// MIN
+		best_result.score = INT_MAX;
 
-	for ( int i = 0; i < 7; i++ )
-	{
-		if ( board_legal_move( b, i + move_offset ) )
+		for ( int i = 0; i < 6; i++ )
 		{
-			Board moved_board;
-			moved_board = *b;
-			board_make_move( &moved_board, i + move_offset );
-
-			rec_result = opencl_player_pre_minimax( &moved_board, depth + 1 );
-
-			if ( ( b->player_to_move == TOP && rec_result.score > ret.score )
-				 || ( b->player_to_move == BOTTOM && rec_result.score < ret.score ) )
+			if ( board_legal_move( b, i ) )
 			{
-				ret.move = i + move_offset;
-				ret.score = rec_result.score;
+				Board moved_board;
+				board_copy( b, &moved_board );
+				board_make_move( &moved_board, i );
+
+				rec_result = opencl_player_pre_minimax( &moved_board, depth + 1 );
+
+				if ( rec_result.score < best_result.score )
+				{
+					best_result.move = i;
+					best_result.score = rec_result.score;
+				}
 			}
 		}
 	}
 
-	return ret;
+	return best_result;
 }
 
 extern "C" int opencl_player_move( Board *b )
@@ -376,6 +399,7 @@ clock_t startm, stopm;
 int main ( void )
 {
 	KalahPlayer minimax = minimax_player();
+	KalahPlayer opencl_minimax = opencl_minimax_player();
 
 //	ProfilerStart( "opencl_player.perf" );
 	for ( int i = 7; i < 12; i++ )
@@ -391,13 +415,11 @@ int main ( void )
 				continue;
 			
 			board_make_move( &b, j );
-			
-			player.set_board( b );
 
 			START;
 			cout << "OpenCL: " << endl;
 
-			int ocl_move = player.makeMove();
+			int ocl_move = opencl_minimax.make_move( &b );
 
 			STOP;
 			PRINTTIME;
