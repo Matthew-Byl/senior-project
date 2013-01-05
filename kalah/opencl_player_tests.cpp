@@ -12,6 +12,9 @@ extern "C" {
 #include <cassert>
 #include <cstdlib>
 #include <climits>
+
+#include "opencl_player.h"
+
 using namespace std;
 
 #define NUM_ITERATIONS 4096
@@ -135,7 +138,7 @@ void test_evaluate_boards( string src )
 		{
 			assert( boards[i].score == minimax_eval( &boards[i] ) );
 		}
-		cout << "* " << flush;
+//		cout << "* " << flush;
 	}
 
 	cout << endl << "All tests passed." << endl;
@@ -210,7 +213,7 @@ void test_minimax( string src )
 		minimax_test( args );
 		check_minimax( boards, 0 );
 
-		cout << "* " << flush;
+//		cout << "* " << flush;
 	}
 
 	cout << endl << "All tests passed." << endl;
@@ -218,7 +221,7 @@ void test_minimax( string src )
 
 void test_combination( string src )
 {
-	cout << "Testing entire OpenCL component..." << endl;
+	cout << "Testing OpenCL kernel..." << endl;
 
 	Board start_boards[256];
 
@@ -249,8 +252,32 @@ void test_combination( string src )
 				board_print( &start_boards[j] );
 			}
 			
-//			assert( start_boards[j].score == mr.score );
+			assert( start_boards[j].score == mr.score );
 		}
+
+//		cout << "* " << flush;
+	}
+
+	cout << endl << "All tests passed." << endl;
+}
+
+void test_opencl_object( string src )
+{
+	cout << "Testing entire OpenCL component..." << endl;
+
+	const int sequential_depth = 4;
+	OpenCLPlayer opencl_player( sequential_depth, src );
+
+	for ( int i = 0; i < NUM_ITERATIONS; i++ )
+	{
+		Board start = generate_valid_board();
+
+		opencl_player.set_board( start );
+		MinimaxResult ocl_result = opencl_player.makeMove();
+		MinimaxResult seq_result = minimax_move( &start, sequential_depth + PARALLEL_DEPTH - 1 );
+
+		assert( ocl_result.move == seq_result.move );
+		assert( ocl_result.score == seq_result.score );
 
 		cout << "* " << flush;
 	}
@@ -274,10 +301,11 @@ int main ( void )
 		board_print( &b );
 	}
 */
-	test_generate_boards( src );
-	test_evaluate_boards( src );
-	test_minimax( src );
-	test_combination( src );
+//	test_generate_boards( src );
+//	test_evaluate_boards( src );
+//	test_minimax( src );
+//	test_combination( src );
+	test_opencl_object( src );
 
 	return 0;
 }

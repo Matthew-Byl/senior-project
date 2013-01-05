@@ -2,8 +2,9 @@ extern "C" {
 #include "board.h"
 #include "kalah_player.h"
 #include "simple_players.h"
-#include "opencl_player.h"
 }
+
+#include "opencl_player.h"
 
 #include <cstdio>
 
@@ -96,7 +97,7 @@ void match ( KalahPlayer top, KalahPlayer bottom )
 int main ( void )
 {
 	KalahPlayer bottom = bonzo_player();
-	KalahPlayer top = minimax_player();
+	KalahPlayer top = opencl_minimax_player();
 	match( top, bottom );
 
 	return 0;

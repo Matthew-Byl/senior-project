@@ -1,6 +1,7 @@
+#include "opencl_player.h"
+
 extern "C" {
 #include "board.h"
-#include "opencl_player.h"
 #include "tree_array.h"
 #include "simple_players.h"
 }
@@ -12,7 +13,7 @@ extern "C" {
  *  -when there isn't a legal move before we get to the OpenCL part.
  */
 
-#include <CLKernel.h>
+// #include <CLKernel.h>
 
 #include <iostream>
 #include <cmath>
@@ -37,45 +38,6 @@ int ipow( int n, int k )
 {
 	return (int) pow( n, k );
 }
-
-class OpenCLPlayer
-{
-public:
-	OpenCLPlayer( int sequentialDepth, string src )
-		: mySequentialDepth( sequentialDepth ),
-		  opencl_player( "opencl_player", src, myContext )
-		{
-		};
-
-	~OpenCLPlayer()
-		{
-//			delete[] myBoards;
-		};
-
-	int leaf_start();
-	int get_leaf_nodes( int sequentialDepth );
-	int get_board_array_size( int sequentialDepth );
-
-	void generate_board( Board parent, int depth );
-	MinimaxResult run_minimax( Board &parent, int depth );
-	void generate_start_boards();
-	MinimaxResult makeMove();
-	int minimax_eval( Board b );
-
-	void set_board( Board b );
-
-private:
-	int minimax_idx;
-
-	CLContext myContext;
-	int mySequentialDepth;
-	int myBoardsSize;
-	Board myStartBoard;
-	CLKernel opencl_player;
-//	CLUnitArgument start_boards;
-
-	vector<Board> myStartBoards;
-};
 
 void OpenCLPlayer::set_board( Board b )
 {
@@ -105,6 +67,10 @@ void OpenCLPlayer::generate_board( Board parent, int depth )
 	if ( depth == 0 )
 	{
 		myStartBoards.push_back( parent );
+		return;
+	}
+	else if ( board_game_over( &parent ) )
+	{ 
 		return;
 	}
 	
@@ -234,9 +200,21 @@ MinimaxResult OpenCLPlayer::run_minimax( Board &parent, int depth )
 	{
 		MinimaxResult mr;
 
+		// Make sure we are reading everything in the same order.
+		assert( board_equal( &myStartBoards[minimax_idx], &parent ) );
+
 		mr.score = myStartBoards[minimax_idx].score;
 		minimax_idx++;
 
+		mr.move = -1;
+
+		return mr;
+	}
+	else if ( board_game_over( &parent ) )
+	{
+		MinimaxResult mr;
+
+		mr.score = minimax_eval( parent );
 		mr.move = -1;
 
 		return mr;
@@ -255,16 +233,13 @@ MinimaxResult OpenCLPlayer::run_minimax( Board &parent, int depth )
 	}
 
 	MinimaxResult rec_result;
-	bool has_legal_move = false;
 	for ( int i = 0; i < 6; i++ )
 	{
 		if ( board_legal_move( &parent, i + move_offset ) )
 		{
-			has_legal_move = true;
 			Board moved_board = parent;
 
 			board_make_move( &moved_board, i + move_offset );
-					
 			rec_result = run_minimax( moved_board, depth - 1 );
 					
 			if ( ( parent.player_to_move == TOP && rec_result.score > best_result.score )
@@ -276,12 +251,6 @@ MinimaxResult OpenCLPlayer::run_minimax( Board &parent, int depth )
 		}
 	}
 			
-	if ( !has_legal_move )
-	{
-		best_result.move = -1;
-		best_result.score = minimax_eval( parent );
-	}
-
 	return best_result;
 }
 
