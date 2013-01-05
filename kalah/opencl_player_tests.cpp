@@ -141,7 +141,7 @@ void test_evaluate_boards( string src )
 
 int check_minimax( Board *opencl_boards, int idx )
 {
-	if ( idx > 43 )
+	if ( idx >= 43 )
 		return opencl_boards[idx].score;
 
 	int best_score;
@@ -182,24 +182,29 @@ void test_minimax( string src )
 	minimax_test.setGlobalDimensions( 1, 216 );
 	minimax_test.setLocalDimensions( 1, 216 );
 
-	// Generate a random array, put scores in the bottom,
-	//  randomly mark some nodes as illegal moves, and go.
-	for ( int i = 0; i < 259; i++ )
+	for ( int j = 0; j < NUM_ITERATIONS; j++ )
 	{
-		boards[i] = generate_valid_board();
-		if ( ( rand() % 5 ) == 0 )
-			boards[i].legal_move = FALSE;
-	}
+		// Generate a random array, put scores in the bottom,
+		//  randomly mark some nodes as illegal moves, and go.
+		for ( int i = 0; i < 259; i++ )
+		{
+			boards[i] = generate_valid_board();
+			if ( ( rand() % 5 ) == 0 )
+				boards[i].legal_move = FALSE;
+		}
 
-	if ( !boards[0].legal_move )
-		boards[0].legal_move = TRUE;
+		if ( !boards[0].legal_move )
+			boards[0].legal_move = TRUE;
 		
 
-	for ( int i = 43; i < 259; i++ )
-		boards[i].score = minimax_eval( &boards[i] );
+		for ( int i = 43; i < 259; i++ )
+			boards[i].score = minimax_eval( &boards[i] );
 
-	minimax_test( args );
-	check_minimax( boards, 0 );
+		minimax_test( args );
+		check_minimax( boards, 0 );
+
+		cout << "* " << flush;
+	}
 
 	cout << endl << "All tests passed." << endl;
 }
@@ -221,7 +226,7 @@ int main ( void )
 	}
 */
 	test_generate_boards( src );
-//	test_evaluate_boards( src );
+	test_evaluate_boards( src );
 	test_minimax( src );
 
 	return 0;
