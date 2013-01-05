@@ -222,6 +222,25 @@ void minimax( __local Board *board_array )
 	}
 }
 
+__kernel void minimax_test( __global Board *host_board_array )
+{
+	__local Board board_array[259];
+	int local_id = get_local_id( 1 );
+
+	board_array[local_id] = host_board_array[local_id];
+	if ( local_id < 43 )
+		board_array[local_id + 216] = host_board_array[local_id + 216];
+	barrier( CLK_LOCAL_MEM_FENCE );
+
+	minimax( board_array );
+	barrier( CLK_LOCAL_MEM_FENCE );
+
+	host_board_array[local_id] = board_array[local_id];
+
+	if ( local_id < 43 )
+		host_board_array[local_id + 216] = board_array[local_id + 216];
+}
+
 // global: tree x (216)
 // local: 1 x 216
 __kernel void opencl_player( __global Board *host_start )
