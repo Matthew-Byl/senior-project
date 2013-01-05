@@ -137,6 +137,7 @@ void OpenCLPlayer::generate_start_boards()
 
 int OpenCLPlayer::minimax_eval( Board b )
 {
+/*
     int score = 5 * ( b.board[13] - b.board[6] );
 
     for ( int i = 0; i <= 5; i++ )
@@ -146,6 +147,9 @@ int OpenCLPlayer::minimax_eval( Board b )
 		score += b.board[i];
 
     return score;
+*/
+
+	return b.board[13] - b.board[6];
 }
 
 int OpenCLPlayer::makeMove()

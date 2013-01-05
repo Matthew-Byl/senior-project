@@ -84,7 +84,7 @@ int num_evaled;
 int minimax_eval( Board *b )
 {
 	// Kalah counts double, but stones count too.
-
+/*
 	int score = 5 * ( b->board[13] - b->board[6] );
 	
 	for ( int i = 0; i <= 5; i++ )
@@ -95,6 +95,9 @@ int minimax_eval( Board *b )
 
 	num_evaled++;
 	return score;
+*/
+
+	return b->board[13] - b->board[6];
 }
 
 typedef struct

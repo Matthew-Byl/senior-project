@@ -228,6 +228,12 @@ void board_print( Board *b )
 // Doesn't check score.
 int board_equal( Board *a, Board *b )
 {
+	if ( !(a->legal_move) && !(b->legal_move) )
+		return TRUE;
+
+	if ( a->legal_move != b->legal_move )
+		return FALSE;	
+
 	if ( a->player_to_move != b->player_to_move )
 		return FALSE;
 
