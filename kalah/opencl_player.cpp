@@ -254,32 +254,20 @@ MinimaxResult OpenCLPlayer::run_minimax( Board &parent, int depth )
 	return best_result;
 }
 
-ifstream t("opencl_player.cl");
-string src((std::istreambuf_iterator<char>(t)),
-		   std::istreambuf_iterator<char>());
-OpenCLPlayer player( SEQUENTIAL_DEPTH, src );
-
-
 // depth will increase.
-MinimaxResult opencl_player_pre_minimax( Board *b, int depth )
+MinimaxResult opencl_player_pre_minimax( OpenCLPlayer *player, Board *b, int depth )
 {
 	MinimaxResult ret;
 
 	if ( depth == PRE_DEPTH )
 	{
-		ret.move = -1;
-
-//		board_print( b );
-
-		player.set_board( *b );
-		ret.score = player.makeMove().score;
-//		cout << ret.score << endl;
-
+		player->set_board( *b );
+		ret = player->makeMove();
 		return ret;
 	}
 	else if ( board_game_over( b ) )
 	{
-		ret.score = player.minimax_eval( *b );
+		ret.score = player->minimax_eval( *b );
 		ret.move = -1;
 
 		return ret;
@@ -299,10 +287,10 @@ MinimaxResult opencl_player_pre_minimax( Board *b, int depth )
 			if ( board_legal_move( b, i ) )
 			{
 				Board moved_board;
-				board_copy( b, &moved_board );
+				moved_board = *b;
 				board_make_move( &moved_board, i );
 
-				rec_result = opencl_player_pre_minimax( &moved_board, depth + 1 );
+				rec_result = opencl_player_pre_minimax( player, &moved_board, depth + 1 );
 
 				if ( rec_result.score > best_result.score )
 				{
@@ -325,7 +313,7 @@ MinimaxResult opencl_player_pre_minimax( Board *b, int depth )
 				board_copy( b, &moved_board );
 				board_make_move( &moved_board, i );
 
-				rec_result = opencl_player_pre_minimax( &moved_board, depth + 1 );
+				rec_result = opencl_player_pre_minimax( player, &moved_board, depth + 1 );
 
 				if ( rec_result.score < best_result.score )
 				{
@@ -344,8 +332,10 @@ extern "C" int opencl_player_move( Board *b )
 	ifstream t("opencl_player.cl");
     string src((std::istreambuf_iterator<char>(t)),
                std::istreambuf_iterator<char>());
+
+	OpenCLPlayer player( SEQUENTIAL_DEPTH, src );
 	
-	MinimaxResult ret = opencl_player_pre_minimax( b, 0 );
+	MinimaxResult ret = opencl_player_pre_minimax( &player, b, 0 );
 
 	return ret.move;
 }

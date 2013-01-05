@@ -19,6 +19,20 @@ using namespace std;
 
 #define NUM_ITERATIONS 4096
 
+bool valid_board( Board b )
+{
+	if ( board_game_over( &b ) ) 
+		return FALSE;
+
+	for ( int i = 0; i < 14; i++ )
+	{
+		if ( b.board[i] < 0 || b.board[i] > 96 )
+			return false;
+	}
+
+	return true;
+}
+
 Board generate_valid_board()
 {
 	Board board;
@@ -48,7 +62,7 @@ Board generate_valid_board()
 
 //		board.board[13] += stones_left;
 
-	} while ( board_game_over( &board ) );
+	} while ( !valid_board( board ) );
 
 	return board;
 }
@@ -138,7 +152,7 @@ void test_evaluate_boards( string src )
 		{
 			assert( boards[i].score == minimax_eval( &boards[i] ) );
 		}
-//		cout << "* " << flush;
+		cout << "* " << flush;
 	}
 
 	cout << endl << "All tests passed." << endl;
@@ -213,7 +227,7 @@ void test_minimax( string src )
 		minimax_test( args );
 		check_minimax( boards, 0 );
 
-//		cout << "* " << flush;
+		cout << "* " << flush;
 	}
 
 	cout << endl << "All tests passed." << endl;
@@ -255,7 +269,7 @@ void test_combination( string src )
 			assert( start_boards[j].score == mr.score );
 		}
 
-//		cout << "* " << flush;
+		cout << "* " << flush;
 	}
 
 	cout << endl << "All tests passed." << endl;
@@ -265,8 +279,7 @@ void test_opencl_object( string src )
 {
 	cout << "Testing entire OpenCL component..." << endl;
 
-	const int sequential_depth = 4;
-	OpenCLPlayer opencl_player( sequential_depth, src );
+	OpenCLPlayer opencl_player( SEQUENTIAL_DEPTH, src );
 
 	for ( int i = 0; i < NUM_ITERATIONS; i++ )
 	{
@@ -274,10 +287,32 @@ void test_opencl_object( string src )
 
 		opencl_player.set_board( start );
 		MinimaxResult ocl_result = opencl_player.makeMove();
-		MinimaxResult seq_result = minimax_move( &start, sequential_depth + PARALLEL_DEPTH - 1 );
+		MinimaxResult seq_result = minimax_move( &start, SEQUENTIAL_DEPTH + PARALLEL_DEPTH - 1 );
 
 		assert( ocl_result.move == seq_result.move );
 		assert( ocl_result.score == seq_result.score );
+
+		cout << "* " << flush;
+	}
+
+	cout << endl << "All tests passed." << endl;
+}
+
+void test_pre_minimax( string src )
+{
+	cout << "Testing pre-OpenCL component minimax..." << endl;
+    OpenCLPlayer opencl_player( SEQUENTIAL_DEPTH, src );
+	// We have to use the depth in depths.h for the moment.
+	
+	for ( int i = 0; i < NUM_ITERATIONS; i++ )
+	{
+		Board start = generate_valid_board();
+
+		MinimaxResult p_ocl_result = opencl_player_pre_minimax( &opencl_player, &start, 0 );
+		MinimaxResult seq_result = minimax_move( &start, PRE_DEPTH + SEQUENTIAL_DEPTH + PARALLEL_DEPTH - 1 );
+
+		assert( p_ocl_result.move == seq_result.move );
+		assert( p_ocl_result.score == seq_result.score );
 
 		cout << "* " << flush;
 	}
@@ -301,11 +336,12 @@ int main ( void )
 		board_print( &b );
 	}
 */
-//	test_generate_boards( src );
-//	test_evaluate_boards( src );
-//	test_minimax( src );
-//	test_combination( src );
+	test_generate_boards( src );
+	test_evaluate_boards( src );
+	test_minimax( src );
+	test_combination( src );
 	test_opencl_object( src );
+	test_pre_minimax( src );
 
 	return 0;
 }
