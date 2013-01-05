@@ -141,7 +141,7 @@ void test_evaluate_boards( string src )
 
 int check_minimax( Board *opencl_boards, int idx )
 {
-	if ( idx > 42 )
+	if ( idx > 43 )
 		return opencl_boards[idx].score;
 
 	int best_score;
@@ -151,7 +151,7 @@ int check_minimax( Board *opencl_boards, int idx )
 		best_score = INT_MAX;
 
 	int child_offset = tree_array_first_child( 6, idx );
-	for ( int i = 0; i < 7; i++ )
+	for ( int i = 0; i < 6; i++ )
 	{
 		if ( !opencl_boards[child_offset + i].legal_move )
 			continue;
