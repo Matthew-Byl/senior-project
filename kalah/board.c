@@ -222,6 +222,7 @@ void board_print( Board *b )
 	printf("\n");
 	printf( "Score: %d\n", b->score );
 	printf( "Legal move: %d\n", b->legal_move );
+	printf( "Player to move: %d\n", b->player_to_move );
 #endif
 }
 

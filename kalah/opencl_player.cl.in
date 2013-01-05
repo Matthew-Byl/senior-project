@@ -194,28 +194,33 @@ void minimax( __local Board *board_array )
 			PlayerPosition playerToMove;
 			int score;
 
-			playerToMove = board_array[board_offset].player_to_move;
-			if ( playerToMove == TOP )
-				score = INT_MIN;
-			else
-				score = INT_MAX;
-			
-			int has_legal_move = FALSE;
-			for ( int i = 0; i < 6; i++ )
+			Board board = board_array[board_offset];
+
+			if ( board.legal_move && !board_game_over( &board ) )
 			{
-				Board child = board_array[child_offset + i];
-				if ( child.legal_move 
-					 && ( ( playerToMove == TOP && child.score > score )
-						  || ( playerToMove == BOTTOM && child.score < score ) ) )
+				playerToMove = board.player_to_move;
+				if ( playerToMove == TOP )
+					score = INT_MIN;
+				else
+					score = INT_MAX;
+				
+				int has_legal_move = FALSE;
+				for ( int i = 0; i < 6; i++ )
 				{
-					has_legal_move = TRUE;
-					score = child.score;
+					Board child = board_array[child_offset + i];
+					if ( child.legal_move 
+						 && ( ( playerToMove == TOP && child.score > score )
+							  || ( playerToMove == BOTTOM && child.score < score ) ) )
+					{
+						has_legal_move = TRUE;
+						score = child.score;
+					}
 				}
+				
+				if ( has_legal_move )
+					board_array[board_offset].score = score;
+				// else leave it with the evaluated score, as a leaf node.
 			}
-			
-			if ( has_legal_move )
-				board_array[board_offset].score = score;
-			// else leave it with the evaluated score.
 		}
 
 		power_of_six /= 6;
@@ -252,8 +257,8 @@ __kernel void opencl_player( __global Board *host_start )
 	__local Board board_array[259];
 
 	// If this whole tree isn't meaningful, don't do anything.
-	if ( !host_start[tree].legal_move )
-		return;
+//	if ( !host_start[tree].legal_move )
+//		return;
 
 	generate_boards( host_start, board_array );
 	barrier( CLK_LOCAL_MEM_FENCE );
