@@ -3,39 +3,6 @@
 #include "tree_array.c"
 #include "depths.h"
 
-/*
- * Plan:
- *  (a) generate all the boards. This can be done in log(n) time, if correct.
- *  (b) evaluate the leaf nodes. (~16 at once, using atomic writes)
- *  (c) perform minimax.
- *
- * I don't think local memory is persistent across kernel executions, so
- *  we probably have to do this all at once.
- */
-
-/*
- * We will eventually want a special packed board structure because memory is our
- *  bottleneck.
- */
-
-/*
- * Layout of board_array:
- *
- * [  tree 0   ][ tree 1 ]...[ tree n-1 ]
- *
- * Due to a theorem (https://ece.uwaterloo.ca/~dwharder/aads/LectureMaterials/4.07.NaryTrees.pdf),
- *  there are ( N^(k+1) - 1 ) / ( N - 1 ) nodes in a complete N-ary tree.
- *
- * Dimensions:
- *  (tree) x (board) x (board_component)
- *   (n)   x  216 leaf nodes x 14 components = 3024n threads.
- */
-
-// Bug: if the game ends after the sequential step but before the GPU evaluation level,
-//   then the score is wonky.
-
-// The number of layers, including the root and bottom layers.
-
 int tree_size ( void )
 {
 	return tree_array_size( 6, PARALLEL_DEPTH - 1 );
@@ -204,7 +171,6 @@ void minimax( __local Board *board_array )
 				else
 					score = INT_MAX;
 				
-				int has_legal_move = FALSE;
 				for ( int i = 0; i < 6; i++ )
 				{
 					Board child = board_array[child_offset + i];
@@ -212,14 +178,11 @@ void minimax( __local Board *board_array )
 						 && ( ( playerToMove == TOP && child.score > score )
 							  || ( playerToMove == BOTTOM && child.score < score ) ) )
 					{
-						has_legal_move = TRUE;
 						score = child.score;
 					}
 				}
-				
-				if ( has_legal_move )
-					board_array[board_offset].score = score;
-				// else leave it with the evaluated score, as a leaf node.
+
+				board_array[board_offset].score = score;
 			}
 		}
 
@@ -257,8 +220,8 @@ __kernel void opencl_player( __global Board *host_start )
 	__local Board board_array[259];
 
 	// If this whole tree isn't meaningful, don't do anything.
-//	if ( !host_start[tree].legal_move )
-//		return;
+	if ( !host_start[tree].legal_move )
+		return;
 
 	generate_boards( host_start, board_array );
 	barrier( CLK_LOCAL_MEM_FENCE );
