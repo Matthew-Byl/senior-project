@@ -95,7 +95,7 @@ void generate_boards( __global Board *host_start, __local Board *board_array )
 	Board m_board;
 	int power_of_six = 6;
 	int level_start = 1;
-	for ( int i = 1; i < PARALLEL_DEPTH; i++ )
+	for ( int i = 1; i < PARALLEL_DEPTH + 1; i++ )
 	{
 		if ( local_id < power_of_six )
 		{

@@ -56,6 +56,9 @@ void check_boards( Board *board, Board *opencl_boards, int idx )
 		move_offset = 0;
 
 	int child_offset = tree_array_first_child( 6, idx );
+	if ( child_offset > 258 )
+		return;
+
 	for ( int i = 0; i < 6; i++ )
 	{
 		if ( board_legal_move( board, i + move_offset ) )
@@ -100,13 +103,14 @@ int main ( void )
 	string src((std::istreambuf_iterator<char>(t)),
 			   std::istreambuf_iterator<char>());
 
+/*
 	Board b;
 	for ( int i = 0; i < 10; i++ )
 	{
 		b = generate_valid_board();
 		board_print( &b );
 	}
-
+*/
 	test_generate_boards( src );
 
 
