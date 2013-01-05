@@ -42,16 +42,18 @@ KalahPlayer human_player( void )
 
 int bonzo_move( Board *b )
 {
+	int i;
+
 	if (b->player_to_move == TOP)
 	{
-		for (int i=12; i>=7; i--)               // try first go-again
+		for (i=12; i>=7; i--)               // try first go-again
 			if (b->board[i] == 13-i) return i;
-		for (int i=12; i>=7; i--)               // otherwise, first
+		for (i=12; i>=7; i--)               // otherwise, first
 			if (b->board[i] > 0) return i;    // available move
 	} else {
-		for (int i=5; i>=0; i--)
+		for (i=5; i>=0; i--)
 			if (b->board[i] == 6-i) return i;
-		for (int i=5; i>=0; i--)
+		for (i=5; i>=0; i--)
 			if (b->board[i] > 0) return i;
 	}
 	return -1;              // an illegal move if there aren't any legal ones.
@@ -102,10 +104,15 @@ int minimax_eval( Board *b )
 
 MinimaxResult minimax_move( Board *b, int depth )
 {
+	int i;
+	MinimaxResult ret;
+	MinimaxResult rec_result;
+	MinimaxResult best_result;
+	Board moved_board;
+	best_result.move = -1;
+
 	if ( depth == 0 || board_game_over( b ) )
-	{
-		MinimaxResult ret;
-		
+	{	
 		ret.move = -1;
 		ret.score = minimax_eval( b );
 
@@ -114,20 +121,15 @@ MinimaxResult minimax_move( Board *b, int depth )
 		return ret;
 	}
 
-	MinimaxResult rec_result;
-	MinimaxResult best_result;
-	best_result.move = -1;
-
 	if ( b->player_to_move == TOP )
 	{
 		// MAX
 		best_result.score = INT_MIN;
 
-		for ( int i = 7; i < 13; i++ )
+		for ( i = 7; i < 13; i++ )
 		{
 			if ( board_legal_move( b, i ) )
 			{
-				Board moved_board;
 				board_copy( b, &moved_board );
 				board_make_move( &moved_board, i );
 
@@ -146,11 +148,10 @@ MinimaxResult minimax_move( Board *b, int depth )
 		// MIN
 		best_result.score = INT_MAX;
 
-		for ( int i = 0; i < 6; i++ )
+		for ( i = 0; i < 6; i++ )
 		{
 			if ( board_legal_move( b, i ) )
 			{
-				Board moved_board;
 				board_copy( b, &moved_board );
 				board_make_move( &moved_board, i );
 
@@ -190,7 +191,7 @@ KalahPlayer minimax_player( void )
 }
 
 /*********** Stackless Minimax player ****************/
-
+#if 0
 #define DEPTH 7
 #define TREE_SIZE 1679616  // 6^1 + 6^2 + 6^3 + 6^4
 
@@ -364,3 +365,5 @@ KalahPlayer stackless_minimax_player( void )
 
 	return st_minimax;	
 }
+
+#endif
