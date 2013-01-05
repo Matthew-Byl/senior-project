@@ -2,6 +2,8 @@
 extern "C" {
 #include "board.h"
 #include "tree_array.h"
+#include "simple_players.h"
+#include "depths.h"
 }
 
 #include <CLKernel.h>
@@ -12,7 +14,7 @@ extern "C" {
 #include <climits>
 using namespace std;
 
-#define NUM_ITERATIONS 512
+#define NUM_ITERATIONS 4096
 
 Board generate_valid_board()
 {
@@ -151,6 +153,7 @@ int check_minimax( Board *opencl_boards, int idx )
 		best_score = INT_MAX;
 
 	int child_offset = tree_array_first_child( 6, idx );
+	bool has_legal_move = false;
 	for ( int i = 0; i < 6; i++ )
 	{
 		if ( !opencl_boards[child_offset + i].legal_move )
@@ -161,9 +164,13 @@ int check_minimax( Board *opencl_boards, int idx )
 		if ( ( opencl_boards[idx].player_to_move == TOP && score > best_score )
 			 || ( opencl_boards[idx].player_to_move == BOTTOM && score < best_score ) )
 		{
+			has_legal_move = true;
 			best_score = score;
 		}
 	}
+
+	if ( !has_legal_move )
+		return opencl_boards[idx].score;
 
 	assert( opencl_boards[idx].score == best_score );
 	return best_score;
@@ -196,12 +203,47 @@ void test_minimax( string src )
 		if ( !boards[0].legal_move )
 			boards[0].legal_move = TRUE;
 		
-
-		for ( int i = 43; i < 259; i++ )
+		// The OpenCL code assumes that all the boards are scored, for game-overs.
+		for ( int i = 0; i < 259; i++ )
 			boards[i].score = minimax_eval( &boards[i] );
 
 		minimax_test( args );
 		check_minimax( boards, 0 );
+
+		cout << "* " << flush;
+	}
+
+	cout << endl << "All tests passed." << endl;
+}
+
+void test_combination( string src )
+{
+	cout << "Testing entire OpenCL component..." << endl;
+
+	Board start_boards[256];
+
+	CLKernel opencl_player( "opencl_player", src );
+	CLUnitArgument host_start_boards( "Board", start_boards, 256 );
+	vector<CLUnitArgument> args;
+	args.push_back( host_start_boards );
+	opencl_player.setGlobalDimensions( 256, 216 );
+	opencl_player.setLocalDimensions( 1, 216 );
+
+	for ( int i = 0; i < NUM_ITERATIONS; i++ )
+	{
+		// Generate start boards.
+		for ( int j = 0; j < 256; j++ )
+			start_boards[j] = generate_valid_board();
+		
+		// Run kernel
+		opencl_player( args );
+		
+		// Test result
+		for ( int j = 0; j < 256; j++ )
+		{
+			int minimax_score = minimax_move( &start_boards[j], PARALLEL_DEPTH ).score;		
+			assert( start_boards[j].score == minimax_score );
+		}
 
 		cout << "* " << flush;
 	}
@@ -225,9 +267,10 @@ int main ( void )
 		board_print( &b );
 	}
 */
-	test_generate_boards( src );
-	test_evaluate_boards( src );
+//	test_generate_boards( src );
+//	test_evaluate_boards( src );
 	test_minimax( src );
+	test_combination( src );
 
 	return 0;
 }

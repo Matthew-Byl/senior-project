@@ -24,4 +24,10 @@
 #define CL_CHAR char
 #endif
 
+typedef struct
+{
+	int move;
+	int score;
+} MinimaxResult;
+
 #endif

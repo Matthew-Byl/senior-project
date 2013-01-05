@@ -100,12 +100,6 @@ int minimax_eval( Board *b )
 	return b->board[13] - b->board[6];
 }
 
-typedef struct
-{
-	int move;
-	int score;
-} MinimaxResult;
-
 MinimaxResult minimax_move( Board *b, int depth )
 {
 	if ( depth == 0 || board_game_over( b ) )

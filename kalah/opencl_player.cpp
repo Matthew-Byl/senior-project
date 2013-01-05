@@ -38,11 +38,6 @@ int ipow( int n, int k )
 	return (int) pow( n, k );
 }
 
-typedef struct {
-	int move;
-	int score;
-} MinimaxResult;
-
 class OpenCLPlayer
 {
 public:
@@ -64,7 +59,7 @@ public:
 	void generate_board( Board parent, int depth );
 	MinimaxResult run_minimax( Board &parent, int depth );
 	void generate_start_boards();
-	int makeMove();
+	MinimaxResult makeMove();
 	int minimax_eval( Board b );
 
 	void set_board( Board b );
@@ -152,7 +147,7 @@ int OpenCLPlayer::minimax_eval( Board b )
 	return b.board[13] - b.board[6];
 }
 
-int OpenCLPlayer::makeMove()
+MinimaxResult OpenCLPlayer::makeMove()
 {
 	// @todo: we might exceed a dimension (like when n=7), so run kernels multiple times with a global offset.
 
@@ -160,7 +155,14 @@ int OpenCLPlayer::makeMove()
 //			cout << "Leaf nodes: " << num_leaf_nodes << endl;
 
 	if ( board_game_over( &myStartBoard ) )
-		return minimax_eval( myStartBoard );
+	{
+		MinimaxResult mr;
+
+		mr.move = -1;
+		mr.score = minimax_eval( myStartBoard );
+
+		return mr;
+	}
 
 	// Create start boards
 	generate_start_boards();
@@ -220,7 +222,7 @@ int OpenCLPlayer::makeMove()
 	// Test our move against the minimax player.
 
 	// To make it an independent player, return move.move.
-	return move.score;
+	return move;
 }
 
 MinimaxResult OpenCLPlayer::run_minimax( Board &parent, int depth )
@@ -301,7 +303,7 @@ MinimaxResult opencl_player_pre_minimax( Board *b, int depth )
 //		board_print( b );
 
 		player.set_board( *b );
-		ret.score = player.makeMove();
+		ret.score = player.makeMove().score;
 //		cout << ret.score << endl;
 
 		return ret;
