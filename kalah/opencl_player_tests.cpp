@@ -274,9 +274,9 @@ int main ( void )
 		board_print( &b );
 	}
 */
-//	test_generate_boards( src );
-//	test_evaluate_boards( src );
-//	test_minimax( src );
+	test_generate_boards( src );
+	test_evaluate_boards( src );
+	test_minimax( src );
 	test_combination( src );
 
 	return 0;
