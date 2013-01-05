@@ -147,10 +147,32 @@ __kernel void generate_boards_test( __global Board *start_board, __global Board 
 
 void evaluate_boards( __local Board *board_array )
 {
-	int local_id = get_real_local_id();
+	int local_id = get_local_id( 1 );
 
 	// Evaluate boards.
 	evaluate_board( local_id, board_array);
+
+	if ( local_id < 43 )
+		evaluate_board( local_id + 216, board_array );
+}
+
+__kernel void evaluate_boards_test( __global Board *host_board_array )
+{
+	__local Board board_array[259];
+	int local_id = get_local_id( 1 );
+
+	board_array[local_id] = host_board_array[local_id];
+	if ( local_id < 43 )
+		board_array[local_id + 216] = host_board_array[local_id + 216];
+	barrier( CLK_LOCAL_MEM_FENCE );
+
+	evaluate_boards( board_array );
+	barrier( CLK_LOCAL_MEM_FENCE );
+
+	host_board_array[local_id] = board_array[local_id];
+
+	if ( local_id < 43 )
+		host_board_array[local_id + 216] = board_array[local_id + 216];
 }
 
 void minimax( __local Board *board_array )

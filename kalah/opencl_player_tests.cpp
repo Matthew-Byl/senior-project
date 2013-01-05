@@ -11,6 +11,8 @@ extern "C" {
 #include <cstdlib>
 using namespace std;
 
+#define NUM_ITERATIONS 512
+
 Board generate_valid_board()
 {
 	Board board;
@@ -72,27 +74,69 @@ void check_boards( Board *board, Board *opencl_boards, int idx )
 
 void test_generate_boards( string src )
 {
+	cout << "Testing generate_boards..." << endl;
+
 	Board boards[259];
-	Board start_board = generate_valid_board();
+	Board start_board;
 
 	CLKernel generate_boards_test( "generate_boards_test", src );
 
 	CLUnitArgument host_boards( "Board", boards, 259 );
-	CLUnitArgument start_boards( "Board", start_board );
+	CLUnitArgument start_boards( "Board", &start_board, 1 );
 	vector<CLUnitArgument> args;
 	args.push_back( start_boards );
 	args.push_back( host_boards );
-
 	generate_boards_test.setGlobalDimensions( 1, 216 );
 	generate_boards_test.setLocalDimensions( 1, 216 );
-	generate_boards_test( args );
 
-	check_boards( &start_board, boards, 0 );
 
-	for ( int i = 0; i < 259; i++ )
+	for ( int i = 0; i < NUM_ITERATIONS; i++ )
 	{
-		board_print( &boards[i] );
+		start_board = generate_valid_board();
+		generate_boards_test( args );
+
+		check_boards( &start_board, boards, 0 );
+		cout << "* " << flush;
 	}
+
+	cout << endl << "All tests passed." << endl;
+}
+
+int minimax_eval( Board *b )
+{
+	return b->board[13] - b->board[6];
+}
+
+void test_evaluate_boards( string src )
+{
+	cout << "Testing evaluate_boards..." << endl;
+
+	Board boards[259];
+
+	CLKernel evaluate_boards_test( "evaluate_boards_test", src );
+	CLUnitArgument host_boards( "Board", boards, 259 );
+	vector<CLUnitArgument> args;
+	args.push_back( host_boards );
+	evaluate_boards_test.setGlobalDimensions( 1, 216 );
+	evaluate_boards_test.setLocalDimensions( 1, 216 );	
+
+	for ( int j = 0; j < NUM_ITERATIONS; j++ )
+	{
+		for ( int i = 0; i < 259; i++ )
+		{
+			boards[i] = generate_valid_board();
+		}
+		
+		evaluate_boards_test( args );
+		
+		for ( int i = 0; i < 259; i++ )
+		{
+			assert( boards[i].score == minimax_eval( &boards[i] ) );
+		}
+		cout << "* " << flush;
+	}
+
+	cout << endl << "All tests passed." << endl;
 }
 
 int main ( void )
@@ -112,7 +156,7 @@ int main ( void )
 	}
 */
 	test_generate_boards( src );
-
+	test_evaluate_boards( src );
 
 	return 0;
 }
