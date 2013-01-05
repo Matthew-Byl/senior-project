@@ -155,6 +155,9 @@ int OpenCLPlayer::makeMove()
 //	int num_leaf_nodes = get_leaf_nodes( mySequentialDepth );
 //			cout << "Leaf nodes: " << num_leaf_nodes << endl;
 
+	if ( board_game_over( &myStartBoard ) )
+		return minimax_eval( myStartBoard );
+
 	// Create start boards
 	generate_start_boards();
 
@@ -210,6 +213,7 @@ int OpenCLPlayer::makeMove()
 	MinimaxResult move = run_minimax( myStartBoard, mySequentialDepth );
 
 	assert( board_legal_move( &myStartBoard, move.move ) );
+	// Test our move against the minimax player.
 
 	// To make it an independent player, return move.move.
 	return move.score;

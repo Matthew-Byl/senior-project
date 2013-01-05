@@ -2,7 +2,7 @@
 
 #define WORKGROUP_SIZE 1000000
 
-#define PRE_DEPTH 1
+#define PRE_DEPTH 4
 #define SEQUENTIAL_DEPTH 4
 #define PARALLEL_DEPTH 3 // This has to match the value MINIMAX_DEPTH in the kernel. @TODO: consistency
 // Actual tree depth:
