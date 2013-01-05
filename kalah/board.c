@@ -26,7 +26,9 @@
  */
 void board_initialize( Board *b, PlayerPosition to_move )
 {
-	for ( int i = 0; i < 13; i++ ) 
+	int i;
+
+	for ( i = 0; i < 13; i++ ) 
 		b->board[i] = 4;
 	b->board[6] = 0;
 	b->board[13] = 0;
@@ -118,8 +120,10 @@ PlayerPosition board_winner( Board *b )
 
 int board_top_score( Board *b )
 {
+	int i;
+
 	int score = 0;
-	for ( int i = 7; i <= 13; i++ )
+	for ( i = 7; i <= 13; i++ )
 		score += b->board[i];
 
 	return score;
@@ -127,8 +131,10 @@ int board_top_score( Board *b )
 
 int board_bottom_score( Board *b )
 {
+	int i;
+
 	int score = 0;
-	for ( int i = 0; i <= 6; i++ )
+	for ( i = 0; i <= 6; i++ )
 		score += b->board[i];
 
 	return score;
@@ -136,28 +142,25 @@ int board_bottom_score( Board *b )
 
 int board_make_move( Board *b, int move )
 {
+	int stones, capture, pos;
+
 	// Check if a legal move.
 	if ( !board_legal_move( b, move ) )
 	{
 #ifndef _OPENCL_
-		const int MAKE_MOVE_DEBUG = 1;
-		if ( MAKE_MOVE_DEBUG )
-		{
-			printf( "Illegal move: %d; terminating.", move );
-			abort();
-		}
+		printf( "Illegal move: %d; terminating.", move );
+		abort();
 #endif
 
 		return -1;
 	}
 
 	// Pick up the stones
-	int stones = b->board[move];
+	stones = b->board[move];
 	b->board[move] = 0;
-	int capture = 0;
+	capture = 0;
 	
     // distribute the stones
-	int pos;
 	for ( pos = move + 1; stones > 0; pos++ )
 	{
 		// Don't add stones to opponent's kalah
@@ -211,13 +214,15 @@ int board_make_move( Board *b, int move )
 void board_print( Board *b )
 {
 #ifndef _OPENCL_
+	int i;
+
 	printf("\n    ");
-	for (int i=12; i>=7; i--)
+	for (i=12; i>=7; i--)
 		printf("%d  ", b->board[i] );
 	printf("\n");
 	printf("%d                     %d\n", b->board[13], b->board[6]);
 	printf("    ");
-	for (int i=0; i<=5; i++)
+	for (i=0; i<=5; i++)
 		printf("%d  ", b->board[i]);
 	printf("\n");
 	printf( "Score: %d\n", b->score );
@@ -229,6 +234,8 @@ void board_print( Board *b )
 // Doesn't check score.
 int board_equal( Board *a, Board *b )
 {
+	int i;
+
 	if ( !(a->legal_move) && !(b->legal_move) )
 		return TRUE;
 
@@ -238,7 +245,7 @@ int board_equal( Board *a, Board *b )
 	if ( a->player_to_move != b->player_to_move )
 		return FALSE;
 
-	for ( int i = 0; i < 14; i++ )
+	for ( i = 0; i < 14; i++ )
 	{
 		if ( a->board[i] != b->board[i] )
 			return FALSE;
