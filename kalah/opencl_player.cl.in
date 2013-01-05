@@ -95,7 +95,7 @@ void generate_boards( __global Board *host_start, __local Board *board_array )
 	Board m_board;
 	int power_of_six = 6;
 	int level_start = 1;
-	for ( int i = 1; i < PARALLEL_DEPTH + 1; i++ )
+	for ( int i = 1; i < PARALLEL_DEPTH; i++ )
 	{
 		if ( local_id < power_of_six )
 		{
@@ -180,11 +180,12 @@ void minimax( __local Board *board_array )
 	// Minimax
 	int power_of_six = (int) pow( 6.0f, PARALLEL_DEPTH - 2 );
 	int level_start = leaf_start();
-	int local_id = get_real_local_id();
+	int local_id = get_local_id( 1 );
 
 	for ( int i = PARALLEL_DEPTH - 2; i >= 0; i-- )
 	{
 		level_start -= power_of_six;
+
 		if ( local_id < power_of_six )
 		{
 			// The board in board_array.

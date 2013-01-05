@@ -153,6 +153,9 @@ int check_minimax( Board *opencl_boards, int idx )
 	int child_offset = tree_array_first_child( 6, idx );
 	for ( int i = 0; i < 7; i++ )
 	{
+		if ( !opencl_boards[child_offset + i].legal_move )
+			continue;
+
 		int score = check_minimax( opencl_boards, child_offset + i );
 
 		if ( ( opencl_boards[idx].player_to_move == TOP && score > best_score )
@@ -188,6 +191,10 @@ void test_minimax( string src )
 			boards[i].legal_move = FALSE;
 	}
 
+	if ( !boards[0].legal_move )
+		boards[0].legal_move = TRUE;
+		
+
 	for ( int i = 43; i < 259; i++ )
 		boards[i].score = minimax_eval( &boards[i] );
 
@@ -214,7 +221,7 @@ int main ( void )
 	}
 */
 	test_generate_boards( src );
-	test_evaluate_boards( src );
+//	test_evaluate_boards( src );
 	test_minimax( src );
 
 	return 0;
