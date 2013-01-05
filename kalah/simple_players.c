@@ -1,5 +1,6 @@
 #include "simple_players.h"
 #include "depths.h"
+#include "evaluate.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -83,24 +84,6 @@ const char *minimax_name( void )
 }
 
 int num_evaled;
-int minimax_eval( Board *b )
-{
-	// Kalah counts double, but stones count too.
-/*
-	int score = 5 * ( b->board[13] - b->board[6] );
-	
-	for ( int i = 0; i <= 5; i++ )
-		score -= b->board[i];
-
-	for ( int i = 7; i <= 12; i++ )
-		score += b->board[i];
-
-	num_evaled++;
-	return score;
-*/
-
-	return b->board[13] - b->board[6];
-}
 
 MinimaxResult minimax_move( Board *b, int depth )
 {

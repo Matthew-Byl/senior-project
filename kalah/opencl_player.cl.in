@@ -2,6 +2,7 @@
 #include "board.c"
 #include "tree_array.c"
 #include "depths.h"
+#include "evaluate.c"
 
 int tree_size ( void )
 {
@@ -37,7 +38,8 @@ void evaluate_board( int board, __local Board *board_array )
 	}
 */
 
-	board_array[board].score = board_array[board].board[13] - board_array[board].board[6];
+	Board b = board_array[board];
+	board_array[board].score = minimax_eval( &b );
 }
 
 int get_real_local_id( void )
