@@ -1,7 +1,0 @@
-#ifndef _SIMPLE_PLAYERS_H
-#define _SIMPLE_PLAYERS_H
-
-KalahPlayer human_player();
-KalahPlayer bonzo_player();
-
-#endif
