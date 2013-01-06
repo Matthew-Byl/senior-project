@@ -36,7 +36,6 @@ public:
 	MinimaxResult run_minimax( Board &parent, int depth );
 	void generate_start_boards();
 	MinimaxResult makeMove();
-	int minimax_eval( Board b );
 
 	void set_board( Board b );
 

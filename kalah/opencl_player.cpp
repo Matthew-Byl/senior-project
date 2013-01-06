@@ -4,6 +4,7 @@ extern "C" {
 #include "board.h"
 #include "tree_array.h"
 #include "simple_players.h"
+#include "evaluate.h"
 }
 
 #include "depths.h"
@@ -96,23 +97,6 @@ void OpenCLPlayer::generate_start_boards()
 	generate_board( myStartBoard, mySequentialDepth );
 };
 
-int OpenCLPlayer::minimax_eval( Board b )
-{
-/*
-    int score = 5 * ( b.board[13] - b.board[6] );
-
-    for ( int i = 0; i <= 5; i++ )
-        score -= b.board[i];
-
-    for ( int i = 7; i <= 12; i++ )
-		score += b.board[i];
-
-    return score;
-*/
-
-	return b.board[13] - b.board[6];
-}
-
 MinimaxResult OpenCLPlayer::makeMove()
 {
 	// @todo: we might exceed a dimension (like when n=7), so run kernels multiple times with a global offset.
@@ -125,7 +109,7 @@ MinimaxResult OpenCLPlayer::makeMove()
 		MinimaxResult mr;
 
 		mr.move = -1;
-		mr.score = minimax_eval( myStartBoard );
+		mr.score = minimax_eval( &myStartBoard );
 
 		return mr;
 	}
@@ -214,7 +198,7 @@ MinimaxResult OpenCLPlayer::run_minimax( Board &parent, int depth )
 	{
 		MinimaxResult mr;
 
-		mr.score = minimax_eval( parent );
+		mr.score = minimax_eval( &parent );
 		mr.move = -1;
 
 		return mr;
@@ -267,7 +251,12 @@ MinimaxResult opencl_player_pre_minimax( OpenCLPlayer *player, Board *b, int dep
 	}
 	else if ( board_game_over( b ) )
 	{
-		ret.score = player->minimax_eval( *b );
+		// I think there is a compiler bug here. We have to dereference b or else
+		//  strange things happen. We have to modify bd to avoid a warning.
+		Board bd = *b;
+		bd.score = 0;
+
+		ret.score = minimax_eval( b );
 		ret.move = -1;
 
 		return ret;
