@@ -4,6 +4,7 @@ extern "C" {
 #include "tree_array.h"
 #include "simple_players.h"
 #include "depths.h"
+#include "evaluate.h"
 }
 
 #include <CLKernel.h>
@@ -119,11 +120,6 @@ void test_generate_boards( string src )
 	}
 
 	cout << endl << "All tests passed." << endl;
-}
-
-int minimax_eval( Board *b )
-{
-	return b->board[13] - b->board[6];
 }
 
 void test_evaluate_boards( string src )
