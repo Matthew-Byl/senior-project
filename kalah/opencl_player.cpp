@@ -239,24 +239,24 @@ MinimaxResult OpenCLPlayer::run_minimax( Board &parent, int depth )
 }
 
 // depth will increase.
-MinimaxResult opencl_player_pre_minimax( OpenCLPlayer *player, Board *b, int depth )
+MinimaxResult opencl_player_pre_minimax( OpenCLPlayer &player, Board &b, int depth )
 {
 	MinimaxResult ret;
 
 	if ( depth == PRE_DEPTH )
 	{
-		player->set_board( *b );
-		ret = player->makeMove();
+		player.set_board( b );
+		ret = player.makeMove();
 		return ret;
 	}
-	else if ( board_game_over( b ) )
+	else if ( board_game_over( &b ) )
 	{
 		// I think there is a compiler bug here. We have to dereference b or else
 		//  strange things happen. We have to modify bd to avoid a warning.
-		Board bd = *b;
-		bd.score = 0;
+//		Board bd = *b;
+//		bd.score = 0;
 
-		ret.score = minimax_eval( b );
+		ret.score = minimax_eval( &b );
 		ret.move = -1;
 
 		return ret;
@@ -266,20 +266,20 @@ MinimaxResult opencl_player_pre_minimax( OpenCLPlayer *player, Board *b, int dep
 	MinimaxResult best_result;
 	best_result.move = -1;
 
-	if ( b->player_to_move == TOP )
+	if ( b.player_to_move == TOP )
 	{
 		// MAX
 		best_result.score = INT_MIN;
 
 		for ( int i = 7; i < 13; i++ )
 		{
-			if ( board_legal_move( b, i ) )
+			if ( board_legal_move( &b, i ) )
 			{
 				Board moved_board;
-				moved_board = *b;
+				moved_board = b;
 				board_make_move( &moved_board, i );
 
-				rec_result = opencl_player_pre_minimax( player, &moved_board, depth + 1 );
+				rec_result = opencl_player_pre_minimax( player, moved_board, depth + 1 );
 
 				if ( rec_result.score > best_result.score )
 				{
@@ -296,13 +296,13 @@ MinimaxResult opencl_player_pre_minimax( OpenCLPlayer *player, Board *b, int dep
 
 		for ( int i = 0; i < 6; i++ )
 		{
-			if ( board_legal_move( b, i ) )
+			if ( board_legal_move( &b, i ) )
 			{
 				Board moved_board;
-				board_copy( b, &moved_board );
+				moved_board = b;
 				board_make_move( &moved_board, i );
 
-				rec_result = opencl_player_pre_minimax( player, &moved_board, depth + 1 );
+				rec_result = opencl_player_pre_minimax( player, moved_board, depth + 1 );
 
 				if ( rec_result.score < best_result.score )
 				{
@@ -324,7 +324,7 @@ extern "C" int opencl_player_move( Board *b )
 
 	OpenCLPlayer player( SEQUENTIAL_DEPTH, src );
 	
-	MinimaxResult ret = opencl_player_pre_minimax( &player, b, 0 );
+	MinimaxResult ret = opencl_player_pre_minimax( player, *b, 0 );
 
 	return ret.move;
 }

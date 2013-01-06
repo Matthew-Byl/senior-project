@@ -52,6 +52,6 @@ private:
 	std::vector<Board> myStartBoards;
 };
 
-MinimaxResult opencl_player_pre_minimax( OpenCLPlayer *player, Board *b, int depth );
+MinimaxResult opencl_player_pre_minimax( OpenCLPlayer &player, Board &b, int depth );
 
 #endif

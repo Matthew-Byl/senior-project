@@ -304,7 +304,7 @@ void test_pre_minimax( string src )
 	{
 		Board start = generate_valid_board();
 
-		MinimaxResult p_ocl_result = opencl_player_pre_minimax( &opencl_player, &start, 0 );
+		MinimaxResult p_ocl_result = opencl_player_pre_minimax( opencl_player, start, 0 );
 		MinimaxResult seq_result = minimax_move( &start, PRE_DEPTH + SEQUENTIAL_DEPTH + PARALLEL_DEPTH - 1 );
 
 		assert( p_ocl_result.move == seq_result.move );
