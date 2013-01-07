@@ -316,6 +316,45 @@ void test_pre_minimax( string src )
 	cout << endl << "All tests passed." << endl;
 }
 
+void test_top_bottom( string src )
+{
+	cout << "Testing whether being TOP or BOTTOM makes a difference..." << endl;
+	OpenCLPlayer opencl_player( 4, src );
+
+	for ( int i = 0; i < NUM_ITERATIONS; i++ )
+	{
+		Board start = generate_valid_board();
+
+		MinimaxResult ocl_result = opencl_player_pre_minimax( opencl_player, start, 0 );
+		
+		// Flip the board around.
+		Board flipped;
+		board_initialize( &flipped, TOP );
+		if ( start.player_to_move == TOP )
+			flipped.player_to_move = BOTTOM;
+		else
+			flipped.player_to_move = TOP;
+
+		for ( int i = 0; i < 7; i++ )
+		{
+			flipped.board[i] = start.board[i+7];
+			flipped.board[i+7] = start.board[i];
+		}
+
+		MinimaxResult flipped_result = opencl_player_pre_minimax( opencl_player, flipped, 0 );
+		
+		if ( start.player_to_move == TOP )
+			assert( ocl_result.move == ( flipped_result.move + 7 ) );
+		else
+			assert( ( ocl_result.move + 7 ) == flipped_result.move );
+
+		assert( ocl_result.score == -flipped_result.score );
+		cout << "* " << flush;
+	}
+
+	cout << endl << "All tests passed." << endl;
+}
+
 int main ( void )
 {
 	srand( time( NULL ) );
@@ -337,7 +376,8 @@ int main ( void )
 //	test_minimax( src );
 //	test_combination( src );
 //	test_opencl_object( src );
-	test_pre_minimax( src );
+//	test_pre_minimax( src );
+	test_top_bottom( src );
 
 	return 0;
 }
