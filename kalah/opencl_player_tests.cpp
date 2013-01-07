@@ -371,12 +371,12 @@ int main ( void )
 		board_print( &b );
 	}
 */
-//	test_generate_boards( src );
-//	test_evaluate_boards( src );
-//	test_minimax( src );
-//	test_combination( src );
-//	test_opencl_object( src );
-//	test_pre_minimax( src );
+	test_generate_boards( src );
+	test_evaluate_boards( src );
+	test_minimax( src );
+	test_combination( src );
+	test_opencl_object( src );
+	test_pre_minimax( src );
 	test_top_bottom( src );
 
 	return 0;

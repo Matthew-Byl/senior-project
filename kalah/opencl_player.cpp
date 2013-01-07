@@ -316,14 +316,14 @@ MinimaxResult opencl_player_pre_minimax( OpenCLPlayer &player, Board &b, int dep
 	return best_result;
 }
 
-extern "C" int opencl_player_move( Board *b )
-{
-	ifstream t("opencl_player.cl");
-    string src((std::istreambuf_iterator<char>(t)),
+ifstream t("opencl_player.cl");
+string src((std::istreambuf_iterator<char>(t)),
                std::istreambuf_iterator<char>());
 
-	OpenCLPlayer player( SEQUENTIAL_DEPTH, src );
-	
+OpenCLPlayer player( SEQUENTIAL_DEPTH, src );
+
+extern "C" int opencl_player_move( Board *b )
+{	
 	MinimaxResult ret = opencl_player_pre_minimax( player, *b, 0 );
 
 	return ret.move;
@@ -338,75 +338,3 @@ KalahPlayer opencl_minimax_player( void )
 
 	return k;
 }
-
-#ifdef MAKE_MAIN
-
-void easy_breakpoint()
-{
-	return;
-}
-
-#include <time.h>
-clock_t startm, stopm;
-#define START if ( (startm = clock()) == -1) {printf("Error calling clock");exit(1);}
-#define STOP if ( (stopm = clock()) == -1) {printf("Error calling clock");exit(1);}
-#define PRINTTIME printf( "%6.3f seconds used by the processor.", ((double)stopm-startm)/CLOCKS_PER_SEC);
-
-#include <google/profiler.h>
-
-int main ( void )
-{
-	KalahPlayer minimax = minimax_player();
-	KalahPlayer opencl_minimax = opencl_minimax_player();
-
-//	ProfilerStart( "opencl_player.perf" );
-	for ( int i = 7; i < 12; i++ )
-	{
-		for ( int j = 0; j < 6; j++ )
-		{
-			Board b;
-			board_initialize( &b, TOP );
-			board_make_move( &b, i );
-
-			// Go-agains
-			if ( b.player_to_move == TOP )
-				continue;
-			
-			board_make_move( &b, j );
-
-			START;
-			cout << "OpenCL: " << endl;
-
-			int ocl_move = opencl_minimax.make_move( &b );
-
-			STOP;
-			PRINTTIME;
-			cout << endl;
-
-			START;
-			cout << "Minimax: " << endl;
-			int min_move = minimax.make_move( &b );
-			STOP;
-			PRINTTIME;
-			cout << endl;
-
-//			cerr << "OpenCL Move: " << ocl_move << endl;
-//			cerr << "Minimax Move: " << min_move << endl;
-
-			if ( ocl_move != min_move )
-			{
-			cerr << "OpenCL Move: " << ocl_move << endl;
-			cerr << "Minimax Move: " << min_move << endl;
-
-		   			}
-		}
-	}
-
-//			ProfilerStop();
-		
-/*
-	OpenCLPlayerTester tester;
-	tester.runTests();
-*/
-}
-#endif
