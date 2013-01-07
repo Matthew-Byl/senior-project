@@ -6,16 +6,13 @@ opencl_player_tests: opencl_player.cl opencl_player_tests.cpp opencl_player.cpp 
 kalah: main.o board.o simple_players.o opencl_player.o tree_array.o opencl_player.cl evaluate.o
 	clang++ main.o board.o simple_players.o opencl_player.o tree_array.o evaluate.o ../cl_test/libCLTest.a -L /opt/AMDAPP/lib/x86_64 -Wall -g -o kalah -lOpenCL
 
-muyskens_kalah: main.cpp board.o simple_players.o
-	g++ main.cpp board.o simple_players.o -o muyskens_kalah
-
 %.o: %.cpp *.h
 	clang++ -Wall -I /opt/AMDAPP/include -I ../cl_test/ -g -c $< -o $@
 
 %.o: %.c *.h
 	clang -Wall -g -c $< -o $@
 
-opencl_player.cl: opencl_player.cl.in board.c
+opencl_player.cl: opencl_player.cl.in board.c depths.h tree_array.c evaluate.c
 	cpp opencl_player.cl.in > opencl_player.cl
 
 clean:

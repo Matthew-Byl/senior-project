@@ -5,6 +5,7 @@
 
 KalahPlayer human_player( void );
 KalahPlayer bonzo_player( void );
+KalahPlayer random_player( void );
 
 MinimaxResult minimax_move( Board *b, int depth );
 
