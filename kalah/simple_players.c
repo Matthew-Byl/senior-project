@@ -114,7 +114,7 @@ MinimaxResult minimax_move( Board *b, int depth )
 		{
 			if ( board_legal_move( b, i ) )
 			{
-				board_copy( b, &moved_board );
+				moved_board = *b;
 				board_make_move( &moved_board, i );
 
 				rec_result = minimax_move( &moved_board, depth - 1 );
@@ -136,7 +136,7 @@ MinimaxResult minimax_move( Board *b, int depth )
 		{
 			if ( board_legal_move( b, i ) )
 			{
-				board_copy( b, &moved_board );
+				moved_board = *b;
 				board_make_move( &moved_board, i );
 
 				rec_result = minimax_move( &moved_board, depth - 1 );
