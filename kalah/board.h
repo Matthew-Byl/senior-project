@@ -14,11 +14,13 @@
 #define TOP_KALAH 13
 #define BOTTOM_KALAH 6
 
+// Whose turn it is to move.
 typedef CL_CHAR PlayerPosition;
 #define TOP 0
 #define	BOTTOM 1
 #define	NOBODY 2
 
+// The state of a board.
 typedef struct {
 	CL_CHAR board[BOARD_SIZE];
 	PlayerPosition player_to_move;

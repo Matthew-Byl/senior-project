@@ -1,3 +1,14 @@
+/**
+ * Definitions of some simple Kalah players:
+ *  -Human
+ *  -Bonzo (go-again if possible, then first possible move)
+ *  -Random
+ *  -Sequential Minimax
+ *
+ * @author John Kloosterman
+ * @date Dec. 24, 2012
+ */
+
 #include "simple_players.h"
 #include "depths.h"
 #include "evaluate.h"
@@ -7,7 +18,9 @@
 #include <limits.h>
 #include <time.h>
 
-/*** Human ***/
+/**
+ * Human player
+ */
 const char *human_name( void )
 {
 	return "Human";
@@ -40,8 +53,9 @@ KalahPlayer human_player( void )
 	return human;
 }
 
-/*** Bonzo ***/
-
+/**
+ * Bonzo player.
+ */
 int bonzo_move( Board *b )
 {
 	int i;
@@ -77,14 +91,13 @@ KalahPlayer bonzo_player( void )
 	return bonzo;
 }
 
-/********* Minimax Player ***************/
-
+/**
+ * Sequential minimax player
+ */
 const char *minimax_name( void )
 {
 	return "Minimax";
 }
-
-int num_evaled;
 
 MinimaxResult minimax_move( Board *b, int depth )
 {
@@ -99,8 +112,6 @@ MinimaxResult minimax_move( Board *b, int depth )
 	{	
 		ret.move = -1;
 		ret.score = minimax_eval( b );
-
-//		printf( "%d ", ret.score );
 
 		return ret;
 	}
@@ -155,11 +166,7 @@ MinimaxResult minimax_move( Board *b, int depth )
 
 int minimax_make_move( Board *b )
 {
-	num_evaled = 0;
 	MinimaxResult res = minimax_move( b, MINIMAX_DEPTH );
-//	printf( "Number of boards evaluated: %d\n", num_evaled );
-
-//	printf( "Best move has score %d\n", res.score );
 
 	return res.move;
 }
@@ -174,8 +181,9 @@ KalahPlayer minimax_player( void )
 	return minimax;
 }
 
-/************ random player ***********/
-
+/**
+ * Random-move player.
+ */
 const char *random_name( void )
 {
 	srand( time( NULL ) );

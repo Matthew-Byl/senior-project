@@ -2,7 +2,7 @@
 
 int minimax_eval( Board *b )
 {
-	// Kalah counts double, but stones count too.
+	// Kalah counts 5 times more, but stones count too.
 	int score = 5 * ( b->board[13] - b->board[6] );
 	
 	for ( int i = 0; i <= 5; i++ )
