@@ -23,35 +23,25 @@ public:
 		{
 		};
 
-	~OpenCLPlayer()
-		{
-//			delete[] myBoards;
-		};
-
-	int leaf_start();
-	int get_leaf_nodes( int sequentialDepth );
-	int get_board_array_size( int sequentialDepth );
-
-	void generate_board( Board parent, int depth );
-	MinimaxResult run_minimax( Board &parent, int depth );
-	void generate_start_boards();
+	void set_board( Board b );
 	MinimaxResult makeMove();
 
-	void set_board( Board b );
-
 private:
-	int minimax_idx;
+	void generate_start_boards();
+	void generate_board( Board parent, int depth );
+	MinimaxResult run_minimax( Board &parent, int depth );
 
+	int minimax_idx;
 	CLContext myContext;
 	int mySequentialDepth;
 	int myBoardsSize;
 	Board myStartBoard;
 	CLKernel opencl_player;
-//	CLUnitArgument start_boards;
 
 	std::vector<Board> myStartBoards;
 };
 
+// Exposed for testing.
 MinimaxResult opencl_player_pre_minimax( OpenCLPlayer &player, Board &b, int depth );
 
 #endif

@@ -1,3 +1,30 @@
+/**
+ * OpenCL minimax player.
+ * 
+ * Minimax trees have the property that every subtree of a 
+ *  minimax tree is itself a minimax tree. We use that to
+ *  split up the computation into 3 stages, whose depths are
+ *  defined in depths.h:
+ *
+ * (1) PRE_DEPTH levels of sequential minimax on the CPU, whose 
+ *     leaf nodes are the level (2) trees.
+ * (2) SEQUENTIAL_DEPTH levels of sequential minimax on the CPU.
+ *     This is done in 3 stages:
+ *       a) All the leaf nodes of this tree for which the game is
+ *          not over are put into an array.
+ *       b) The parallel minimax implementation, level (3) is called
+ *          on each of those leaf nodes.
+ *       c) Minimax is run on the leaf nodes.
+ *     The leaf nodes have to remain in memory in order to be passed
+ *      off to the parallel level, which limits how deep this level
+ *      can search. If it's too small, the GPU is under-utilized, and if
+ *      it's too big, we use and transfer around too much memory.
+ * (3) PARALLEL_DEPTH levels of minimax are run on the GPU.
+ * 
+ * @author John Kloosterman
+ * @date Dec. 26, 2012 - Jan. 5, 2013
+ */
+
 #include "opencl_player.h"
 
 extern "C" {
@@ -9,13 +36,6 @@ extern "C" {
 
 #include "depths.h"
 
-/*
- * Things to fix:
- *  -when there isn't a legal move before we get to the OpenCL part.
- */
-
-// #include <CLKernel.h>
-
 #include <iostream>
 #include <cmath>
 #include <climits>
@@ -24,45 +44,83 @@ extern "C" {
 #include <list>
 using namespace std;
 
-void easy_break ( void )
-{
-	return;
-}
-
-
-extern "C" const char *opencl_player_name( void )
-{
-	return "OpenCL Minimax";
-}
-
-int ipow( int n, int k )
-{
-	return (int) pow( n, k );
-}
-
+/**
+ * Set the board that the OpenCLPlayer should evaluate
+ *  when makeMove() is called.
+ */
 void OpenCLPlayer::set_board( Board b )
 {
 	myStartBoard = b;
 }
 
-int OpenCLPlayer::get_leaf_nodes( int sequentialDepth )
+/**
+ * Run levels (2) and (3) of minimax on the current board.
+ */
+MinimaxResult OpenCLPlayer::makeMove()
 {
-	// The number of leaf nodes of the given sequential depth.
-	return ipow( 6, sequentialDepth );
+	// Handle the case when the game ends at our root.
+	if ( board_game_over( &myStartBoard ) )
+	{
+		MinimaxResult mr;
+
+		mr.move = -1;
+		mr.score = minimax_eval( &myStartBoard );
+
+		return mr;
+	}
+
+	// Create the start boards
+	generate_start_boards();
+
+	// C++ guarantees vector elements are stored contiguously.
+	CLUnitArgument start_boards( 
+		"Board", 
+		&myStartBoards[0],
+		myStartBoards.size(), 
+		false, true );
+	start_boards.makePersistent( myContext );
+	int num_leaf_nodes = myStartBoards.size();
+
+	if ( num_leaf_nodes )
+	{
+		int offset = 0;
+		int items;
+		int iterations = 0;
+
+		// We have to batch the work to the GPU, because if one batch
+		//  takes too long, the system gets unreponsive, and after a 
+		//  certain point, the watchdog timer goes off and the system
+		//  locks up.
+		do {
+			if ( ( num_leaf_nodes - offset ) < WORKGROUP_SIZE )
+				items = num_leaf_nodes - offset;
+			else
+				items = WORKGROUP_SIZE;
+			
+			vector<CLUnitArgument> args;
+			args.push_back( start_boards );
+			opencl_player.setGlobalDimensions( items, 216 );
+			opencl_player.setGlobalOffset( offset, 0 );
+			opencl_player.setLocalDimensions( 1, 216 );
+			opencl_player( args );
+			
+			offset += WORKGROUP_SIZE;
+			iterations++;
+		} while ( offset < num_leaf_nodes );
+	}
+
+	// Run minimax on the start boards.
+	minimax_idx = 0;
+	MinimaxResult move = run_minimax( myStartBoard, mySequentialDepth );
+	assert( board_legal_move( &myStartBoard, move.move ) );
+
+	return move;
 }
 
-int OpenCLPlayer::get_board_array_size( int sequentialDepth )
-{
-	int leaf = get_leaf_nodes( sequentialDepth );
-
-	return leaf * tree_array_size( 6, PARALLEL_DEPTH );
-}
-
-int OpenCLPlayer::leaf_start()
-{
-	return tree_array_size( 6, mySequentialDepth - 1 );
-}
-
+/**
+ * Recursively find the leaf nodes of the level (2) minimax tree,
+ *  and put then in the myStartBoards vector.
+ */
 void OpenCLPlayer::generate_board( Board parent, int depth )
 {
 	if ( depth == 0 )
@@ -91,90 +149,21 @@ void OpenCLPlayer::generate_board( Board parent, int depth )
 	}
 }
 
+/**
+ * Generate all the level (2) leaf nodes for the current
+ *  board.
+ */
 void OpenCLPlayer::generate_start_boards()
 {
 	myStartBoards.clear();
 	generate_board( myStartBoard, mySequentialDepth );
 };
 
-MinimaxResult OpenCLPlayer::makeMove()
-{
-	// @todo: we might exceed a dimension (like when n=7), so run kernels multiple times with a global offset.
-
-//	int num_leaf_nodes = get_leaf_nodes( mySequentialDepth );
-//			cout << "Leaf nodes: " << num_leaf_nodes << endl;
-
-	if ( board_game_over( &myStartBoard ) )
-	{
-		MinimaxResult mr;
-
-		mr.move = -1;
-		mr.score = minimax_eval( &myStartBoard );
-
-		return mr;
-	}
-
-	// Create start boards
-	generate_start_boards();
-
-	// C++ guarantees vector elements are stored contiguously.
-	CLUnitArgument start_boards( "Board", &myStartBoards[0], myStartBoards.size(), false, true );
-	start_boards.makePersistent( myContext );
-	int num_leaf_nodes = myStartBoards.size();
-
-/*
-	cout << "LEAF NODES: " << endl;
-	for ( int i = 0; i < num_leaf_nodes; i++ )
-	{
-		board_print( &myStartBoards[i] );
-		cout << endl;
-	}
-	cout << "================" << endl;
-*/
-	if ( num_leaf_nodes )
-	{
-		// Assume the maximum local dimension is 512.
-		int offset = 0;
-		int items;
-		int iterations = 0;
-//	int evaled = 0;
-		do {
-//			cout << "Running iteration " << iterations << ", offset " << offset << endl;
-			
-			if ( ( num_leaf_nodes - offset ) < WORKGROUP_SIZE )
-				items = num_leaf_nodes - offset;
-			else
-				items = WORKGROUP_SIZE;
-			
-			vector<CLUnitArgument> args;
-			args.push_back( start_boards );
-			opencl_player.setGlobalDimensions( items, 216 );
-			opencl_player.setGlobalOffset( offset, 0 );
-			opencl_player.setLocalDimensions( 1, 216 );
-			opencl_player( args );
-			
-			offset += WORKGROUP_SIZE;
-			iterations++;
-		} while ( offset < num_leaf_nodes );
-		
-//	cout << "Number of boards to evaluate: " << evaled << endl;
-//		cout << "Did " << iterations << " iterations." << endl;
-	}
-
-	// Copy back from device.
-//	start_boards.copyFromDevice( myContext.getCommandQueue() );
-
-	// Run minimax on the start boards.
-	minimax_idx = 0;
-	MinimaxResult move = run_minimax( myStartBoard, mySequentialDepth );
-
-	assert( board_legal_move( &myStartBoard, move.move ) );
-	// Test our move against the minimax player.
-
-	// To make it an independent player, return move.move.
-	return move;
-}
-
+/**
+ * Run minimax on the level (2) leaf nodes in myStartBoards,
+ *  which have had their scores populated by the level (3)
+ *  GPU component.
+ */
 MinimaxResult OpenCLPlayer::run_minimax( Board &parent, int depth )
 {
 	MinimaxResult best_result;
@@ -238,11 +227,22 @@ MinimaxResult OpenCLPlayer::run_minimax( Board &parent, int depth )
 	return best_result;
 }
 
-// depth will increase.
+/**
+ * Recursively run level (1) minimax on a board.
+ *
+ * @param player
+ *  The OpenCLPlayer to use to evaluate leaf nodes.
+ * @param b
+ *  The parent of the minimax subtree
+ * @param depth
+ *  The current minimax tree depth, which increases
+ *   as we go down levels.
+ */
 MinimaxResult opencl_player_pre_minimax( OpenCLPlayer &player, Board &b, int depth )
 {
 	MinimaxResult ret;
 
+	// Use the OpenCLPlayer object to go deeper.
 	if ( depth == PRE_DEPTH )
 	{
 		player.set_board( b );
@@ -251,11 +251,6 @@ MinimaxResult opencl_player_pre_minimax( OpenCLPlayer &player, Board &b, int dep
 	}
 	else if ( board_game_over( &b ) )
 	{
-		// I think there is a compiler bug here. We have to dereference b or else
-		//  strange things happen. We have to modify bd to avoid a warning.
-//		Board bd = *b;
-//		bd.score = 0;
-
 		ret.score = minimax_eval( &b );
 		ret.move = -1;
 
@@ -316,11 +311,22 @@ MinimaxResult opencl_player_pre_minimax( OpenCLPlayer &player, Board &b, int dep
 	return best_result;
 }
 
+/**
+ * Bindings from the OpenCL player object to the
+ *  C world.
+ */
+
+// Instantiating an OpenCLPlayer involves recompiling
+//  the kernel, which is slow, so instiantiate only one.
 ifstream t("opencl_player.cl");
 string src((std::istreambuf_iterator<char>(t)),
                std::istreambuf_iterator<char>());
-
 OpenCLPlayer player( SEQUENTIAL_DEPTH, src );
+
+extern "C" const char *opencl_player_name( void )
+{
+	return "OpenCL Minimax";
+}
 
 extern "C" int opencl_player_move( Board *b )
 {	
