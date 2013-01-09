@@ -24,7 +24,7 @@ string KernelGenerator::generate()
 		"__kernel void _autogen_run_" + myFunction;
 	ret += "( ";
 
-	for ( int i = 0; i < myArguments.size(); i++ )
+	for ( unsigned i = 0; i < myArguments.size(); i++ )
 	{
 		// global *someType arg3,
 		ret += "__global " + myArguments[i].getType() + " *arg" + intToString( i ) + ", ";
