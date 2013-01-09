@@ -39,7 +39,7 @@ cl::Program CLContext::buildProgram( string &src ) const
 
 	cl::Program::Sources sources(
         1,
-        std::pair<const char *, int>( src.c_str(), src.length() )
+        std::pair<const char *, int>( src.c_str(), (int) src.length() )
         );
 
 	cl::Program program( myContext, sources );

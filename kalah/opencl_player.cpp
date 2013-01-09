@@ -72,6 +72,16 @@ MinimaxResult OpenCLPlayer::makeMove()
 	// Create the start boards
 	generate_start_boards();
 
+	if ( !myStartBoards.size() )
+	{
+		MinimaxResult mr;
+
+		mr.move = -1;
+		mr.score = minimax_eval( &myStartBoard );
+
+		return mr;
+	}
+
 	// C++ guarantees vector elements are stored contiguously.
 	CLUnitArgument start_boards( 
 		"Board", 
@@ -79,7 +89,7 @@ MinimaxResult OpenCLPlayer::makeMove()
 		myStartBoards.size(), 
 		false, true );
 	start_boards.makePersistent( myContext );
-	int num_leaf_nodes = myStartBoards.size();
+	int num_leaf_nodes = (int) myStartBoards.size();
 
 	if ( num_leaf_nodes )
 	{

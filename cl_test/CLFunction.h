@@ -274,7 +274,7 @@ T CLFunction<T>::run( std::string type )
 		);
 	
 	// Make it the next kernel argument.
-	kernel.setArg( myArguments.size(), resultBuffer );
+	kernel.setArg( (cl_uint) myArguments.size(), resultBuffer );
 
 	std::vector<int> globalDimensions;
 	globalDimensions.push_back( 1 );
