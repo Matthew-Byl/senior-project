@@ -72,11 +72,15 @@ int board_legal_move( Board *b, int move )
 	}
 }
 
+/**
+ * Determine whether the game is over, given
+ *  a board from a game.
+ *
+ * @param b
+ *  The board in question
+ */
 int board_game_over( Board *b )
 {
-	// Optimize for memory usage? It might be faster to copy the board
-	//  to a local variable than to use double indirection so many times.
-
 	if ( b->board[0] == 0 && b->board[1] == 0 && b->board[2] == 0 &&
 		 b->board[3] == 0 && b->board[4] == 0 && b->board[5] == 0 )
 	{
@@ -93,6 +97,13 @@ int board_game_over( Board *b )
 	}
 }
 
+/**
+ * Determine who won the game, given a board for 
+ *  which the game is over.
+ *
+ * @param b
+ *  A board for which the game is over.
+ */
 PlayerPosition board_winner( Board *b )
 {
 	int top = board_top_score( b );
@@ -106,6 +117,10 @@ PlayerPosition board_winner( Board *b )
 		return NOBODY;
 }
 
+/**
+ * Return the score of the player in TOP
+ *  position.
+ */
 int board_top_score( Board *b )
 {
 	int i;
@@ -117,6 +132,10 @@ int board_top_score( Board *b )
 	return score;
 }
 
+/**
+ * Return the score of the player in
+ *  BOTTOM position.
+ */
 int board_bottom_score( Board *b )
 {
 	int i;
@@ -128,6 +147,19 @@ int board_bottom_score( Board *b )
 	return score;
 }
 
+/**
+ * Perform a move on a board.
+ *
+ * @param b
+ *  The board to make the move on. This board
+ *   will be modified by this function.
+ * @param move
+ *  The index of the move to make.
+ *
+ * @return
+ *  The number of stones captured in the move,
+ *   if any.
+ */
 int board_make_move( Board *b, int move )
 {
 	int stones, capture, pos;
@@ -199,6 +231,9 @@ int board_make_move( Board *b, int move )
 	return capture;
 }
 
+/**
+ * Output a board to standard output.
+ */
 void board_print( Board *b )
 {
 #ifndef _OPENCL_
@@ -219,7 +254,13 @@ void board_print( Board *b )
 #endif
 }
 
-// Doesn't check score.
+/**
+ * Determine whether two boards are equal. This doesn't
+ *  check the score field.
+ *
+ * @param a, b
+ *  The boards to compare.
+ */
 int board_equal( Board *a, Board *b )
 {
 	int i;
