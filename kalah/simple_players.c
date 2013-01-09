@@ -186,7 +186,7 @@ KalahPlayer minimax_player( void )
  */
 const char *random_name( void )
 {
-	srand( time( NULL ) );
+	srand( (unsigned) time( NULL ) );
 	return "Random";
 }
 

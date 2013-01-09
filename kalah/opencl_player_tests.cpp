@@ -23,6 +23,7 @@ extern "C" {
 #include <cassert>
 #include <cstdlib>
 #include <climits>
+#include <ctime>
 using namespace std;
 
 // The number of iterations of each test to run.
@@ -453,7 +454,7 @@ void test_top_bottom( string src )
 int main ( void )
 {
 	// Seed the random number generator
-	srand( time( NULL ) );
+	srand( (unsigned) time( NULL ) );
 
 	// Read the source code for the OpenCL player from the file.
 	ifstream t("opencl_player.cl");
