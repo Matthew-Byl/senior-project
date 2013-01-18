@@ -1,0 +1,82 @@
+\documentclass{article}
+\usepackage{palatino}
+\begin{document}
+
+\title{Accelerating Minimax Artificial Intelligence with GPGPU Computing}
+\author{John Kloosterman \\
+  \texttt{john.kloosterman@gmail.com}}
+\date{January 2013}
+\maketitle
+
+\section{Introduction}
+
+% I forget what the correct title for this is.
+\section{Previous Work}
+
+\section{Modified Minimax Algorithm}
+There are several considerations that an algorithm for GPUs must satisfy. First, GPUs do not support recursion, which means that the recursive minimax algorithm is impossible to implement on one. Second, every thread in a workgroup on the Radeon 7970 has the same instruction counter, meaning that an optimal algorithm runs the same set of instructions on different data, exploiting the data-parallel nature of the device. Third, the type of memory used by an algorithm (thread-local, workgroup-local, or global) has vastly different access and latency times.
+
+OpenCL local memory provides a very fast place to store scratch data for an OpenCL workgroup (4 bits/cycle access time vs. 0.14 bits/cycle access time for global memory). The minimax algorithm takes one game board as input, and the optimal move and its score as output. Any data generated to compute the output can be discarded.
+
+\subsection{Generating boards}
+In this step, the game boards that represent the game tree for the next number of moves are generated from the start board. The tree is stored in global memory in an array, where the child of the node stored at location n in the array is at location 6n + 1. This can be computed in O(log(n)) time with $n^{d}$ threads, by having the first thread compute the first node, 6 threads compute the first level of child nodes, 36 threads compute the second level, and so on.
+
+\subsection{Evaluating boards}
+In the standard minimax algorithm, the evaluate function needs to be computed only for boards at the leaf nodes of the game tree. Because all threads execute the same instruction counter, however, it is not slower to run the function on all the generated boards. This saves time in a later step, as should the game end at a stage before the bottom level of the minimax tree, the board is already evaluated.
+
+\subsection{Minimax}
+The minimax scores at a node can be computed in O(log(n)) time by using $n^{d-1}$ threads to compute the minimax values for the nodes one level above the leaf nodes, $n^{d-2}$ threads to compute the minimax values for the nodes 2 levels about the leaf nodes, and so on. After this process, the parent node for the game tree stores the minimax value for the tree.
+
+\subsection{Limitations}
+Because the boards are stored in local memory, and there are sequential dependencies between these steps, all threads for one of these minimax trees must be in the same workgroup. On the Radeon 7970, the maximum work group size is 256. Therefore, for Kalah, with a branching factor of 6, a minimax tree of 4 levels ($6^0 + 6^1 + 6^2 + 6^3 = 259$ nodes) was used, with a workgroup size of $6^3 = 216$. Some threads had to evaluate 2 boards.
+
+\section{Increasing Search Depth}
+Since minimax has the property that every subtree of a minimax game tree is itself a minimax game tree, the GPU minimax trees of depth 4 can be combined in a larger, deeper minimax tree. The independent design of the GPU minimax trees means that many of them can be dispatched on the GPU at the same time. Following the design of [author names here], one strategy is to run several levels of minimax sequentially on the CPU, then run many instances of GPU minimax on the leaf nodes of that minimax tree.
+
+Because of memory bottlenecks, there is a limit to how many GPU minimax instances can be dispatched efficiently. On the test system, 8 levels of sequential minimax (genering an average of [--] GPU instances) was optimal for performance. As well, as [--] noted, the search tree has to be traversed twice at this level, once to determine what the leaf nodes are, and second to run the minimax reduction on the nodes.
+
+Therefore, to gain more search depth, another level of sequential minimax was run above this first round of sequential minimax. Adding more levels at the topmost level of minimax increased the depth of the search but not the number of GPU instances dispatched at one time. Only one traversal of the search tree is necessary at this step.
+
+\section{Results}
+The algorithm was implemented for the game of (6,4)-Kalah. Speed testing was done on a system with an Intel Core i7-3770 CPU and an AMD Radeon 7970 GPU.
+
+\subsection{Optimal Sequential Depth}
+Time to complete search to level 13 (average over 1000 times):
+
+\begin{tabular}{| l | l | l | l | l |}
+  \hline
+  Pre & Seq & Parallel & Time for 20 & Time for 1 \\
+  \hline
+  0 & 10 & 4 & 188.03s & 9.40s \\
+  1 & 9 & 4 & 221.17s & 11.05s \\ 
+  2 & 8 & 4 & 212.45s & 10.62s \\
+  3 & 7 & 4 & 233.92s & 11.70s \\ 
+  4 & 6 & 4 & 281.78s & 14.09s \\
+  \hline
+\end{tabular}
+
+\subsection{Speedup}
+
+Time to complete search to level n (For OpenCL, 2nd spot was as close to 10 as possible):
+
+\begin{tabular}{| l | l | l | l |}
+  \hline
+  Depth & Sequential & CPU Parallel & GPU Parallel \\
+  \hline
+  4 & 0.000068 & 0.000656 & 0.000919 \\
+  5 & 0.000343 & 0.008957 & 0.000907 \\
+  6 & 0.001658 & 0.004544 & 0.001054 \\
+  7 & 0.008301 & 0.023702 & 0.001382 \\
+  8 & 0.040561 & 0.102351 & 0.005487 \\
+  9 & 0.203477 & 0.516266 & 0.021644 \\
+  10 & 0.980497 & 2.61265 & 0.1048 \\
+  11 & 4.80143 & 11.0873 & 0.438745 \\
+  12 & 23.4349 & 60.0211 & 2.23596 \\
+  13 & 113.512 & 231.792 & 9.41622 \\
+  \hline
+\end{tabular}
+Since minimax is an embarrasingly parallel problem, a parallel CPU implementation should be able to achieve a speed of $\frac{sequential}{# cores}$. Since the OpenCL parallel implementation was worse on the CPU than the sequential implementation, which itself can be sped up 4 times on the test system, this illustrates how algorithms tuned for GPUs are very different than ones tuned for CPUs.
+
+\section{Conclusion}
+
+\end{document}
