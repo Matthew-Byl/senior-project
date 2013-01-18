@@ -1,0 +1,11 @@
+Instead of objects that are agents, there are buffers in memory for each agent.
+  -One GPU has 3GB of memory, (which will take about 0.5s to transfer over PCIe).
+  -Therefore, any one step cannot use more than 3GB of memory at once.
+  -It will probably work best to use "batches" the same way the Minimax player does.
+  -The logic will be faster when using a bunch of similar agents (?)
+
+Since moving data around will be the slow part, and we need to log, we should
+  have a separate thread do the logging. Anything that doesn't need to be used
+  anymore should be logged and forgotten.
+ -Logged things don't need to have very much structure. We can have a separate
+   program that reconstitutes what happened from the logs.

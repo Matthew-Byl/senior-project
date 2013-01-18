@@ -1,0 +1,12 @@
+This project will be organized into directories per stage in the simulation.
+Each of the steps is completely independent.
+
+There will be a tests directory in each subfolder with the tests for the
+  functions used therein.
+There will be a test for every significant function.
+
+This project should be compilable using Visual Studio, so we can optimize
+  it. That means no C++11, sadly.
+
+Everything needs to be so obvious that beginning coders can understand
+  what's going on.
