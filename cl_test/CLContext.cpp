@@ -4,7 +4,7 @@ using namespace std;
 
 CLContext::CLContext()
 {
-	initialize( 1, 0 );
+	initialize( 0, 0 );
 }
 
 CLContext::CLContext( int platform, int device )
@@ -17,12 +17,7 @@ void CLContext::initialize( int platform, int device )
 	vector<cl::Platform> platforms;
 	cl::Platform::get( &platforms );
 
-<<<<<<< local
-    platforms[platform].getDevices( CL_DEVICE_TYPE_CPU, &myDevices );
-=======
-    platforms[platform].getDevices( CL_DEVICE_TYPE_ALL, &myDevices );
->>>>>>> other
-	
+    platforms[platform].getDevices( CL_DEVICE_TYPE_GPU, &myDevices );	
 	myContext = cl::Context( myDevices, NULL, NULL, NULL );
 	myCommandQueue = cl::CommandQueue( myContext, myDevices[device], 0 );
 }
