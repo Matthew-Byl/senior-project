@@ -18,28 +18,33 @@
  * @param max_experience
  *  The maximum amount of experience with a resource agents
  *   can have.
- * @param max_effort
- *  The maximum effort to extract a resource.
  * @param min_effort
  *  The minimum effort to extract a resource.
+ * @param max_effort
+ *  The maximum effort to extract a resource.
  *
  * @return
  *  The number of minutes the agent needs to extract that
  *   resource.
  */
-float resource_effort( int experience, int max_experience, int max_effort, int min_effort )
+float resource_effort( int experience, int max_experience, int min_effort, int max_effort )
 {
-	float term2 = 
-		( max_effort - min_effort )
-		* exp( -2 * sqrt( (float) max_effort ) )
-		* exp( -( (float) max_effort - min_effort ) / 2 )
-		* ( experience / max_experience );
-	float effort = max_effort - term2;
+	float f_experience = (float) experience;
+	float f_max_experience = (float) max_experience;
+	float f_min_effort = (float) min_effort;
+	float f_max_effort = (float) max_effort;
+
+	float effort =
+		f_max_effort -
+		( f_max_effort - f_min_effort )
+		* exp( -sqrt( f_max_effort ) * 2
+			   * exp( -(f_max_effort - f_min_effort )
+					  * f_experience / max_experience ) );
 
 	// No amount of experience allows the amount of effort to go
 	//  beneath the minimum.
-	if ( effort < min_effort )
-		return min_effort;
-	else
+//	if ( min_effort > effort )
+//		return min_effort;
+//	else
 		return effort;
 }

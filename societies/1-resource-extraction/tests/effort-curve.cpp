@@ -21,7 +21,7 @@ int main ( void )
 
 	// Open output file.
 	fstream out( OUTPUT_FILE, fstream::out );
-	out << "Experience" << "\t" << "Effort" << endl;
+//	out << "Experience" << "\t" << "Effort" << endl;
 
 	// Open OpenCL kernel
 	ifstream t( KERNEL_SOURCE );
@@ -32,7 +32,7 @@ int main ( void )
 	// Compute efforts.
 	for ( cl_int experience = 0; experience <= max_experience; experience++ )
 	{
-		cl_int effort = 
+		cl_float effort = 
 			resource_effort( 
 				experience,
 				max_experience,
