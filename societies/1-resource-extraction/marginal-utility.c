@@ -27,10 +27,14 @@ float mu( int x, int D, int n )
  *
  * @param x
  *  The number of units of the resource already owned.
+ * @param D
+ *  The level of utility for the resource.
+ * @param n
+ *  The diminishing marginal utility for the resource.
  * @param e
  *  The agent's current effort to extract the resource.
  */
-float gpm( int x, float e )
+float gpm( int x, int D, int n, float e )
 {
-	
+	return mu( x + 1, D, n ) / e;
 }

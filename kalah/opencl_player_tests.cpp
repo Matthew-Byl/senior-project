@@ -15,6 +15,8 @@ extern "C" {
 #include "evaluate.h"
 }
 
+#include <sys/time.h>
+
 #include "opencl_player.h"
 
 #include <CLKernel.h>
@@ -451,6 +453,30 @@ void test_top_bottom( string src )
 	cout << endl << "All tests passed." << endl;
 }
 
+void speed_test( string src )
+{
+	KalahPlayer cl_player = minimax_player();
+
+	Board start;
+	board_initialize( &start, TOP );
+	struct timeval tv_start;
+	struct timeval tv_end;
+	
+	for ( int i = 0; i < 5; i++ )
+	{
+		gettimeofday( &tv_start, NULL );
+		cl_player.make_move( &start );
+		gettimeofday( &tv_end, NULL );
+		
+		int diff_sec = tv_end.tv_sec - tv_start.tv_sec;
+		int diff_usec = tv_end.tv_usec - tv_start.tv_usec;
+
+		double diff = diff_sec + ( 0.000001 * diff_usec );
+
+		cout << i << ": " << diff << endl;
+	}
+}
+
 int main ( void )
 {
 	// Seed the random number generator
@@ -461,13 +487,14 @@ int main ( void )
 	string src((std::istreambuf_iterator<char>(t)),
 			   std::istreambuf_iterator<char>());
 
-	test_generate_boards( src );
-	test_evaluate_boards( src );
-	test_minimax( src );
-	test_combination( src );
-	test_opencl_object( src );
-	test_pre_minimax( src );
-	test_top_bottom( src );
+//	test_generate_boards( src );
+//	test_evaluate_boards( src );
+//	test_minimax( src );
+//	test_combination( src );
+//	test_opencl_object( src );
+//	test_pre_minimax( src );
+//	test_top_bottom( src );
+	speed_test( src );
 
 	return 0;
 }

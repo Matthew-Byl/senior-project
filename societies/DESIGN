@@ -9,3 +9,7 @@ Since moving data around will be the slow part, and we need to log, we should
   anymore should be logged and forgotten.
  -Logged things don't need to have very much structure. We can have a separate
    program that reconstitutes what happened from the logs.
+
+Testing
+ -Each test is an independent program. These will be run by scripts.
+ -This way they can do whatever they need to when forming/running the tests.

@@ -255,10 +255,12 @@ T CLFunction<T>::run( std::string type )
 
 	generateKernelSource( type, src, kernelFunction );
 
+/*
 	std::cout << "FULL SOURCE" << std::endl;
 	std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
 	std::cout << src << std::endl;
 	std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
+*/
 
 	copyBuffersToDevice();
 	cl::Kernel kernel = generateKernel( src, kernelFunction );
