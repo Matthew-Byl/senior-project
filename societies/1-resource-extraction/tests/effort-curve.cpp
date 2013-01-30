@@ -16,12 +16,11 @@ using namespace std;
 int main ( void )
 {
 	const cl_int min_effort = 3;
-	const cl_int max_effort = 0;
+	const cl_int max_effort = 9;
 	const cl_int max_experience = 600;
 
 	// Open output file.
 	fstream out( OUTPUT_FILE, fstream::out );
-//	out << "Experience" << "\t" << "Effort" << endl;
 
 	// Open OpenCL kernel
 	ifstream t( KERNEL_SOURCE );
@@ -32,7 +31,7 @@ int main ( void )
 	// Compute efforts.
 	for ( cl_int experience = 0; experience <= max_experience; experience++ )
 	{
-		cl_float effort = 
+		cl_double effort = 
 			resource_effort( 
 				experience,
 				max_experience,

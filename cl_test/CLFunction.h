@@ -312,6 +312,7 @@ void CLFunction<void>::run();
 
 _GEN_CL_FUNCTION_RUN_P( cl_int, int )
 _GEN_CL_FUNCTION_RUN_P( cl_float, float )
+_GEN_CL_FUNCTION_RUN_P( cl_double, double )
 _GEN_CL_FUNCTION_RUN_P( cl_float3, float3 )
 
 #endif

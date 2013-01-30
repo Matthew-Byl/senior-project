@@ -9,6 +9,7 @@
 
 _GEN_CL_FUNCTION_RUN( cl_int, int )
 _GEN_CL_FUNCTION_RUN( cl_float, float )
+_GEN_CL_FUNCTION_RUN( cl_double, double )
 _GEN_CL_FUNCTION_RUN( cl_float3, float3 )
 
 template<>

@@ -29,17 +29,17 @@
  */
 float resource_effort( int experience, int max_experience, int min_effort, int max_effort )
 {
-	float f_experience = (float) experience;
-	float f_max_experience = (float) max_experience;
-	float f_min_effort = (float) min_effort;
-	float f_max_effort = (float) max_effort;
+	float f_experience = experience;
+	float f_max_experience = max_experience;
+	float f_min_effort = min_effort;
+	float f_max_effort = max_effort;
 
-	float effort =
+	float effort = 
 		f_max_effort -
-		( f_max_effort - f_min_effort )
-		* exp( -sqrt( f_max_effort ) * 2
-			   * exp( -(f_max_effort - f_min_effort )
-					  * f_experience / max_experience ) );
+		(f_max_effort - f_min_effort)
+		* exp(-sqrt(f_max_effort) * 2 
+			  * exp(-(f_max_effort - f_min_effort)
+					* f_experience / f_max_experience ));
 
 	// No amount of experience allows the amount of effort to go
 	//  beneath the minimum.
