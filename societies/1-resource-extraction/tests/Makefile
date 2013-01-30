@@ -1,4 +1,4 @@
-all: effort-curve utility marginal-utility
+all: effort-curve utility marginal-utility gain-per-minute
 
 clean:
 	rm -f effort-curve utility marginal-utility *.out
@@ -11,3 +11,6 @@ utility: utility.cpp ../utility.c
 
 marginal-utility: marginal-utility.cpp ../utility.c
 	clang++ -std=c++11 -I ../../../cl_test -I /opt/AMDAPP/include -L /opt/AMDAPP/lib/x86_64 marginal-utility.cpp ../../../cl_test/libCLTest.a -lOpenCL -o marginal-utility
+
+gain-per-minute: gain-per-minute.cpp ../utility.c
+	clang++ -std=c++11 -I ../../../cl_test -I /opt/AMDAPP/include -L /opt/AMDAPP/lib/x86_64 gain-per-minute.cpp ../../../cl_test/libCLTest.a -lOpenCL -o gain-per-minute
