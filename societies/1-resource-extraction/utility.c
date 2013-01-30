@@ -3,7 +3,32 @@
  */
 
 /**
- * Computes MU(x) = (D/n) * x^((1/n) - 1 ).
+ * Computes the utility of a resource when posessing
+ *  x units of that resource, using the formula
+ *     U(x) = D * x^( 1/n ).
+ *  See page 5 of the paper.
+ *
+ * @param x
+ *  The number of units of the resource already owned.
+ * @param D
+ *  The level of utility for the resource.
+ * @param n
+ *  The diminishing marginal utility for the resource.
+ */
+float u( int x, int D, int n )
+{
+	float f_x = x;
+	float f_D = D;
+	float f_n = n;
+
+	return f_D * pow( f_x, 1.0f / f_n );
+}
+
+/**
+ * Computes the marginal utility of the next unit of
+ *  a resource, given that x units are already owned,
+ *  using the formula
+ *     MU(x) = U(k) - U(k-1)
  *  See page 5 of the paper.
  *
  * @param x
@@ -15,10 +40,7 @@
  */
 float mu( int x, int D, int n )
 {
-	float C = (float) D / (float) n;
-
-	float exponent = ( 1.0f / (float) x ) - 1.0f;
-	return C * pow( (float) x, exponent );
+	return u( x, D, n ) - u( x - 1, D, n );
 }
 
 /**
