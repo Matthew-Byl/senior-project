@@ -18,13 +18,16 @@ typedef struct {
 	CL_INT num_resources;
 
 	/* The D and n values for each resource.
-	   This needs to be an array of size
-	   num_resources, but we don't know num_resources
-	   at compile time. They also can't be pointers, because
-	   they won't be part of the structure.
+	   Because of GPU limitations, there can be at
+	   most 256 resources, so these can be a known size.
 	*/
-	CL_UCHAR resource_D;
-	CL_UCHAR resource_n;
+	CL_UCHAR resource_D[256];
+	CL_UCHAR resource_n[256];
+
+	CL_INT max_experience;
+	CL_INT min_effort;
+	CL_INT max_effort;
+	
 } SocietiesConfig;
 
 SocietiesConfig config_generate_default_configuration( void );
