@@ -1,7 +1,7 @@
 all: effort-curve utility marginal-utility gain-per-minute max_gains_per_minute
 
 clean:
-	rm -f effort-curve utility marginal-utility *.out
+	rm -f effort-curve utility marginal-utility gain-per-minute max_gains_per_minute *.out
 
 effort-curve: effort-curve.cpp ../effort.c
 	clang++ -std=c++11 -I ../../../cl_test -I /opt/AMDAPP/include -L /opt/AMDAPP/lib/x86_64 effort-curve.cpp ../../../cl_test/libCLTest.a -lOpenCL -o effort-curve
