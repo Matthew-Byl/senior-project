@@ -26,6 +26,9 @@
  * Preconditions: 
  *    *counter = 0
  *    scratch is of size at least sizeof( uchar ) * 256
+ *
+ * Postconditions:
+ *   there needs to be a local barrier before choose_thread_make_choice can be called.
  */
 void choose_thread_add_to_options( 
 	__local int *counter, 
@@ -35,7 +38,6 @@ void choose_thread_add_to_options(
 	int idx = atomic_inc( counter );
 
 	scratch[idx] = get_local_id( 0 );
-	barrier( CLK_LOCAL_MEM_FENCE );
 }
 
 /**

@@ -1,0 +1,47 @@
+#include "../choose_thread.c"
+
+__kernel void choose_thread_tester(
+	__global uchar *enableds,
+	__global uchar *chosen,
+	__global ulong *rng_base_offset
+	)
+{
+	__local int counter;
+	__local uchar scratch[255];
+	size_t local_id = get_local_id( 0 );
+
+	// Seed random number generator
+	mwc64x_state_t rng;
+	// The documentation ( http://cas.ee.ic.ac.uk/people/dt10/research/rngs-gpu-mwc64x.html )
+	//  says that 2^40 is a good perStreamOffset if we don't know one.
+	// 2^40 = 1099511627776
+    MWC64X_SeedStreams( &rng, *rng_base_offset, 1099511627776 );
+
+	// Set counter to 0
+	if ( local_id == 0 )
+	{
+		counter = 0;
+	}
+	barrier( CLK_LOCAL_MEM_FENCE );
+	
+	// If our thread is enabled, add ourselves to the list.
+	if ( enableds[get_local_id( 0 )] )
+	{
+		choose_thread_add_to_options( &counter, scratch );
+	}
+   	barrier( CLK_LOCAL_MEM_FENCE );
+
+	// Make a choice.
+	__local uchar chosen_thread;
+	if ( local_id == 0 )
+	{
+		chosen_thread = choose_thread_make_choice( counter, scratch, &rng );
+	}
+	barrier( CLK_LOCAL_MEM_FENCE );
+
+	// Return the choice.
+	if ( local_id == chosen_thread )
+	{
+		*chosen = local_id;
+	}
+}
