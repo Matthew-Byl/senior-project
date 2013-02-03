@@ -10,22 +10,23 @@ See http://www.doc.ic.ac.uk/~dt10/research
 // Post: r=(a+b) mod M
 ulong MWC_AddMod64(ulong a, ulong b, ulong M)
 {
-	ulong v=a+b;
-
 	/**
-	 * @XXX: John Kloosterman modification.
+	 * John Kloosterman modification.
 	 *
-	 * Original code:
+	 * Added @c volatile keyword.
 	 *
-	 * if( (v>=M) || (v<a) )
-	 *    v=v-M;
-	 *
-	 * This won't compile using the AMD GPU compiler, and
-	 *  makes no sense, because v < a only if b < 0, which
-	 *  can't be the case because b is an unsigned long.
+	 * a+b can overflow the range of ulong. The AMD GPU
+	 *  compiler didn't compile this function without
+	 *  v being volatile, because a+b < a makes no sense
+	 *  if a and b are positive. Marking the variable as
+	 *  volatile ensures that the optimizer can't assume
+	 *  a+b won't overflow.
 	 */
-	if ( v >= M )
-		v = v - M;
+	volatile ulong v=a+b;
+
+	if( (v>=M) || (v<a) )
+	    v=v-M;
+
 	return v;
 }
 
