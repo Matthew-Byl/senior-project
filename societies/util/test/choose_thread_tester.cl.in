@@ -15,7 +15,7 @@ __kernel void choose_thread_tester(
 	// The documentation ( http://cas.ee.ic.ac.uk/people/dt10/research/rngs-gpu-mwc64x.html )
 	//  says that 2^40 is a good perStreamOffset if we don't know one.
 	// 2^40 = 1099511627776
-    MWC64X_SeedStreams( &rng, *rng_base_offset, 1099511627776 );
+    MWC64X_SeedStreams( &rng, *rng_base_offset, 128 );
 
 	// Set counter to 0
 	if ( local_id == 0 )

@@ -11,8 +11,21 @@ See http://www.doc.ic.ac.uk/~dt10/research
 ulong MWC_AddMod64(ulong a, ulong b, ulong M)
 {
 	ulong v=a+b;
-	if( (v>=M) || (v<a) )
-		v=v-M;
+
+	/**
+	 * @XXX: John Kloosterman modification.
+	 *
+	 * Original code:
+	 *
+	 * if( (v>=M) || (v<a) )
+	 *    v=v-M;
+	 *
+	 * This won't compile using the AMD GPU compiler, and
+	 *  makes no sense, because v < a only if b < 0, which
+	 *  can't be the case because b is an unsigned long.
+	 */
+	if ( v >= M )
+		v = v - M;
 	return v;
 }
 
