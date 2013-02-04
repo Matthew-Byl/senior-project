@@ -59,9 +59,25 @@ void test_first_pass( string src )
 	cout << "All tests passed." << endl << flush;
 }
 
-void test_second_pass( string src )
+void test_function( string src )
 {
-	CLKernel max_index_second_pass_tester( "max_index_second_pass_tester", src );
+	CLKernel max_index_tester( "max_index_tester", src );
+	cl_uchar host_max;
+	CLUnitArgument max( &host_max, 1 );
+
+	cl_float host_floats1[] = 
+		{ 24, 6.333, 2.1, 9.76, 2.11, 44.2224, 11000, 23 };
+	cl_uchar host_floats1_tree[4];
+
+    CLUnitArgument floats1( host_floats1, 8 );
+    CLUnitArgument floats1_tree( host_floats1_tree, 4 );
+	max_index_tester.setGlobalDimensions( 8, 1 );
+	max_index_tester.setLocalDimensions( 8, 1 );
+	max_index_tester( floats1, floats1_tree, max );
+	
+	for ( int i = 0; i < 4; i++ )
+		cout << (int) host_floats1_tree[i] << " ";
+	cout << endl;
 }
 
 int main ( void )
@@ -74,5 +90,5 @@ int main ( void )
 			   std::istreambuf_iterator<char>());
 
 	test_first_pass( src );
-	test_second_pass( src );
+	test_function( src );
 }

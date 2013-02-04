@@ -17,7 +17,7 @@ void CLContext::initialize( int platform, int device )
 	vector<cl::Platform> platforms;
 	cl::Platform::get( &platforms );
 
-    platforms[platform].getDevices( CL_DEVICE_TYPE_GPU, &myDevices );	
+    platforms[platform].getDevices( CL_DEVICE_TYPE_CPU, &myDevices );	
 	myContext = cl::Context( myDevices, NULL, NULL, NULL );
 	myCommandQueue = cl::CommandQueue( myContext, myDevices[device], 0 );
 }
