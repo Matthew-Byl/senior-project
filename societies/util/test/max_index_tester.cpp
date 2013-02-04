@@ -41,18 +41,27 @@ void test_first_pass( string src )
 		{ 54.2, 9000, 223.5, 222, 43 };
 	tree  = new cl_uchar[3];
 
-    CLUnitArgument floats2( host_floats2, 8 );
-    CLUnitArgument floats2_sort_tree( tree, 4 );
+    CLUnitArgument floats2( host_floats2, 5 );
+    CLUnitArgument floats2_sort_tree( tree, 3 );
+	max_index_first_pass_tester.setGlobalDimensions( 5, 1 );
+	max_index_first_pass_tester.setLocalDimensions( 5, 1 );
 	max_index_first_pass_tester( floats2, floats2_sort_tree );
 	
 	cl_uchar host_floats2_tree[3] =
 		{ 1, 2, 4 };
 
 	for ( int i = 0; i < 3; i++ )
+	{
 		assert( tree[i] == host_floats2_tree[i] );
+	}
 	delete[] tree;
 	cout << "* " << flush;
 	cout << "All tests passed." << endl << flush;
+}
+
+void test_second_pass( string src )
+{
+	CLKernel max_index_second_pass_tester( "max_index_second_pass_tester", src );
 }
 
 int main ( void )
@@ -65,4 +74,5 @@ int main ( void )
 			   std::istreambuf_iterator<char>());
 
 	test_first_pass( src );
+	test_second_pass( src );
 }
