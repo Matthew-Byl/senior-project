@@ -13,5 +13,3 @@ echo "marginal-utility"
 ./marginal-utility
 echo "utility"
 ./utility
-echo "max_gains_per_minute"
-./max_gains_per_minute
