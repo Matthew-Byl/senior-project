@@ -32,7 +32,7 @@ ResourceExtraction::ResourceExtraction(
 	resources( all_resources, config.num_agents * config.num_resources ),
 	experiences( all_experiences, config.num_agents * config.num_resources ),
 	random_offsets( myRandomOffsets, config.num_agents, false, false ),
-	config( "SocietiesConfig", &myConfig, 1, false, false ),
+	config( "SocietiesConfig", config ),
 	myConfig( config ),
 	mySeed( random_seed )
 {
@@ -82,8 +82,15 @@ int main ( void )
 	SocietiesConfig config;
 	config = config_generate_default_configuration();
 
-	cl_uint all_resources[1000*256];
-	cl_uint all_experiences[1000*256];
+	const int total_resources = 10 * 10;
+	cl_uint all_resources[total_resources];
+	cl_uint all_experiences[total_resources];
+
+	for ( int i = 0; i < total_resources; i++ )
+	{
+		all_resources[i] = 0;
+		all_experiences[i] = 0;
+	}
 
 	ResourceExtraction re( 
 		all_resources, 
@@ -91,4 +98,14 @@ int main ( void )
 		config,
 		42 );
 	re.extractResources();
+
+	for ( int i = 0; i < 10; i++ )
+	{
+		cout << "Agent " << i << ": " << endl;
+		for ( int j = 0; j < 10; j++ )
+		{
+			cout << "(" << all_resources[i*10 + j] << "," << all_experiences[i*10 + j] << ")" << " ";
+		}
+		cout << endl;
+	}
 }
