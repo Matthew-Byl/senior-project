@@ -122,21 +122,29 @@ __kernel void resource_extraction(
 	)
 {
 	__local int counter;
+	__local int minutes_used;
 	__local uchar chosen_resource;
 
 	size_t local_id = get_local_id( 0 );
-	size_t agent_offset = get_global_id( 1 ) * config->num_agents;
+	size_t agent_offset = get_local_size( 0 ) * get_global_id( 1 );
 
 	// Initialize the RNG.
 	mwc64x_state_t rng_state;
 	// The documentation ( http://cas.ee.ic.ac.uk/people/dt10/research/rngs-gpu-mwc64x.html )
 	//  says that 2^40 is a good perStreamOffset if we don't know one.
 	// 2^40 = 1099511627776
-    MWC64X_SeedStreams(
-		&rng_state, 
-		rng_base_offsets[get_global_id( 1 )], 
-		1099511627776 
-	);
+	//
+	// Only thread 0 needs to do this.
+	if ( local_id == 0 )
+	{
+		MWC64X_SeedStreams(
+			&rng_state, 
+			rng_base_offsets[get_global_id( 1 )], 
+			1099511627776 
+			);
+
+		minutes_used = 0;
+	}
 
 	// Copy our chunk to local memory.
 	resources[local_id] = all_resources[agent_offset + local_id];
@@ -146,7 +154,6 @@ __kernel void resource_extraction(
 	// Compute gain per minute for all resources.
 	compute_gain_per_minute( resources, experiences, gains_per_minute, config );
 
-	int minutes_used = 0;
 	while ( minutes_used < config->num_minutes )
 	{
 		// Find the resource with maximum gain per minute.
@@ -174,6 +181,7 @@ __kernel void resource_extraction(
 		barrier( CLK_LOCAL_MEM_FENCE );
 
 		// Collect one of that resource and gain experience with it.
+	
 		if ( local_id == chosen_resource )
 		{
 			minutes_used += resource_effort(
