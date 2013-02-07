@@ -14,12 +14,17 @@
 #ifdef _OPENCL_
 /* Types used in OpenCL code */
 
-#define CL_INT cl_int
+#define CL_INT int
+#define CL_FLOAT_T float
+#define CL_UCHAR uchar
 
 #else
 /* Types used in host code */
+#include <CL/cl.hpp>
 
-#define CL_INT int
+#define CL_INT cl_int
+#define CL_FLOAT_T cl_float
+#define CL_UCHAR cl_uchar
 
 #endif
 

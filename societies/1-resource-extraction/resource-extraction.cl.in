@@ -5,6 +5,7 @@
  *  -Loop that stores time left and what we got. (fewer iterations)
  */
 
+#define _OPENCL_
 #include <config.h>
 #include <mwc64x.cl>
 #include <choose_thread.cl>

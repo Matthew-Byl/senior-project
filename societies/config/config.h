@@ -32,7 +32,7 @@ typedef struct {
 
 	/* How close to the maximum gain per minute a
 	   resource needs to be in order to be collected. */
-	CL_FLOAT resource_epsilon;
+	CL_FLOAT_T resource_epsilon;
 
 	CL_INT max_experience;
 	CL_INT min_effort;
@@ -44,7 +44,7 @@ typedef struct {
 	
 } SocietiesConfig;
 
-#ifdef _HOST
+#ifdef _HOST_
 SocietiesConfig config_generate_default_configuration( void );
 bool config_verify_configuration( SocietiesConfig config );
 #endif
