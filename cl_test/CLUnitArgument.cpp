@@ -103,7 +103,7 @@ cl::Buffer *CLUnitArgument::getBuffer( CLContext &context )
 		myBuffer = cl::Buffer(
 			context.getContext(),
 			// If we don't supply memory, allocate some for us.
-			( myPtr == NULL ) ? CL_MEM_ALLOC_HOST_PTR : CL_MEM_USE_HOST_PTR,
+			( myPtr == NULL ) ? CL_MEM_HOST_NO_ACCESS : CL_MEM_USE_HOST_PTR,
 			mySize,
 			myPtr
 			);

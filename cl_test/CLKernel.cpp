@@ -1,5 +1,17 @@
 #include "CLKernel.h"
 
+CLKernel::CLKernel( std::string function,
+		  std::string kernel,
+		  const CLContext context )
+	: CLFunction( function, kernel, context ),
+	  globalDimensionsSet( false ),
+	  globalOffsetSet( false ),
+	  localDimensionsSet( false )
+{ 
+	myCLKernel = generateKernel( myKernel, myFunction );
+};
+
+
 void CLKernel::setGlobalDimensions( int dim1 )
 {
 	globalDimensions.clear();
@@ -72,6 +84,11 @@ void CLKernel::setGlobalOffset( int dim1, int dim2, int dim3 )
 	globalOffsetSet = true;
 }
 
+void CLKernel::setLocalArgument( int arg, size_t size )
+{
+	myCLKernel.setArg( arg, cl::__local( size ) );
+}
+
 void CLKernel::run()
 {
 	// Be nicer, later.
@@ -79,8 +96,11 @@ void CLKernel::run()
 
 	copyBuffersToDevice();
 
-	cl::Kernel kernel = generateKernel( myKernel, myFunction );
-	enqueueKernel( kernel, globalDimensions, globalOffset, localDimensions );
+    for ( unsigned i = 0; i < myBuffers.size(); i++ )
+    {
+        myCLKernel.setArg( i, *myBuffers[i] );
+    }
+	enqueueKernel( myCLKernel, globalDimensions, globalOffset, localDimensions );
 
 	copyBuffersFromDevice();
 }

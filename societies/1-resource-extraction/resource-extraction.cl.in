@@ -16,7 +16,7 @@
 #define TRUE 1
 #define FALSE 0
 
-// local ids: 1-dimensional: 1 per resource.
+// Local ids: 1-dimensional: 1 per resource.
 // Global ids: resources x agents
 
 /**
@@ -26,7 +26,7 @@ void compute_gain_per_minute(
 	__local uint *resources, 
 	__local uint *experiences,
 	__local float *gains_per_minute,
-	__constant SocietiesConfig *config
+	__global SocietiesConfig *config
 	)
 {
 	size_t local_id = get_local_id( 0 );
@@ -53,7 +53,7 @@ void compute_gain_per_minute(
 int is_within_epsilon(
 	uchar max_gpm_index,
 	__local float *gains_per_minute,
-	__constant SocietiesConfig *config
+	__global SocietiesConfig *config
 	)
 {
 	size_t local_id = get_local_id( 0 );
@@ -77,7 +77,7 @@ void take_experience_penalty(
 	__global uint *all_resources,
 	__local uint *resources,
 	__local uint *experiences,
-	__constant SocietiesConfig *config
+	__global SocietiesConfig *config
 	)
 {
     size_t local_id = get_local_id( 0 );
@@ -99,7 +99,7 @@ void take_experience_penalty(
  */
 void clamp_experience(
 	__local uint *experiences,
-	__constant SocietiesConfig *config
+	__global SocietiesConfig *config
 	)
 {
 	size_t local_id = get_local_id( 0 );
@@ -114,11 +114,11 @@ __kernel void resource_extraction(
 	__global uint *all_resources,
 	__global uint *all_experiences,
 	__global ulong *rng_base_offsets,
+	__global SocietiesConfig *config,
 	__local uint *resources,
 	__local uint *experiences,
 	__local float *gains_per_minute,
-	__local uchar *scratch,  // 255 * sizeof( uchar )
-	__constant SocietiesConfig *config
+	__local uchar *scratch  // 255 * sizeof( uchar )
 	)
 {
 	__local int counter;

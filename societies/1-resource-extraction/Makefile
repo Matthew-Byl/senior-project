@@ -11,4 +11,4 @@ resource-extraction.cl: resource-extraction.cl.in effort.cl utility.cl ../util/c
 	cpp -I ../util -I ../mwc64x/cl -I ../config resource-extraction.cl.in > resource-extraction.cl
 
 clean:
-	rm -f resource-extraction.cl
+	rm -f resource-extraction.cl resource-extraction
