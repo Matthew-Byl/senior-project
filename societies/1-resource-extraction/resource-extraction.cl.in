@@ -185,6 +185,9 @@ __kernel void resource_extraction(
 
 			resources[local_id]++;
 			experiences[local_id]++;
+			
+			// Recompute gain per minute with the new amount and experience.
+			compute_gain_per_minute( resources, experiences, gains_per_minute, config );
 		}
 		barrier( CLK_LOCAL_MEM_FENCE );
 	}
