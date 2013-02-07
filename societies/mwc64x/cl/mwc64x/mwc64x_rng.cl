@@ -18,7 +18,9 @@ void MWC64X_Step(mwc64x_state_t *s)
 {
 	uint X=s->x, C=s->c;
 	
-	uint Xn=MWC64X_A*X+C;
+	// Another John Kloosterman fix: insert volatile
+	//  so that the uint can overflow.
+	volatile uint Xn=MWC64X_A*X+C;
 	uint carry=(uint)(Xn<C);				// The (Xn<C) will be zero or one for scalar
 	uint Cn=mad_hi(MWC64X_A,X,carry);  
 	
