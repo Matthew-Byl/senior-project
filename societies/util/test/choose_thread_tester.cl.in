@@ -1,4 +1,4 @@
-#include "../choose_thread.c"
+#include "../choose_thread.cl"
 
 __kernel void choose_thread_tester(
 	__global uchar *enableds,

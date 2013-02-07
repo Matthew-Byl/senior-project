@@ -10,7 +10,7 @@
 #include <fstream>
 using namespace std;
 
-#define KERNEL_SOURCE "../effort.c"
+#define KERNEL_SOURCE "../effort.cl"
 #define OUTPUT_FILE "effort-curve.out"
 
 int main ( void )

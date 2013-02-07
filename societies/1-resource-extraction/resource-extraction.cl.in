@@ -7,10 +7,10 @@
 
 #include <config.h>
 #include <mwc64x.cl>
-#include <choose_thread.c>
-#include <max_index.c>
-#include "effort.c"
-#include "resource_extraction.c"
+#include <choose_thread.cl>
+#include <max_index.cl>
+#include "effort.cl"
+#include "resource_extraction.cl"
 
 // local ids: 1-dimensional: 1 per resource.
 // Global ids: resources x agents

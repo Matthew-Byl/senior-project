@@ -10,7 +10,7 @@
 #include <fstream>
 using namespace std;
 
-#define KERNEL_SOURCE "../utility.c"
+#define KERNEL_SOURCE "../utility.cl"
 #define OUTPUT_FILE "utility.out"
 
 int main ( void )

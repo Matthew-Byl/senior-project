@@ -1,4 +1,4 @@
-#include "../max_index.c"
+#include "../max_index.cl"
 
 __kernel void max_index_first_pass_tester(
 	__global float *global_values,
