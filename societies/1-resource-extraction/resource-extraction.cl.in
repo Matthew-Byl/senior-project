@@ -11,6 +11,10 @@
 #include <choose_thread.cl>
 #include <max_index.cl>
 #include "effort.cl"
+#include "utility.cl"
+
+#define TRUE 1
+#define FALSE 0
 
 // local ids: 1-dimensional: 1 per resource.
 // Global ids: resources x agents
@@ -129,7 +133,7 @@ __kernel void resource_extraction(
 	//  says that 2^40 is a good perStreamOffset if we don't know one.
 	// 2^40 = 1099511627776
     MWC64X_SeedStreams(
-		&rng, 
+		&rng_state, 
 		rng_base_offsets[get_global_id( 1 )], 
 		1099511627776 
 	);
@@ -158,14 +162,14 @@ __kernel void resource_extraction(
 		//  be randomly chosen from.
 		if ( is_within_epsilon( max_gpm_index, gains_per_minute, config ) )
 		{
-			choose_thread_add_to_options( counter, scratch );
+			choose_thread_add_to_options( &counter, scratch );
 		}
 		barrier( CLK_LOCAL_MEM_FENCE );
 
 		// Choose a resource.
 		if ( local_id == 0 )
 		{
-			chosen_resource = choose_thread_make_choice( counter, scratch, rng_state );
+			chosen_resource = choose_thread_make_choice( counter, scratch, &rng_state );
 		}
 		barrier( CLK_LOCAL_MEM_FENCE );
 
@@ -189,7 +193,7 @@ __kernel void resource_extraction(
 	take_experience_penalty( all_resources, resources, experiences, config );
 
 	// Ensure experience is below the maximum allowed.
-	clamp_experiences( experiences, config );
+	clamp_experience( experiences, config );
 	
 	// Copy data back to global memory.
 	all_resources[agent_offset + local_id] = resources[local_id];
