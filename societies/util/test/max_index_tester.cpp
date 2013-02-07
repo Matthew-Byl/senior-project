@@ -61,10 +61,13 @@ void test_first_pass( string src )
 
 void test_function( string src )
 {
+	cout << "Testing max_index()... ";
+
 	CLKernel max_index_tester( "max_index_tester", src );
 	cl_uchar host_max;
 	CLUnitArgument max( &host_max, 1 );
 
+	// Nice power of two
 	cl_float host_floats1[] = 
 		{ 24, 6.333, 2.1, 9.76, 2.11, 44.2224, 11000, 23 };
 	cl_uchar host_floats1_tree[4];
@@ -74,10 +77,37 @@ void test_function( string src )
 	max_index_tester.setGlobalDimensions( 8, 1 );
 	max_index_tester.setLocalDimensions( 8, 1 );
 	max_index_tester( floats1, floats1_tree, max );
-	
+
+	cl_uchar floats1_correct_tree[4] = { 6, 3, 6, 6 };
 	for ( int i = 0; i < 4; i++ )
-		cout << (int) host_floats1_tree[i] << " ";
-	cout << endl;
+	{
+		assert( host_floats1_tree[i] == floats1_correct_tree[i] );
+	}
+	assert( host_max == 6 );
+	cout << "* ";
+
+	// Odd number
+	cl_float host_floats2[] = 
+		{ 54.2, 43, 223.5, 222, 9000 };
+	cl_uchar host_floats2_tree[3];
+
+    CLUnitArgument floats2( host_floats2, 5 );
+    CLUnitArgument floats2_sort_tree( host_floats2_tree, 3 );
+	max_index_tester.setGlobalDimensions( 5, 1 );
+	max_index_tester.setLocalDimensions( 5, 1 );
+	max_index_tester( floats2, floats2_sort_tree, max );
+	
+	cl_uchar floats2_correct_tree[3] =
+		{ 4, 2, 4 };
+
+	for ( int i = 0; i < 3; i++ )
+	{
+		assert( host_floats2_tree[i] == floats2_correct_tree[i] );
+	}
+	assert( host_max == 4 );
+	cout << "* ";
+
+	cout << "All tests passed." << endl << flush;
 }
 
 int main ( void )

@@ -48,26 +48,29 @@ void max_index_second_pass(
 {
 	size_t local_id = get_local_id( 0 );
 	size_t local_size = get_local_size( 0 );
-	size_t sort_tree_size = ( local_size + 1 ) / 2; // The +1 means we round up.
+	size_t sort_tree_size = ( local_size + 1 ) / 2; // The + 1 means we round up when dividing.
 
+	// How far apart the two values that are being compared are.
 	int stride = 1;
 	int power_of_two = 2;
 
-	// We want only the threads that put together the sort tree.
-	while ( power_of_two <= sort_tree_size )
+	// ( sort_tree_size * 2 ) forces one extra iteration,
+	//  which is necessary when the sort tree is not a
+	//  power-of-two size.
+	while ( power_of_two <= ( sort_tree_size * 2 ) )
 	{
 		if ( ( local_id < sort_tree_size )
 			 && ( ( local_id % power_of_two ) == 0 ) )
 		{
-
-			printf( "Thread %d!\n", local_id );
-
 			if ( ( local_id + stride ) >= sort_tree_size )
 			{
-				// do nothing; keep the current value.
+				// If the comparison needs a value beyond the
+				//  size of the sort tree, keep the current value.
 			}
 			else if ( values[sort_tree[local_id + stride]] > values[sort_tree[local_id]] )
 			{
+				// Otherwise, make the sort tree at this location equal
+				//  to the larger of the two values we are comparing.
 				sort_tree[local_id] = sort_tree[local_id + stride];
 			}
 		}
