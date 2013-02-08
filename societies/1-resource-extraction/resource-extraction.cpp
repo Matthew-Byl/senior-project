@@ -82,7 +82,7 @@ int main ( void )
 	SocietiesConfig config;
 	config = config_generate_default_configuration();
 
-	const int total_resources = 10 * 10;
+	const int total_resources = config.num_agents * config.num_resources;
 	cl_uint all_resources[total_resources];
 	cl_uint all_experiences[total_resources];
 
@@ -99,12 +99,12 @@ int main ( void )
 		42 );
 	re.extractResources();
 
-	for ( int i = 0; i < 10; i++ )
+	for ( int i = 0; i < config.num_agents; i++ )
 	{
 		cout << "Agent " << i << ": " << endl;
-		for ( int j = 0; j < 10; j++ )
+		for ( int j = 0; j < config.num_resources; j++ )
 		{
-			cout << "(" << all_resources[i*10 + j] << "," << all_experiences[i*10 + j] << ")" << " ";
+			cout << "(" << all_resources[i*config.num_resources + j] << "," << all_experiences[i*config.num_resources + j] << ")" << " ";
 		}
 		cout << endl;
 	}

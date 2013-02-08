@@ -50,19 +50,19 @@ void choose_thread_add_to_options(
  *   rng_state has been initialized
  */
 uchar choose_thread_make_choice(
-	int counter,
+	__local int *counter,
 	__local uchar *scratch,
 	mwc64x_state_t *rng_state
 	)
 {
-	if ( counter == 0 )
+	if ( *counter == 0 )
 	{
 		// Error. It makes no sense to pick out of 
 		//  0 options.
 		printf( "choose_thread_make_choice: *counter == 0. Returning 0.\n" );
 		return 0;
 	}
-	else if ( counter == 1 )
+	else if ( *counter == 1 )
 	{
 		return scratch[0];
 	}
@@ -70,7 +70,7 @@ uchar choose_thread_make_choice(
 	{
 		// Choose a random integer between 0 and (counter - 1).
 		uint random_integer = MWC64X_NextUint( rng_state );
-		uint random_idx = random_integer % counter;
+		uint random_idx = random_integer % *counter;
 
 		return scratch[random_idx];
 	}

@@ -158,6 +158,7 @@ __kernel void resource_extraction(
 	{
 		// Find the resource with maximum gain per minute.
 		uchar max_gpm_index = max_index( gains_per_minute, scratch );
+//		printf( "Max GPM: %d, %f\n", max_gpm_index, gains_per_minute[max_gpm_index] );
 
 		// Set the random selection counter to 0.
 		if ( local_id == 0 )
@@ -170,18 +171,18 @@ __kernel void resource_extraction(
 		if ( is_within_epsilon( max_gpm_index, gains_per_minute, config ) )
 		{
 			choose_thread_add_to_options( &counter, scratch );
+//			printf( "Adding thread %d to options!\n", get_local_id( 0 ) );
 		}
 		barrier( CLK_LOCAL_MEM_FENCE );
 
 		// Choose a resource.
 		if ( local_id == 0 )
 		{
-			chosen_resource = choose_thread_make_choice( counter, scratch, &rng_state );
+			chosen_resource = choose_thread_make_choice( &counter, scratch, &rng_state );
 		}
 		barrier( CLK_LOCAL_MEM_FENCE );
 
 		// Collect one of that resource and gain experience with it.
-	
 		if ( local_id == chosen_resource )
 		{
 			minutes_used += resource_effort(
