@@ -9,7 +9,7 @@
 #include <config.h>
 #include <mwc64x.cl>
 #include <choose_thread.cl>
-#include <max_index.cl>
+#include <max_min.cl>
 #include "effort.cl"
 #include "utility.cl"
 

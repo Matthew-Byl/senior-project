@@ -7,7 +7,7 @@ OCL_CC = $(CC) $(CFLAGS) $(CL_TEST_INCLUDE)
 resource-extraction: resource-extraction.cpp resource-extraction.h ../config/config.cpp resource-extraction.cl
 	$(OCL_CC) resource-extraction.cpp ../config/config.cpp -o resource-extraction $(OCL_LIBS)
 
-resource-extraction.cl: resource-extraction.cl.in effort.cl utility.cl ../util/choose_thread.cl ../util/max_index.cl
+resource-extraction.cl: resource-extraction.cl.in effort.cl utility.cl ../util/choose_thread.cl ../util/max_min.cl
 	cpp -I ../util -I ../mwc64x/cl -I ../config resource-extraction.cl.in > resource-extraction.cl
 
 clean:
