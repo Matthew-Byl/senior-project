@@ -31,7 +31,7 @@
  *   there needs to be a local barrier before choose_thread_make_choice can be called.
  */
 void choose_thread_add_to_options( 
-	__local int *counter, 
+	volatile __local int *counter, 
 	__local uchar *scratch
 	)
 {
@@ -50,7 +50,7 @@ void choose_thread_add_to_options(
  *   rng_state has been initialized
  */
 uchar choose_thread_make_choice(
-	__local int *counter,
+	volatile __local int *counter,
 	__local uchar *scratch,
 	mwc64x_state_t *rng_state
 	)

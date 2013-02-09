@@ -121,7 +121,7 @@ __kernel void resource_extraction(
 	__local uchar *scratch  // 255 * sizeof( uchar )
 	)
 {
-	__local int counter;
+	volatile __local int counter;
 	__local int minutes_used;
 	__local uchar chosen_resource;
 

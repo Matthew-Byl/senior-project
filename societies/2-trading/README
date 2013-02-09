@@ -1,0 +1,14 @@
+Strategy:
+ -Randomly pair agents by generating a random permutation on the CPU and
+   transferring that to the GPU.
+ -The random permutaion allows each to randomly be agent A and agent B,
+   so we don't need more randomness for that.
+ -Dimensions: (resources)x(pair of agents)
+ -configurable number of trading rounds
+
+Functions I'll need:
+ -n-minimum (for 5 least valuable resources)
+ -maximum that might not use all threads (to find the pair with highest internal valuation)
+   -for pairs, we could have 1 thread per possible pair. This would mean that the "menu"
+    can be up to 16, because sqrt(256) = 16.
+ -

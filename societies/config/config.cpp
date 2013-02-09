@@ -12,8 +12,8 @@ SocietiesConfig config_generate_default_configuration( void )
 {
 	SocietiesConfig config;
 
-	config.num_agents = 1000;
-	config.num_resources = 256;
+	config.num_agents = 5;
+	config.num_resources = 128;
 	config.num_days = 50;
 	config.num_minutes = 6000;
 
