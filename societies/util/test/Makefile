@@ -6,7 +6,7 @@ OCL_CC = $(CC) $(CFLAGS) $(CL_TEST_INCLUDE)
 
 all: choose_thread_tester max_index_tester n_minimum_tester
 
-clean: choose_thread_tester_clean max_index_tester_clean
+clean: choose_thread_tester_clean max_index_tester_clean n_minimum_tester_clean
 	rm -f *.out
 
 choose_thread_tester: choose_thread_tester.cl choose_thread_tester.cpp

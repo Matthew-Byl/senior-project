@@ -29,9 +29,9 @@ void CLContext::initialize( int platform, int device )
 	cl::Platform::get( &platforms );
 
 	if ( myDebug )
-		platforms[platform].getDevices( CL_DEVICE_TYPE_GPU, &myDevices );	
-	else
 		platforms[platform].getDevices( CL_DEVICE_TYPE_CPU, &myDevices );	
+	else
+		platforms[platform].getDevices( CL_DEVICE_TYPE_GPU, &myDevices );	
 
 	myContext = cl::Context( myDevices, NULL, NULL, NULL );
 	myCommandQueue = cl::CommandQueue( myContext, myDevices[device], 0 );
