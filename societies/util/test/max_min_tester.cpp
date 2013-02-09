@@ -9,15 +9,15 @@
 #include <iostream>
 using namespace std;
 
-#define KERNEL_SOURCE "max_index_tester.cl"
+#define KERNEL_SOURCE "max_min_tester.cl"
 
 void test_first_pass( string src )
 {
 	cout << "Testing max_index_first_pass()... ";
 
-	CLKernel max_index_first_pass_tester( "max_index_first_pass_tester", src );
-	max_index_first_pass_tester.setGlobalDimensions( 8, 1 );
-	max_index_first_pass_tester.setLocalDimensions( 8, 1 );
+	CLKernel max_min_first_pass_tester( "max_min_first_pass_tester", src );
+	max_min_first_pass_tester.setGlobalDimensions( 8, 1 );
+	max_min_first_pass_tester.setLocalDimensions( 8, 1 );
 	cl_uchar *tree;
 
 	// Power of two
@@ -27,7 +27,7 @@ void test_first_pass( string src )
 
     CLUnitArgument floats1( host_floats1, 8 );
     CLUnitArgument floats1_sort_tree( tree, 4 );
-	max_index_first_pass_tester( floats1, floats1_sort_tree );
+	max_min_first_pass_tester( floats1, floats1_sort_tree );
 
 	cl_uchar host_floats1_tree[4] = 
 		{ 0, 3, 5, 6 };
@@ -43,9 +43,9 @@ void test_first_pass( string src )
 
     CLUnitArgument floats2( host_floats2, 5 );
     CLUnitArgument floats2_sort_tree( tree, 3 );
-	max_index_first_pass_tester.setGlobalDimensions( 5, 1 );
-	max_index_first_pass_tester.setLocalDimensions( 5, 1 );
-	max_index_first_pass_tester( floats2, floats2_sort_tree );
+	max_min_first_pass_tester.setGlobalDimensions( 5, 1 );
+	max_min_first_pass_tester.setLocalDimensions( 5, 1 );
+	max_min_first_pass_tester( floats2, floats2_sort_tree );
 	
 	cl_uchar host_floats2_tree[3] =
 		{ 1, 2, 4 };
@@ -63,7 +63,7 @@ void test_function( string src )
 {
 	cout << "Testing max_index()... ";
 
-	CLKernel max_index_tester( "max_index_tester", src );
+	CLKernel max_tester( "max_tester", src );
 	cl_uchar host_max;
 	CLUnitArgument max( &host_max, 1 );
 
@@ -74,9 +74,9 @@ void test_function( string src )
 
     CLUnitArgument floats1( host_floats1, 8 );
     CLUnitArgument floats1_tree( host_floats1_tree, 4 );
-	max_index_tester.setGlobalDimensions( 8, 1 );
-	max_index_tester.setLocalDimensions( 8, 1 );
-	max_index_tester( floats1, floats1_tree, max );
+	max_tester.setGlobalDimensions( 8, 1 );
+	max_tester.setLocalDimensions( 8, 1 );
+	max_tester( floats1, floats1_tree, max );
 
 	cl_uchar floats1_correct_tree[4] = { 6, 3, 6, 6 };
 	for ( int i = 0; i < 4; i++ )
@@ -93,9 +93,9 @@ void test_function( string src )
 
     CLUnitArgument floats2( host_floats2, 5 );
     CLUnitArgument floats2_sort_tree( host_floats2_tree, 3 );
-	max_index_tester.setGlobalDimensions( 5, 1 );
-	max_index_tester.setLocalDimensions( 5, 1 );
-	max_index_tester( floats2, floats2_sort_tree, max );
+	max_tester.setGlobalDimensions( 5, 1 );
+	max_tester.setLocalDimensions( 5, 1 );
+	max_tester( floats2, floats2_sort_tree, max );
 	
 	cl_uchar floats2_correct_tree[3] =
 		{ 4, 2, 4 };
@@ -112,7 +112,7 @@ void test_function( string src )
 
 int main ( void )
 {
-	cout << "max_index_tester.cpp: Test the max_index() function and dependencies." << endl;
+	cout << "max_min_tester.cpp: Test the maximum and minimum functions and dependencies." << endl;
 
 	// Open OpenCL kernel
 	ifstream t( KERNEL_SOURCE );

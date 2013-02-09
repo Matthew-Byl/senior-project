@@ -1,6 +1,6 @@
-#include "../max_index.cl"
+#include "../max_min.cl"
 
-__kernel void max_index_first_pass_tester(
+__kernel void max_min_first_pass_tester(
 	__global float *global_values,
 	__global uchar *global_sort_tree
 	)
@@ -14,7 +14,7 @@ __kernel void max_index_first_pass_tester(
 	values[local_id] = global_values[local_id];
 	barrier( CLK_LOCAL_MEM_FENCE );
 
-	max_index_first_pass( values, sort_tree );
+	max_min_first_pass( MAX, values, sort_tree );
 	barrier( CLK_LOCAL_MEM_FENCE );
 	
 	size_t local_size = get_local_size( 0 );
@@ -23,7 +23,7 @@ __kernel void max_index_first_pass_tester(
 	barrier( CLK_LOCAL_MEM_FENCE );
 }
 
-__kernel void max_index_tester(
+__kernel void max_tester(
 	__global float *global_values,
 	__global uchar *global_sort_tree,
 	__global uchar *global_max

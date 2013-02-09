@@ -1,14 +1,23 @@
-// The idea is that we keep a sorted list, which makes the
-//  maximum operation trivial. The resource that is harvested
-//  then just needs to re-find its position in the list, and the
-//  others need to increment their positions by one.
-//
-// Except this is slow because we only need the first few largest ones.
-//  Finding the max is faster than sorting.
-//
-// Sort_tree is n/2 items long, and has to be a power of 2.
+/**
+ * Efficient max and min functions for OpenCL, all running in lg(n)
+ *  time with n threads.
+ *
+ * Conceptually, this works like making a heap. But since on the GPU
+ *  it would take as long to reheapify as just build the heap again
+ *  from scratch, we save over 1/2 the __local memory space by
+ *  building a tree-like structure.
+ *
+ * @author John Kloosterman
+ * @date Feb. 9, 2013
+ */
 
-void max_index_first_pass(
+typedef enum {
+	MAX,
+	MIN
+} MaxMinType;
+
+void max_min_first_pass(
+	MaxMinType type,
 	__local float *values,
 	__local uchar *sort_tree
 	)
@@ -30,10 +39,20 @@ void max_index_first_pass(
 		{
 			// Put the index of the maximum of the two values
 			//  in this thread's index in @sort_tree.
-			if ( values[real_idx] > values[real_idx + 1] )
+			if ( type == MAX
+				 && values[real_idx] > values[real_idx + 1] )
+			{
 				sort_tree[local_id] = real_idx;
+			}
+			else if ( type == MIN
+					  && values[real_idx] < values[real_idx + 1] )
+			{
+				sort_tree[local_id] = real_idx;
+			}
 			else
+			{
 				sort_tree[local_id] = real_idx + 1;
+			}
 		}
 	}
 
@@ -41,7 +60,8 @@ void max_index_first_pass(
 	barrier( CLK_LOCAL_MEM_FENCE );
 }	
 
-void max_index_second_pass(
+void max_min_second_pass(
+	MaxMinType type,
 	__local float *values,
 	__local uchar *sort_tree
 	)
@@ -67,7 +87,15 @@ void max_index_second_pass(
 				// If the comparison needs a value beyond the
 				//  size of the sort tree, keep the current value.
 			}
-			else if ( values[sort_tree[local_id + stride]] > values[sort_tree[local_id]] )
+			else if ( type == MAX
+					  && values[sort_tree[local_id + stride]] > values[sort_tree[local_id]] )
+			{
+				// Otherwise, make the sort tree at this location equal
+				//  to the larger of the two values we are comparing.
+				sort_tree[local_id] = sort_tree[local_id + stride];
+			}
+			else if ( type == MIN
+					  && values[sort_tree[local_id + stride]] < values[sort_tree[local_id]] )
 			{
 				// Otherwise, make the sort tree at this location equal
 				//  to the larger of the two values we are comparing.
@@ -83,16 +111,32 @@ void max_index_second_pass(
 }
 
 
-uchar max_index(
+uchar max_min(
+	MaxMinType type,
 	__local float *values,
 	__local uchar *sort_tree
 	)
 {
 	// Pass 1: put the indices of the maximum of every other element
 	//  into the sort tree.
-	max_index_first_pass( values, sort_tree );
-
-	max_index_second_pass( values, sort_tree );
+	max_min_first_pass( type, values, sort_tree );
+	max_min_second_pass( type, values, sort_tree );
 
 	return sort_tree[0];
+}
+
+uchar max_index(
+	__local float *values,
+	__local uchar *sort_tree
+	)
+{
+	return max_min( MAX, values, sort_tree );
+}
+
+uchar min_index(
+	__local float *values,
+	__local uchar *sort_tree
+	)
+{
+	return max_min( MIN, values, sort_tree );
 }
