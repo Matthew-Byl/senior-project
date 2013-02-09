@@ -24,6 +24,9 @@
    because the values are bigger than the 5 minimums.
 
  Thought 4: do 5 at a time, or have a shifting window or something: which is O(n) time.
+ 
+ Thought 5: do 5 log(n) minimums. Use the function we already have, but add an exclusion
+     vector for elements we've already used.
 */
 
 // Preconditions:
