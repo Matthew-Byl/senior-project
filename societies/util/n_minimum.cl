@@ -29,12 +29,14 @@
 // Preconditions:
 //  locks is the same size as mins, indices, locks; all threads participate.
 //  locks = 0.
+//
+// There are no guarantees made about the order.
 void n_minimum(
 	int n,
 	float value,
 	__local float *mins,
 	__local uchar *indices,
-	volatile __local int *locks,
+	volatile __local int *locks
 	)
 {
 	size_t local_id = get_local_id( 0 );
@@ -55,7 +57,7 @@ void n_minimum(
 
 			// Acquire the lock. The lock = 0 when not held, so
 			//  this will stop looping once someone else released it.
-			while ( atomic_xchng( &locks[i], 1 ) );
+			while ( atomic_xchg( &locks[i], 1 ) );
 			
 			// Do the real check to see if we are less
 			//  than the value already there. It could
@@ -68,7 +70,7 @@ void n_minimum(
 			}
 
 			// Release the lock.
-			atomic_xchng( &locks[i], 0 );
+			atomic_xchg( &locks[i], 0 );
 
 			// Exit the loop if we put ourselves in one of the slots.
 			if ( been_placed )

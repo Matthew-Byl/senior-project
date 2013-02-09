@@ -1,0 +1,29 @@
+/**
+ * Tester for the n_minimum function.
+ */
+
+#include "../n_minimum.cl"
+
+__kernel void
+n_minimum_tester( 
+	__global uchar *n,
+	__global float *values, 
+	__global float *mins, 
+	__global uchar *indices,
+	__local float *local_mins,
+	__local uchar *local_indices,
+	__local int *locks
+	)
+{
+	size_t local_id = get_local_id( 0 );
+
+	n_minimum( *n, values[local_id], local_mins, local_indices, locks );
+	barrier( CLK_LOCAL_MEM_FENCE );
+
+	// Copy local to global values.
+	if ( local_id < *n )
+	{
+		mins[local_id] = local_mins[local_id];
+		indices[local_id] = local_indices[local_id];
+	}
+}

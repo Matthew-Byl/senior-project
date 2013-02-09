@@ -21,6 +21,7 @@ private:
 	cl::Context myContext;
 	cl::CommandQueue myCommandQueue;
 	std::vector<cl::Device> myDevices;
+	bool myDebug;
 };
 
 #endif
