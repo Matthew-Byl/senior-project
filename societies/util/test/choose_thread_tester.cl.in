@@ -6,7 +6,7 @@ __kernel void choose_thread_tester(
 	__global ulong *rng_base_offset
 	)
 {
-	__local int counter;
+	volatile __local int counter;
 	__local uchar scratch[255];
 	size_t local_id = get_local_id( 0 );
 
@@ -35,7 +35,7 @@ __kernel void choose_thread_tester(
 	__local uchar chosen_thread;
 	if ( local_id == 0 )
 	{
-		chosen_thread = choose_thread_make_choice( counter, scratch, &rng );
+		chosen_thread = choose_thread_make_choice( &counter, scratch, &rng );
 	}
 	barrier( CLK_LOCAL_MEM_FENCE );
 

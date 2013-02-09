@@ -149,7 +149,7 @@ __kernel void resource_extraction(
 	// Copy our chunk to local memory.
 	resources[local_id] = all_resources[agent_offset + local_id];
 	experiences[local_id] = all_experiences[agent_offset + local_id];
-	mem_fence( CLK_LOCAL_MEM_FENCE );
+	barrier( CLK_LOCAL_MEM_FENCE );
 
 	// Compute gain per minute for all resources.
 	compute_gain_per_minute( resources, experiences, gains_per_minute, config );
@@ -174,6 +174,11 @@ __kernel void resource_extraction(
 //			printf( "Adding thread %d to options!\n", get_local_id( 0 ) );
 		}
 		barrier( CLK_LOCAL_MEM_FENCE );
+
+		if ( counter == 0 )
+		{
+			printf( "The maximum was %f, from thread %d.\n", gains_per_minute[max_gpm_index], max_gpm_index );
+		}
 
 		// Choose a resource.
 		if ( local_id == 0 )
