@@ -58,10 +58,28 @@ cl::Program CLContext::buildProgram( string &src ) const
 
 	cl::Program program( myContext, sources );
     try {
-        program.build( 
-			myDevices //,
-//			"-cl-opt-disable"
-			);
+		if ( myDebug )
+		{
+			program.build( 
+				myDevices,
+				"-g -O0"
+				);
+
+			// @TODO: this should be myDevices[device].
+			std::cout << "Build Status: "
+					  << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(myDevices[0])
+					  << std::endl;
+			std::cout << "Build Options:\t"
+					  << program.getBuildInfo<CL_PROGRAM_BUILD_OPTIONS>(myDevices[0])
+					  << std::endl;
+			std::cout << "Build Log:\t "
+					  << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(myDevices[0])
+					  << std::endl;
+		}
+		else
+		{
+			program.build( myDevices );
+		}
     } catch ( cl::Error err ) {		
 		std::cout << "Build Status: "
                   << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(myDevices[0])
@@ -75,20 +93,6 @@ cl::Program CLContext::buildProgram( string &src ) const
 
 		throw new exception();
     }
-
-	// @TODO: this should be myDevices[device].
-	if ( myDebug )
-	{
-		std::cout << "Build Status: "
-                  << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(myDevices[0])
-                  << std::endl;
-		std::cout << "Build Options:\t"
-                  << program.getBuildInfo<CL_PROGRAM_BUILD_OPTIONS>(myDevices[0])
-                  << std::endl;
-		std::cout << "Build Log:\t "
-                  << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(myDevices[0])
-                  << std::endl;
-	}
 
 	return program;
 }
