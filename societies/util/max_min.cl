@@ -5,11 +5,15 @@
  * Conceptually, this works like making a heap. But since on the GPU
  *  it would take as long to reheapify as just build the heap again
  *  from scratch, we save over 1/2 the __local memory space by
- *  building a tree-like structure.
+ *  building a tree-like structure that doesn't survive intact afterwards.
  *
  * @author John Kloosterman
  * @date Feb. 9, 2013
  */
+
+#ifndef NULL
+#define NULL (void *) 0
+#endif
 
 typedef enum {
 	MAX,
@@ -19,7 +23,9 @@ typedef enum {
 void max_min_first_pass(
 	MaxMinType type,
 	__local float *values,
-	__local uchar *sort_tree
+	__local uchar *sort_tree,
+	int use_mask,
+	__local uchar *value_mask
 	)
 {
 	size_t local_id = get_local_id( 0 );
@@ -31,26 +37,39 @@ void max_min_first_pass(
 		// The index in @gains_per_minute this thread is examining.
 		int real_idx = local_id * 2;
 
+
 		// If there is an odd number of threads, don't read past
 		//  the end of the array.
+		// It's OK if this is a masked value, we'll catch it in the
+		//  next phase.
 		if ( ( real_idx + 1 ) >= local_size )
 			sort_tree[local_id] = real_idx;
 		else
 		{
-			// Put the index of the maximum of the two values
-			//  in this thread's index in @sort_tree.
-			if ( type == MAX
-				 && values[real_idx] > values[real_idx + 1] )
+			// Masking: all that's important is that a masked value can't
+			//  win over an unmasked one. So if one is masked, choose the other.
+			if ( use_mask
+				 && ( value_mask[real_idx] || value_mask[real_idx + 1] ) )
 			{
-				sort_tree[local_id] = real_idx;
+				if ( value_mask[real_idx] )
+					sort_tree[local_id] = real_idx + 1;
+				else
+					sort_tree[local_id] = real_idx;
 			}
-			else if ( type == MIN
-					  && values[real_idx] < values[real_idx + 1] )
+			else if ( ( type == MAX
+						&& values[real_idx] > values[real_idx + 1] )
+					  ||
+					  ( type == MIN
+						&& values[real_idx] < values[real_idx + 1] ) )
 			{
+				// Put the index of the maximum of the two values
+				//  in this thread's index in @sort_tree.
 				sort_tree[local_id] = real_idx;
 			}
 			else
 			{
+				// If MAX, this meant that values[real_idx + 1] was larger
+				// If MIN
 				sort_tree[local_id] = real_idx + 1;
 			}
 		}
@@ -63,7 +82,9 @@ void max_min_first_pass(
 void max_min_second_pass(
 	MaxMinType type,
 	__local float *values,
-	__local uchar *sort_tree
+	__local uchar *sort_tree,
+	int use_mask,
+	__local uchar *value_mask
 	)
 {
 	size_t local_id = get_local_id( 0 );
@@ -86,6 +107,12 @@ void max_min_second_pass(
 			{
 				// If the comparison needs a value beyond the
 				//  size of the sort tree, keep the current value.
+			}
+			else if ( use_mask
+					  && value_mask[local_id + stride] )
+			{
+				// If the other value is masked, keep
+				//  the current value.
 			}
 			else if ( type == MAX
 					  && values[sort_tree[local_id + stride]] > values[sort_tree[local_id]] )
@@ -114,13 +141,15 @@ void max_min_second_pass(
 uchar max_min(
 	MaxMinType type,
 	__local float *values,
-	__local uchar *sort_tree
+	__local uchar *sort_tree,
+	int use_mask,
+	__local uchar *value_mask
 	)
 {
 	// Pass 1: put the indices of the maximum of every other element
 	//  into the sort tree.
-	max_min_first_pass( type, values, sort_tree );
-	max_min_second_pass( type, values, sort_tree );
+	max_min_first_pass( type, values, sort_tree, use_mask, value_mask );
+	max_min_second_pass( type, values, sort_tree, use_mask, value_mask );
 
 	return sort_tree[0];
 }
@@ -130,7 +159,7 @@ uchar max_index(
 	__local uchar *sort_tree
 	)
 {
-	return max_min( MAX, values, sort_tree );
+	return max_min( MAX, values, sort_tree, 0, NULL );
 }
 
 uchar min_index(
@@ -138,5 +167,40 @@ uchar min_index(
 	__local uchar *sort_tree
 	)
 {
-	return max_min( MIN, values, sort_tree );
+	return max_min( MIN, values, sort_tree, 0, NULL );
+}
+
+// This is not used anywhere, but is for me to remember that
+// this will work.
+// Find the max of the first n elements in values, not all of them.
+uchar max_min_index_n(
+	uchar n,
+	MaxMinType type,
+	__local float *values,
+	__local uchar *sort_tree
+	)
+{
+	size_t local_id = get_local_id( 0 );
+
+	if ( local_id < n )
+		return max_min( type, values, sort_tree, 0, NULL );
+	else
+	{
+		// You better ignore this.
+		return 0;
+	}
+}
+
+// Find the maximum n values in the array.
+//  This works like running the first few iterations of
+//   heapsort.
+// results can overlap safely with sort_tree.
+void n_max_indices(
+	uchar n,
+	__local float *values,
+	__local uchar *sort_tree,
+	__local uchar *results
+	)
+{
+
 }

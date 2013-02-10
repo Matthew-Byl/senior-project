@@ -14,7 +14,7 @@ __kernel void max_min_first_pass_tester(
 	values[local_id] = global_values[local_id];
 	barrier( CLK_LOCAL_MEM_FENCE );
 
-	max_min_first_pass( MAX, values, sort_tree );
+	max_min_first_pass( MAX, values, sort_tree, 0, NULL );
 	barrier( CLK_LOCAL_MEM_FENCE );
 	
 	size_t local_size = get_local_size( 0 );
