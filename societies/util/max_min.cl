@@ -12,7 +12,15 @@
  */
 
 #ifndef NULL
-#define NULL (void *) 0
+#define NULL ((void *) 0)
+#endif
+
+#ifndef TRUE
+#define TRUE 1
+#endif
+
+#ifndef FALSE
+#define FALSE 0
 #endif
 
 typedef enum {
@@ -53,7 +61,7 @@ void max_min_first_pass(
 			{
 				if ( value_mask[real_idx] )
 					sort_tree[local_id] = real_idx + 1;
-				else
+				else // value_mask[real_idx + 1]
 					sort_tree[local_id] = real_idx;
 			}
 			else if ( ( type == MAX
@@ -109,7 +117,7 @@ void max_min_second_pass(
 				//  size of the sort tree, keep the current value.
 			}
 			else if ( use_mask
-					  && value_mask[local_id + stride] )
+					  && value_mask[sort_tree[local_id + stride]] )
 			{
 				// If the other value is masked, keep
 				//  the current value.
@@ -202,5 +210,5 @@ void n_max_indices(
 	__local uchar *results
 	)
 {
-
+	
 }

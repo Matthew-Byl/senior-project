@@ -47,3 +47,47 @@ __kernel void max_tester(
 		global_sort_tree[local_id] = sort_tree[local_id];
 	barrier( CLK_LOCAL_MEM_FENCE );
 }
+
+// Masks out every other value and takes a min.
+__kernel void max_min_mask_tester(
+	__global float *global_values,
+	__global uchar *global_result,
+	__global uchar *global_result_no_mask
+	)
+{
+	__local uchar mask[256];
+	__local float values[256];
+	__local uchar sort_tree[128];
+
+	size_t local_id = get_local_id( 0 );
+	values[local_id] = global_values[local_id];
+
+	// Mask out every odd index.
+	if ( local_id % 2 )
+		mask[local_id] = TRUE;
+	else
+		mask[local_id] = FALSE;
+
+	barrier( CLK_LOCAL_MEM_FENCE );
+
+	uchar mask_result = max_min( 
+		MIN, 
+		values, 
+		sort_tree,
+		TRUE,
+		mask
+	);
+	if ( get_local_id( 0 ) == 0 )
+		*global_result = mask_result;
+
+	uchar result = max_min(
+		MIN,
+		values,
+		sort_tree,
+		FALSE,
+		NULL
+		);
+	if ( get_local_id( 0 ) == 0 )
+		*global_result_no_mask = result;
+
+}

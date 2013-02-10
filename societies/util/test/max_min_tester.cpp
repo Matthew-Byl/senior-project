@@ -110,6 +110,54 @@ void test_function( string src )
 	cout << "All tests passed." << endl << flush;
 }
 
+void test_mask( string src )
+{
+	cout << "Testing masking... ";
+
+	CLKernel mask_tester( "max_min_mask_tester", src );
+	cl_uchar host_min;
+	CLUnitArgument min( &host_min, 1 );
+	cl_uchar host_min_no_mask;
+	CLUnitArgument min_no_mask( &host_min_no_mask, 1 );
+
+	cl_float host_values[20] = 
+		{
+			-27.342,
+			73.887,  // masked
+			-61.280,
+			88.231, // masked
+			-57.100,
+			-564.927, // masked, attractive min
+			-42.691,
+			-97.121, // masked
+			-2.643,
+			8.741, // masked
+			18.538,
+			26.442, // masked
+			36.100,
+			42.445, // masked
+			-104.102,  // actual min
+			48.808, // masked
+			63.522,
+			-58.05, // masked
+			69.232,
+			100.676 // masked
+		};
+
+	CLUnitArgument values( host_values, 20 );
+	mask_tester.setGlobalDimensions( 20, 1 );
+	mask_tester.setLocalDimensions( 20, 1 );
+	mask_tester( values, min, min_no_mask );
+
+
+	assert( host_min == 14 );
+	cout << "* " << flush;
+	assert( host_min_no_mask == 5 );
+	cout << "* " << flush;
+	
+	cout << "All tests passed!" << endl << flush;
+}
+
 int main ( void )
 {
 	cout << "max_min_tester.cpp: Test the maximum and minimum functions and dependencies." << endl;
@@ -121,4 +169,5 @@ int main ( void )
 
 	test_first_pass( src );
 	test_function( src );
+	test_mask( src );
 }
