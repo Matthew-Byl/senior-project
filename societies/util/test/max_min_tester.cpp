@@ -158,6 +158,54 @@ void test_mask( string src )
 	cout << "All tests passed!" << endl << flush;
 }
 
+void test_n_max_indices( string src )
+{
+	cout << "Testing n_max_indices()... ";
+
+	CLKernel n_max_indices_tester( "n_max_indices_tester", src );
+	cl_uchar host_results[6];
+	CLUnitArgument results( host_results, 6 );
+
+	cl_float host_values[20] = 
+		{
+			-27.342,
+			73.887,
+			-61.280,
+			88.231,
+			-57.100,
+			-564.927,
+			-42.691,
+			-97.121,
+			-2.643,
+			8.741,
+			18.538,
+			26.442,
+			36.100,
+			42.445,
+			-104.102,
+			48.808,
+			63.522,
+			-58.05,
+			69.232,
+			100.676
+		};
+
+	CLUnitArgument values( host_values, 20 );
+	n_max_indices_tester.setGlobalDimensions( 20, 1 );
+	n_max_indices_tester.setLocalDimensions( 20, 1 );
+	n_max_indices_tester( values, results );
+
+	assert( host_results[0] == 19 );
+	assert( host_results[1] == 3 );
+	assert( host_results[2] == 1 );
+	assert( host_results[3] == 18 );
+	assert( host_results[4] == 16 );
+	assert( host_results[5] == 15 );
+	cout << "* " << flush;
+
+	cout << "All tests passed!" << endl << flush;
+}
+
 int main ( void )
 {
 	cout << "max_min_tester.cpp: Test the maximum and minimum functions and dependencies." << endl;
@@ -170,4 +218,5 @@ int main ( void )
 	test_first_pass( src );
 	test_function( src );
 	test_mask( src );
+	test_n_max_indices( src );
 }

@@ -89,5 +89,33 @@ __kernel void max_min_mask_tester(
 		);
 	if ( get_local_id( 0 ) == 0 )
 		*global_result_no_mask = result;
+}
 
+// Assume n=6.
+__kernel void n_max_indices_tester(
+	__global float *host_values,
+	__global uchar *host_results
+	)
+{
+	__local float values[255];
+	__local uchar sort_tree[128];
+	__local uchar results[6];
+	__local uchar mask[255];
+
+	size_t local_id = get_local_id( 0 );
+	values[local_id] = host_values[local_id];
+	barrier( CLK_LOCAL_MEM_FENCE );
+
+	n_max_indices(
+		6,
+		values,
+		sort_tree,
+		results,
+		mask
+		);
+
+	if ( local_id < 6 )
+	{
+		host_results[local_id] = results[local_id];
+	}
 }

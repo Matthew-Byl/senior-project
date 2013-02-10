@@ -125,15 +125,15 @@ void max_min_second_pass(
 			else if ( type == MAX
 					  && values[sort_tree[local_id + stride]] > values[sort_tree[local_id]] )
 			{
-				// Otherwise, make the sort tree at this location equal
+				// Make the sort tree at this location equal
 				//  to the larger of the two values we are comparing.
 				sort_tree[local_id] = sort_tree[local_id + stride];
 			}
 			else if ( type == MIN
 					  && values[sort_tree[local_id + stride]] < values[sort_tree[local_id]] )
 			{
-				// Otherwise, make the sort tree at this location equal
-				//  to the larger of the two values we are comparing.
+				// Make the sort tree at this location equal
+				//  to the smaller of the two values we are comparing.
 				sort_tree[local_id] = sort_tree[local_id + stride];
 			}
 		}
@@ -145,7 +145,7 @@ void max_min_second_pass(
 	}
 }
 
-
+// Precondition: there is at least one value that is not masked.
 uchar max_min(
 	MaxMinType type,
 	__local float *values,
@@ -199,16 +199,41 @@ uchar max_min_index_n(
 	}
 }
 
-// Find the maximum n values in the array.
+// Find the maximum n values in the array, in sorted order.
 //  This works like running the first few iterations of
 //   heapsort.
-// results can overlap safely with sort_tree.
 void n_max_indices(
 	uchar n,
 	__local float *values,
-	__local uchar *sort_tree,
-	__local uchar *results
+	__local uchar *sort_tree, // 1/2 the size of values
+	__local uchar *results,   // size n
+	__local uchar *mask       // the size of values
 	)
 {
-	
+	size_t local_id = get_local_id( 0 );
+
+	mask[local_id] = FALSE;
+	barrier( CLK_LOCAL_MEM_FENCE );
+
+	for ( int i = 0; i < n; i++ )
+	{
+		uchar max = max_min(
+			MAX,
+			values,
+			sort_tree,
+			TRUE,
+			mask
+			);
+
+		if ( local_id == 0 )
+		{
+			results[i] = max;
+		}
+		else if ( local_id == max )
+		{
+			// Don't reuse this value.
+			mask[local_id] = TRUE;
+		}
+		barrier( CLK_LOCAL_MEM_FENCE );
+	}
 }
