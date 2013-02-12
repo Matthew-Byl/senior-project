@@ -16,7 +16,7 @@
 //  the more parallel workgroups are spawned at the same time, and 
 //  the more memory is needed and transferred. The optimal size depends 
 //  on the type of OpenCL device being used.
-#define SEQUENTIAL_DEPTH 2
+#define SEQUENTIAL_DEPTH 7
 // Depth of the parallel minimax component. This is limited to 4 on
 //  my test system because the maximum local workgroup size on AMD
 //  GPUs is 256, and 2^4 is 216.

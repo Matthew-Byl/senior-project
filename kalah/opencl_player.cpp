@@ -63,7 +63,7 @@ MinimaxResult OpenCLPlayer::makeMove()
 	{
 		MinimaxResult mr;
 
-		mr.move = -1;
+		mr.move = -30;
 		mr.score = minimax_eval( &myStartBoard );
 
 		return mr;
@@ -75,11 +75,7 @@ MinimaxResult OpenCLPlayer::makeMove()
 	if ( !myStartBoards.size() )
 	{
 		MinimaxResult mr;
-
-		mr.move = -1;
-		mr.score = minimax_eval( &myStartBoard );
-
-		return mr;
+		return run_minimax( myStartBoard, mySequentialDepth );
 	}
 
 	// C++ guarantees vector elements are stored contiguously.
@@ -262,14 +258,14 @@ MinimaxResult opencl_player_pre_minimax( OpenCLPlayer &player, Board &b, int dep
 	else if ( board_game_over( &b ) )
 	{
 		ret.score = minimax_eval( &b );
-		ret.move = -1;
+		ret.move = -10;
 
 		return ret;
 	}
 
 	MinimaxResult rec_result;
 	MinimaxResult best_result;
-	best_result.move = -1;
+	best_result.move = -20;
 
 	if ( b.player_to_move == TOP )
 	{
