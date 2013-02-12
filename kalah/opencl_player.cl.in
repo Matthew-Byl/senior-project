@@ -4,11 +4,10 @@
 #include "depths.h"
 #include "evaluate.c"
 
-int tree_size ( void )
-{
-	return tree_array_size( 6, PARALLEL_DEPTH - 1 );
-}
-
+/**
+ * Determine the index of the first leaf node
+ *  in the tree array.
+ */
 int leaf_start ( void )
 {
 	return tree_array_size( 6, PARALLEL_DEPTH - 2 );
@@ -20,33 +19,27 @@ int leaf_start ( void )
 // AMD OpenCL allows only 256 work-items per work-group, so we are limited
 //  to a depth of 3 with this approach (when there will be 216 leaf nodes).
 
+/**
+ * Evaluate the score of a given board
+ *  and put it in board_array.
+ */
 void evaluate_board( int board, __local Board *board_array )
 {
-/*	int weight;
-
-	for ( int i = 0; i < 14; i++ )
-	{
-		if ( i == 6 || i == 13 )
-			weight = 5;
-		else
-			weight = 1;
-
-		if ( i < 7 )
-			weight = -weight;
-
-		board_array[board].score += board_array[board].board[i] * weight;
-	}
-*/
-
 	Board b = board_array[board];
 	board_array[board].score = minimax_eval( &b );
 }
 
-int get_real_local_id( void )
-{
-	return 6 * get_local_id( 1 ) + get_local_id( 2 );
-}
-
+/**
+ * Generate the tree of possible boards resulting
+ *  from this workgroup's start board.
+ *
+ * This algorithm uses
+ *   1 thread for the root board
+ *   6 threads for the second level
+ *   36 threads for the third level
+ *   216 threads for the fourth level.
+ * Therefore, it can generate the boards in O(lg(n), n) time.
+ */
 void generate_boards( __global Board *host_start, __local Board *board_array )
 {
 	int tree = get_global_id( 0 );
@@ -99,21 +92,9 @@ void generate_boards( __global Board *host_start, __local Board *board_array )
 	}
 }
 
-__kernel void generate_boards_test( __global Board *start_board, __global Board *host_board_array )
-{
-	__local Board board_array[259];
-	int local_id = get_local_id( 1 );
-
-	generate_boards( start_board, board_array );
-	barrier( CLK_LOCAL_MEM_FENCE );
-
-	// Copy from local to global mem.
-	host_board_array[local_id] = board_array[local_id];
-
-	if ( local_id < 43 )
-		host_board_array[local_id + 216] = board_array[local_id + 216];
-}
-
+/**
+ * Evaluate all the boards in the move tree.
+ */
 void evaluate_boards( __local Board *board_array )
 {
 	int local_id = get_local_id( 1 );
@@ -121,29 +102,18 @@ void evaluate_boards( __local Board *board_array )
 	// Evaluate boards.
 	evaluate_board( local_id, board_array);
 
+	// Some threads have to do a second one, because
+	//  there are more boards than threads.
 	if ( local_id < 43 )
 		evaluate_board( local_id + 216, board_array );
 }
 
-__kernel void evaluate_boards_test( __global Board *host_board_array )
-{
-	__local Board board_array[259];
-	int local_id = get_local_id( 1 );
-
-	board_array[local_id] = host_board_array[local_id];
-	if ( local_id < 43 )
-		board_array[local_id + 216] = host_board_array[local_id + 216];
-	barrier( CLK_LOCAL_MEM_FENCE );
-
-	evaluate_boards( board_array );
-	barrier( CLK_LOCAL_MEM_FENCE );
-
-	host_board_array[local_id] = board_array[local_id];
-
-	if ( local_id < 43 )
-		host_board_array[local_id + 216] = board_array[local_id + 216];
-}
-
+/**
+ * Run minimax on the board tree, using the same log(n)
+ *  tree strategy as for generate_boards(), but in reverse:
+ *  starting from the second-to-bottom level with 36 threads
+ *  and working upwards.
+ */
 void minimax( __local Board *board_array )
 {
 	// Minimax
@@ -159,6 +129,7 @@ void minimax( __local Board *board_array )
 		{
 			// The board in board_array.
 			int board_offset = level_start + local_id;
+			// The location in board_array of the children of this board.
 			int child_offset = tree_array_first_child( 6, board_offset );
 			PlayerPosition playerToMove;
 			int score;
@@ -193,27 +164,17 @@ void minimax( __local Board *board_array )
 	}
 }
 
-__kernel void minimax_test( __global Board *host_board_array )
-{
-	__local Board board_array[259];
-	int local_id = get_local_id( 1 );
-
-	board_array[local_id] = host_board_array[local_id];
-	if ( local_id < 43 )
-		board_array[local_id + 216] = host_board_array[local_id + 216];
-	barrier( CLK_LOCAL_MEM_FENCE );
-
-	minimax( board_array );
-	barrier( CLK_LOCAL_MEM_FENCE );
-
-	host_board_array[local_id] = board_array[local_id];
-
-	if ( local_id < 43 )
-		host_board_array[local_id + 216] = board_array[local_id + 216];
-}
-
-// global: tree x (216)
-// local: 1 x 216
+/**
+ * Kernel to perform 4 levels of minimax on a game board.
+ *
+ * Dimensions:
+ *   global: (boards to do minimax on)x216 threads
+ *   local: 1x216
+ *
+ * The board to do minimax on is at host_start[get_global_id(0)]
+ * The minimax value of that board is stored in that board's
+ *   @c score field.
+ */
 __kernel void opencl_player( __global Board *host_start )
 {
 	int tree = get_global_id( 0 );
@@ -237,4 +198,68 @@ __kernel void opencl_player( __global Board *host_start )
 	// Store back in global memory.
 	if ( get_local_id( 1 ) == 0 )
 		host_start[tree].score = board_array[0].score;
+}
+
+/***************************************/
+
+/** 
+ * Testing stub for generate_boards.
+ */
+__kernel void generate_boards_test( __global Board *start_board, __global Board *host_board_array )
+{
+	__local Board board_array[259];
+	int local_id = get_local_id( 1 );
+
+	generate_boards( start_board, board_array );
+	barrier( CLK_LOCAL_MEM_FENCE );
+
+	// Copy from local to global mem.
+	host_board_array[local_id] = board_array[local_id];
+
+	if ( local_id < 43 )
+		host_board_array[local_id + 216] = board_array[local_id + 216];
+}
+
+/**
+ * Testing stub for evaluate_boards().
+ */
+__kernel void evaluate_boards_test( __global Board *host_board_array )
+{
+	__local Board board_array[259];
+	int local_id = get_local_id( 1 );
+
+	board_array[local_id] = host_board_array[local_id];
+	if ( local_id < 43 )
+		board_array[local_id + 216] = host_board_array[local_id + 216];
+	barrier( CLK_LOCAL_MEM_FENCE );
+
+	evaluate_boards( board_array );
+	barrier( CLK_LOCAL_MEM_FENCE );
+
+	host_board_array[local_id] = board_array[local_id];
+
+	if ( local_id < 43 )
+		host_board_array[local_id + 216] = board_array[local_id + 216];
+}
+
+/**
+ * Testing stub for minimax()
+ */
+__kernel void minimax_test( __global Board *host_board_array )
+{
+	__local Board board_array[259];
+	int local_id = get_local_id( 1 );
+
+	board_array[local_id] = host_board_array[local_id];
+	if ( local_id < 43 )
+		board_array[local_id + 216] = host_board_array[local_id + 216];
+	barrier( CLK_LOCAL_MEM_FENCE );
+
+	minimax( board_array );
+	barrier( CLK_LOCAL_MEM_FENCE );
+
+	host_board_array[local_id] = board_array[local_id];
+
+	if ( local_id < 43 )
+		host_board_array[local_id + 216] = board_array[local_id + 216];
 }

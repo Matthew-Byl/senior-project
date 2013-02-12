@@ -487,14 +487,14 @@ int main ( void )
 	string src((std::istreambuf_iterator<char>(t)),
 			   std::istreambuf_iterator<char>());
 
-//	test_generate_boards( src );
-//	test_evaluate_boards( src );
-//	test_minimax( src );
-//	test_combination( src );
-//	test_opencl_object( src );
-//	test_pre_minimax( src );
-//	test_top_bottom( src );
-	speed_test( src );
+	test_generate_boards( src );
+	test_evaluate_boards( src );
+	test_minimax( src );
+	test_combination( src );
+	test_opencl_object( src );
+	test_pre_minimax( src );
+	test_top_bottom( src );
+//	speed_test( src );
 
 	return 0;
 }
