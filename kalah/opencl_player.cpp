@@ -74,7 +74,6 @@ MinimaxResult OpenCLPlayer::makeMove()
 
 	if ( !myStartBoards.size() )
 	{
-		MinimaxResult mr;
 		return run_minimax( myStartBoard, mySequentialDepth );
 	}
 
