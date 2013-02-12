@@ -35,3 +35,9 @@ bool config_verify_configuration( SocietiesConfig config )
 {
 	return true;
 }
+
+// Create -D flags that can be passed to the OpenCL compiler.
+string config_generate_compiler_flags( SocietiesConfig config )
+{
+	
+}

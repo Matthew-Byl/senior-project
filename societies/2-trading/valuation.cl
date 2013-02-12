@@ -10,8 +10,8 @@
 // returns TRUE if this thread will be involved, FALSE otherwise.
 //  It depends on the size of the menu.
 int valuation_resources( 
-	int *resource_1,
-	int *resource_2,
+	uint *resource_1,
+	uint *resource_2,
 	__global SocietiesConfig *config )
 {
 	size_t local_id = get_local_id( 0 );
@@ -65,14 +65,58 @@ int valuation_trade_beneficial(
 }
 
 // menu is an array of resource #s.
+// menus need to already have been computed.
+// The resource that a wants to trade will be put in resource_a
+//  and resource that a wants to receive will be put in resource_b
 void valuation_highest_trade_valuation(
 	uint agent_a,
-	uint agent_b,
 	__local uint *menu_a,
 	__local uint *menu_b,
-	__local uchar *beneficial_trade_mask,
+	__local uint *resource_a,
+	__local uint *resource_b,
+	__global uint *all_resources,
 	__global SocietiesConfig *config
 	)
 {
-	
+	size_t local_id = get_local_id( 0 );
+	uint thread_index_1, thread_resource_1;
+	uint thread_index_2, thread_resource_2;
+	__local float internal_valuations[MENU_SIZE * MENU_SIZE];
+
+	// Threads not in a pair still have to participate in
+	//  synchronization and min/max.
+	int is_pair = valuation_resources( &thread_index_1, &thread_index_2, config );
+	thread_resource_1 = menu_a[thread_index1];
+	thread_resource_2 = menu_b[thread_index2];
+
+	// This thread is involved in a pair.
+	if ( is_pair )
+	{
+		internal_valuations[local_id] = internal_valuation(
+			agent_a,
+			thread_resource_1,
+			thread_resource_2,
+			all_resources,
+			config
+			);
+	}
+	barrier( CLK_LOCAL_MEM_FENCE );
+
+	// Find the maximum.
+	__local uchar sort_tree[MENU_SIZE * MENU_SIZE / 2];
+	uint highest_valuation;
+	if ( is_pair )
+	{
+		highest_valuation = max_index(
+			internal_valuations
+			sort_tree
+			);
+	}
+
+	if ( highest_valuation == local_id )
+	{
+		(*resource_a) = thread_resource_1;
+		(*resource_b) = thread_resource_2;
+	}
+	barrier( CLK_LOCAL_MEM_FENCE );
 }

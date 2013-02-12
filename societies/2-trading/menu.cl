@@ -33,18 +33,18 @@ void menu_create_menus(
 	__global uint *all_resources,
 	__local uint *agent_a_menu,
 	__local uint *agent_b_menu,
-	__local uint *resources_scratch,  // Needs to be at least config->num_resources long.
-	__local uchar *sort_tree_scratch, // 0.5 * config->num_resources
-	__local uchar *mask_scratch,      // config->num_resources
-	__local float *valuations_scratch, // config->num_resources
 	__global SocietiesConfig *config
 	)
 {
 	size_t local_id = get_local_id( 0 );
 	size_t resource_offset;
+	__local uint resources_scratch[CONFIG_NUM_RESOURCES];
+	__local uchar sort_tree_scratch[CONFIG_NUM_RESOURCES / 2];
+	__local uchar mask_scratch[CONFIG_NUM_RESOURCES];
+	__local float valuations_scratch[CONFIG_NUM_RESOURCES];
 
 	// Copy agent A's resources to local memory.
-	resource_offset = ( agent_a * config->num_resources ) + local_id;
+	resource_offset = ( agent_a * CONFIG_NUM_RESOURCES ) + local_id;
 	resources_scratch[local_id] = all_resources[resource_offset];
 	barrier( CLK_LOCAL_MEM_FENCE );
 	
@@ -62,7 +62,7 @@ void menu_create_menus(
 
 	// Do the same for agent B.
 	// Copy agent B's resources to local memory.
-	resource_offset = ( agent_b * config->num_resources ) + local_id;
+	resource_offset = ( agent_b * CONFIG_NUM_RESOURCES ) + local_id;
 	resources_scratch[local_id] = all_resources[resource_offset];
 	barrier( CLK_LOCAL_MEM_FENCE );
 	
