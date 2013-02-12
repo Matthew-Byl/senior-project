@@ -7,6 +7,8 @@
  *  than 16, since 16^2 = 256.
  */
 
+#include "../util/max_min.cl"
+
 // returns TRUE if this thread will be involved, FALSE otherwise.
 //  It depends on the size of the menu.
 int valuation_resources( 

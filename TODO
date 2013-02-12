@@ -1,0 +1,1 @@
+-Test whether the lg(n) min or a min with atomic_min() is faster for integers.

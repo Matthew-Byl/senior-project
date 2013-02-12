@@ -24,6 +24,33 @@ float u( int x, int D, int n )
 	return f_D * pow( f_x, 1.0f / f_n );
 }
 
+// Take the area under the utility curve between x_old and x_new.
+//
+// This is not equivalent behaviour to the Python program, which
+//  summed it discretely, but this is *much* faster.
+// It's not worth doing some elaborate parallel discrete version.
+float utility_gain(
+	int x_old,
+	int x_new,
+	int D,
+	int n
+	)
+{
+	float f_x_old = x_old;
+	float f_x_new = x_new;
+	float f_D = D;
+	float f_n = n;
+
+	// The antiderivative of U(x) = D * x^( 1/n )
+	//  is U' = ( D * n * x^( 1/n + 1 ) ) / ( n + 1 ).
+
+	float numerator_old = f_D * f_n * pow( f_x_old, ( 1 / f_n ) + 1 );
+	float numerator_new = f_D * f_n * pow( f_x_new, ( 1 / f_n ) + 1 );
+	float denominator = f_n + 1;
+
+	return ( numerator_new - numerator_old ) / denominator;
+}
+
 /**
  * Computes the marginal utility of the next unit of
  *  a resource, given that x units are already owned,
