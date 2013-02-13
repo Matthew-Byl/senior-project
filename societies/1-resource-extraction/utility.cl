@@ -29,6 +29,9 @@ float u( int x, int D, int n )
 // This is not equivalent behaviour to the Python program, which
 //  summed it discretely, but this is *much* faster.
 // It's not worth doing some elaborate parallel discrete version.
+//
+// @XXX: This is for _marginal utility_ in Python, and utility is
+//  the derivative for utility.
 float utility_gain(
 	int x_old,
 	int x_new,
