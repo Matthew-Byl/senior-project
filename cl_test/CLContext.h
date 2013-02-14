@@ -15,7 +15,7 @@ public:
 	CLContext( int platform, int device );
 	cl::Context &getContext();
 	cl::CommandQueue &getCommandQueue();
-	cl::Program buildProgram( std::string &src ) const;
+	cl::Program buildProgram( std::string &src, std::string &compiler_flags ) const;
 private:
 	void initialize( int platform, int device );
 	cl::Context myContext;

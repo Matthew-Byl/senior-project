@@ -47,7 +47,7 @@ cl::CommandQueue &CLContext::getCommandQueue()
 	return myCommandQueue;
 }
 
-cl::Program CLContext::buildProgram( string &src ) const
+cl::Program CLContext::buildProgram( string &src, string &compiler_flags ) const
 {
 //	cout << "*** rebuilding! ***" << endl;
 
@@ -62,7 +62,7 @@ cl::Program CLContext::buildProgram( string &src ) const
 		{
 			program.build( 
 				myDevices,
-				"-g -O0"
+				( "-g -O0 " + compiler_flags ).c_str()
 				);
 
 			// @TODO: this should be myDevices[device].
@@ -78,7 +78,7 @@ cl::Program CLContext::buildProgram( string &src ) const
 		}
 		else
 		{
-			program.build( myDevices );
+			program.build( myDevices, compiler_flags.c_str() );
 		}
     } catch ( cl::Error err ) {		
 		std::cout << "Build Status: "

@@ -1,14 +1,16 @@
 #include "CLKernel.h"
 
 CLKernel::CLKernel( std::string function,
-		  std::string kernel,
-		  const CLContext context )
+					std::string kernel,
+					std::string compilerFlags,
+					const CLContext context )
 	: CLFunction( function, kernel, context ),
 	  globalDimensionsSet( false ),
 	  globalOffsetSet( false ),
-	  localDimensionsSet( false )
+	  localDimensionsSet( false ),
+	  myCompilerFlags( compilerFlags )
 { 
-	myCLKernel = generateKernel( myKernel, myFunction );
+	myCLKernel = generateKernel( myKernel, myFunction, compilerFlags );
 };
 
 

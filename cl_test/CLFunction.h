@@ -69,7 +69,7 @@ protected:
 	void generateBuffers();
 	void copyBuffersToDevice();
 	void copyBuffersFromDevice();
-	cl::Kernel generateKernel( std::string src, std::string kernel_name );
+	cl::Kernel generateKernel( std::string src, std::string kernel_name, std::string compiler_flags="" );
 	void enqueueKernel( cl::Kernel &kernel, std::vector<int> &globalDimensions, std::vector<int> &globalOffset, std::vector<int> &localDimensions );
 };
 
@@ -105,13 +105,13 @@ void CLFunction<T>::copyBuffersToDevice()
 }
 
 template<class T>
-cl::Kernel CLFunction<T>::generateKernel( std::string src, std::string kernel_name )
+cl::Kernel CLFunction<T>::generateKernel( std::string src, std::string kernel_name, std::string compiler_flags )
 {
 	if ( !kernelBuilt )
 	{
 //		std::cout << "Rebuilding kernel: " << kernelBuilt << std::endl;
 
-		cl::Program program = myContext.buildProgram( src );
+		cl::Program program = myContext.buildProgram( src, compiler_flags );
 		myCLKernel = cl::Kernel(
 			program,
 			kernel_name.c_str()
