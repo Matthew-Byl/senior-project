@@ -2,7 +2,8 @@
 #define _TRADING_H
 
 #define _HOST_
-#include <CL/cl.hpp>
+#define _CPP_11_
+#include <CLKernel.h>
 #include <config.h>
 #include <random>
 
@@ -17,12 +18,19 @@ public:
 
 	~Trading();
 
+	void trade();
+
 private:
 	void generate_random_pairs();
 
 	cl_uint *myRandomPairs;
 	SocietiesConfig myConfig;
 	std::minstd_rand0 myGenerator;
+
+	CLKernel *trading_kernel;
+	CLUnitArgument allResources;
+	CLUnitArgument randomPairs;
+	CLUnitArgument configBuffer;
 };
 
 #endif

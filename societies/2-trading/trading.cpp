@@ -4,7 +4,10 @@
 
 #include <random>
 #include <iostream>
+#include <fstream>
 using namespace std;
+
+#define KERNEL_SOURCE "trading.cl"
 
 /// @XXX: make sture that random_seed isn't the same as some other class' random seed.
 Trading::Trading(
@@ -13,11 +16,24 @@ Trading::Trading(
 	unsigned int random_seed
 	)
 	:
+	myRandomPairs( new cl_uint[config.num_agents] ),
 	myConfig( config ),
-	myGenerator( random_seed )
+	myGenerator( random_seed ),
+	allResources( all_resources, config.num_agents * config.num_resources ),
+	randomPairs( myRandomPairs, config.num_agents ),
+	configBuffer( "SocietiesConfig", config )
 {
-	myRandomPairs = new cl_uint[config.num_agents];
 	generate_random_pairs();
+
+    ifstream t( KERNEL_SOURCE );
+    string src((std::istreambuf_iterator<char>(t)),
+               std::istreambuf_iterator<char>());
+
+	string compiler_flags = config_generate_compiler_flags( config );
+	trading_kernel = new CLKernel( "trading", src, compiler_flags );
+
+	trading_kernel->setGlobalDimensions( config.num_threads, config.num_agents );
+	trading_kernel->setLocalDimensions( config.num_threads, 1 );	
 
 	for ( int i = 0; i < myConfig.num_agents; i++ )
 	{
@@ -29,6 +45,15 @@ Trading::Trading(
 Trading::~Trading()
 {
 	delete[] myRandomPairs;
+}
+
+void Trading::trade()
+{
+	(*trading_kernel)(
+		allResources,
+		randomPairs,
+		configBuffer
+		);
 }
 
 void Trading::generate_random_pairs()
@@ -57,4 +82,6 @@ int main ( void )
 		config,
 		42
 		);
+
+	cout << config_generate_compiler_flags( config ) << endl;
 }
