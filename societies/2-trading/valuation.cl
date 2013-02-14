@@ -24,6 +24,8 @@ int valuation_resources(
 
 	(*resource_1) = local_id / config->menu_size;
 	(*resource_2) = local_id % config->menu_size;
+
+	return TRUE;
 }
 
 float valuation_internal_valuation(
@@ -31,25 +33,25 @@ float valuation_internal_valuation(
 	uint resource1,
 	uint resource2,
 	__global uint *all_resources,
-	__global SocietiesConfig *config,
+	__global SocietiesConfig *config
 	)
 {
 	// Evaluate MU( outbound )
-	size_t resource1_offset = ( agent_a * config->num_resources ) + resource1;
+	size_t resource1_offset = ( agent * config->num_resources ) + resource1;
 	uint resource1_amount = all_resources[resource1_offset];
 	float resource1_valuation = mu(
 		resource1_amount,
-		config->D[resource1],
-		config->n[resource1]
+		config->resource_D[resource1],
+		config->resource_n[resource1]
 		);
 
 	// Evaluate MU( inboud )
-	size_t resource2_offset = ( agent_a * config->num_resources ) + resource2;
+	size_t resource2_offset = ( agent * config->num_resources ) + resource2;
 	uint resource2_amount = all_resources[resource2_offset];
 	float resource2_valuation = mu(
 		resource2_amount,
-		config->D[resource2],
-		config->n[resource2]
+		config->resource_D[resource2],
+		config->resource_n[resource2]
 		);
 
 	return resource2_valuation / resource1_valuation;
@@ -83,7 +85,7 @@ void valuation_highest_trade_valuation(
 	size_t local_id = get_local_id( 0 );
 	uint thread_index_1, thread_resource_1;
 	uint thread_index_2, thread_resource_2;
-	__local float internal_valuations[MENU_SIZE * MENU_SIZE];
+	__local float internal_valuations[CONFIG_MENU_SIZE * CONFIG_MENU_SIZE];
 
 	// Threads not in a pair still have to participate in
 	//  synchronization and min/max.
@@ -94,7 +96,7 @@ void valuation_highest_trade_valuation(
 	// This thread is involved in a pair.
 	if ( is_pair )
 	{
-		internal_valuations[local_id] = internal_valuation(
+		internal_valuations[local_id] = valuation_internal_valuation(
 			agent_a,
 			thread_resource_1,
 			thread_resource_2,
@@ -105,12 +107,12 @@ void valuation_highest_trade_valuation(
 	barrier( CLK_LOCAL_MEM_FENCE );
 
 	// Find the maximum.
-	__local uchar sort_tree[MENU_SIZE * MENU_SIZE / 2];
+	__local uchar sort_tree[(CONFIG_MENU_SIZE * CONFIG_MENU_SIZE) / 2];
 	uint highest_valuation;
 	if ( is_pair )
 	{
 		highest_valuation = max_index(
-			internal_valuations
+			internal_valuations,
 			sort_tree
 			);
 	}

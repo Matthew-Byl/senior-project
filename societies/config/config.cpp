@@ -72,10 +72,13 @@ string config_generate_compiler_flags( SocietiesConfig config )
 	stringstream flags;
 
 	// num_resources
-	flags << "-D CONFIG_NUM_FLAGS=" << config.num_resources << " ";
+	flags << "-D CONFIG_NUM_RESOURCES=" << config.num_resources << " ";
 
 	// menu_size
 	flags << "-D CONFIG_MENU_SIZE=" << config.menu_size << " ";
+
+	// num_threads
+	flags << "-D CONFIG_NUM_THREADS=" << config.num_threads << " ";
 
 	return flags.str();
 }

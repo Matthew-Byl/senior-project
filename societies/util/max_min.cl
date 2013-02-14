@@ -1,3 +1,6 @@
+#ifndef _MAX_MIN_CL
+#define _MAX_MIN_CL
+
 /**
  * Efficient max and min functions for OpenCL, all running in lg(n)
  *  time with n threads.
@@ -202,8 +205,9 @@ uchar max_min_index_n(
 // Find the maximum n values in the array, in sorted order.
 //  This works like running the first few iterations of
 //   heapsort.
-void n_max_indices(
+void n_max_min_indices(
 	uchar n,
+	MaxMinType type,
 	__local float *values,
 	__local uchar *sort_tree, // 1/2 the size of values
 	__local uchar *results,   // size n
@@ -217,8 +221,8 @@ void n_max_indices(
 
 	for ( int i = 0; i < n; i++ )
 	{
-		uchar max = max_min(
-			MAX,
+		uchar val = max_min(
+			type,
 			values,
 			sort_tree,
 			TRUE,
@@ -227,9 +231,9 @@ void n_max_indices(
 
 		if ( local_id == 0 )
 		{
-			results[i] = max;
+			results[i] = val;
 		}
-		else if ( local_id == max )
+		else if ( local_id == val )
 		{
 			// Don't reuse this value.
 			mask[local_id] = TRUE;
@@ -237,3 +241,42 @@ void n_max_indices(
 		barrier( CLK_LOCAL_MEM_FENCE );
 	}
 }
+
+void n_max_indices(
+	uchar n,
+	__local float *values,
+	__local uchar *sort_tree, // 1/2 the size of values
+	__local uchar *results,   // size n
+	__local uchar *mask       // the size of values
+	)
+{
+	return n_max_min_indices( 
+		n,
+		MAX,
+		values,
+		sort_tree,
+		results,
+		mask
+		);
+}
+
+void n_min_indices(
+	uchar n,
+	__local float *values,
+	__local uchar *sort_tree, // 1/2 the size of values
+	__local uchar *results,   // size n
+	__local uchar *mask       // the size of values
+	)
+{
+	return n_max_min_indices( 
+		n,
+		MIN,
+		values,
+		sort_tree,
+		results,
+		mask
+		);
+}
+
+
+#endif

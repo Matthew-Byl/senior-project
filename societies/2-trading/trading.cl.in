@@ -5,6 +5,7 @@
  * @date Feb. 12, 2013
  */
 
+#define _OPENCL_
 #include "menu.cl"
 #include "valuation.cl"
 
@@ -18,14 +19,14 @@ uint trading_find_maximum_surplus(
 	__global SocietiesConfig *config )
 {
 	// NUM_RESOURCES is a proxy for number of threads.
-	__local float surpluses[NUM_THREADS];
-	__local float sort_tree[NUM_THREADS / 2];
+	__local float surpluses[CONFIG_NUM_THREADS];
+	__local float sort_tree[CONFIG_NUM_THREADS / 2];
 	int offset = 0;
 	size_t local_id = get_local_id( 0 );
 
 	// Is it faster to get only 1 thread to do this? Do we have to
 	//  use global memory?
-	int resource_offset = agent * num_resources;
+	int resource_offset = agent * config->num_resources;
 	uint resource1_amount = all_resources[resource_offset + resource1];
 	uint resource2_amount = all_resources[resource_offset + resource2];
 
@@ -38,14 +39,14 @@ uint trading_find_maximum_surplus(
 
 		// The amount of utility the agent gains by getting more resource1.
 		float resource1_gain_utility = 
-			u( resource1_amount + resource1_gain, config->D[resource1], config->n[resource1] )
-			- u( resource1_amount, config->D[resource1], config->n[resource1] );
+			u( resource1_amount + resource1_gain, config->resource_D[resource1], config->resource_n[resource1] )
+			- u( resource1_amount, config->resource_D[resource1], config->resource_n[resource1] );
 
 		// The amount of utility the agent loses by giving up more resource2.
 		float resource2_loss = 1 * ( local_id + offset );
 		float resource2_loss_utility = 
-			u( resource2_amount - resource2_loss, config->D[resource2], config->n[resource2] )
-			- u( resource2_amount, config->D[resource2], config->n[resource2] );
+			u( resource2_amount - resource2_loss, config->resource_D[resource2], config->resource_n[resource2] )
+			- u( resource2_amount, config->resource_D[resource2], config->resource_n[resource2] );
 		
 		// If we can't afford this trade, don't consider it.
 		float surplus;
@@ -62,9 +63,9 @@ uint trading_find_maximum_surplus(
 
 		// If the maximum is the last thread, we don't know if it was the true maximum.
 		//  In that case, do another round, with the last thread being reconsidered.
-		if ( max_multiplier == ( NUM_THREADS - 1 ) )
+		if ( max_multiplier == ( CONFIG_NUM_THREADS - 1 ) )
 		{
-			offset += NUM_THREADS - 2;
+			offset += CONFIG_NUM_THREADS - 2;
 		}
 		else
 		{
@@ -78,27 +79,17 @@ uint trading_find_maximum_surplus(
 __kernel void trading(
 	__global uint *all_resources,
 	__global uint *random_pairs,
-	__global SocietiesConfig *config,
+	__global SocietiesConfig *config
 	)
 {
-	size pair_id = get_global_id( 1 );
+	size_t local_id = get_local_id( 0 );
+	size_t pair_id = get_global_id( 1 );
 	int pair_offset = 2 * pair_id;
 	uint agent_a = random_pairs[pair_offset];
 	uint agent_b = random_pairs[pair_offset + 1];
 
-	__local uint menu_1[MENU_SIZE];
-	__local uint menu_2[MENU_SIZE];
-
-	// Generate the menus.
-	menu_create_menus(
-		agent_a,
-		agent_b,
-		all_resources,
-		menu_a,
-		menu_b,
-		config
-		);
-	barrier( CLK_LOCAL_MEM_FENCE );
+	__local uint menu_1[CONFIG_MENU_SIZE];
+	__local uint menu_2[CONFIG_MENU_SIZE];
 
 	/// @XXX: maybe after this point, to avoid confusion, rename the agents
 	///  "first mover" and "respondent".
@@ -118,6 +109,17 @@ __kernel void trading(
 			first_mover = agent_b;
 			respondent = agent_a;
 		}
+
+		// Generate the menus.
+		menu_create_menus(
+			first_mover,
+			respondent,
+			all_resources,
+			menu_1,
+			menu_2,
+			config
+			);
+		barrier( CLK_LOCAL_MEM_FENCE );
 
 		__local uint resource_1, resource_2;
 		// The first mover gets to choose its favourite pair.
@@ -182,6 +184,7 @@ __kernel void trading(
 		// Respondent accepts only if it benefits from the trade. The respondent benefits when
 		//  the utility of the resources received is greater than the loss of
 		//  utility of the resources given up.
+/*
 		if ( trading_respondent_benefits(...) )
 		{
 			trading_make_trade(
@@ -194,6 +197,7 @@ __kernel void trading(
 		}
 		/// @XXX: The correct type of fence depends on what trading_make_trade does.
 		barrier( CLK_GLOBAL_MEM_FENCE );
+*/
 
 		a_is_first_mover = !a_is_first_mover;
 	}	

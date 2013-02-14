@@ -7,13 +7,15 @@
  *  computation for both trading agents.
  */
 
+#include "../config/config.h"
 #include "../1-resource-extraction/utility.cl"
+#include "../util/max_min.cl"
 
 /**
  * From the paper: "the value of a resource is simply
  *  the MU of the last unit of each resource they hold.
  */
-float menu_resource_value(
+void menu_resource_value(
 	__local uint *agent_resources,
 	__local float *valuations,
 	__global SocietiesConfig *config )
@@ -22,8 +24,8 @@ float menu_resource_value(
 
 	valuations[local_id] = mu( 
 		agent_resources[local_id],
-		config->D[local_id],
-		config->n[local_id]
+		config->resource_D[local_id],
+		config->resource_n[local_id]
 	);
 }
 
