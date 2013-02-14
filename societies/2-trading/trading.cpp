@@ -23,6 +23,7 @@ Trading::Trading(
 	{
 		cout << myRandomPairs[i] << " ";
 	}
+	cout << endl;
 }
 
 Trading::~Trading()
@@ -42,7 +43,7 @@ void Trading::generate_random_pairs()
 		int random_idx = myGenerator() % ( i + 1 );
 
 		myRandomPairs[i] = myRandomPairs[random_idx];
-		myRandomPairs[random_idx] = myRandomPairs[i];
+		myRandomPairs[random_idx] = i;
 	}
 }
 
