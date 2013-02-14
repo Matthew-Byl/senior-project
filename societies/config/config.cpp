@@ -9,6 +9,7 @@
 #include "config.h"
 #include <string>
 #include <iostream>
+#include <sstream>
 using namespace std;
 
 SocietiesConfig config_generate_default_configuration( void )
@@ -59,7 +60,10 @@ bool config_verify_configuration( SocietiesConfig config )
 	if ( (config.menu_size * config.menu_size ) > config.num_threads )
 	{
 		cerr << "The trading menu size squared needs to be less than the number of threads." << endl;
+		return false;
 	}
+
+	return true;
 }
 
 // Create -D flags that can be passed to the OpenCL compiler.

@@ -43,7 +43,7 @@ CLRenderer *renderer;
 #define NUM_OBJECTS 1024
 Object objects[NUM_OBJECTS];
 
-#define NUM_SPHERES 6
+#define NUM_SPHERES 2
 
 /**
  * Initially prepare the scene.

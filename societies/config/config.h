@@ -11,6 +11,9 @@
 #include "../util/types.h"
 
 typedef struct {
+	/* The number of OpenCL threads to use per agent. */
+	CL_INT num_threads;
+
 	/* The number of agents */
 	CL_INT num_agents;
 
