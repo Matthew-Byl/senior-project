@@ -38,6 +38,12 @@ typedef struct {
 	CL_INT min_effort;
 	CL_INT max_effort;
 
+	/* The number of resources that are offered during trades. */
+    CL_INT menu_size;
+
+	/* The number of trade rounds per pairing. */
+    CL_INT num_trades;
+	
 	/* The experience penalty for not collecting a resources
 	   on a given day. */
 	CL_INT idle_penalty;
@@ -45,8 +51,12 @@ typedef struct {
 } SocietiesConfig;
 
 #ifdef _HOST_
+#include <string>
+
 SocietiesConfig config_generate_default_configuration( void );
 bool config_verify_configuration( SocietiesConfig config );
+std::string config_generate_compiler_flags( SocietiesConfig config );
+
 #endif
 
 #endif
