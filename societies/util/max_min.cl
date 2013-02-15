@@ -34,7 +34,7 @@ typedef enum {
 void max_min_first_pass(
 	MaxMinType type,
 	__local float *values,
-	__local uchar *sort_tree,
+	__local uint *sort_tree,
 	int use_mask,
 	__local uchar *value_mask
 	)
@@ -93,7 +93,7 @@ void max_min_first_pass(
 void max_min_second_pass(
 	MaxMinType type,
 	__local float *values,
-	__local uchar *sort_tree,
+	__local uint *sort_tree,
 	int use_mask,
 	__local uchar *value_mask
 	)
@@ -149,10 +149,10 @@ void max_min_second_pass(
 }
 
 // Precondition: there is at least one value that is not masked.
-uchar max_min(
+uint max_min(
 	MaxMinType type,
 	__local float *values,
-	__local uchar *sort_tree,
+	__local uint *sort_tree,
 	int use_mask,
 	__local uchar *value_mask
 	)
@@ -165,17 +165,17 @@ uchar max_min(
 	return sort_tree[0];
 }
 
-uchar max_index(
+uint max_index(
 	__local float *values,
-	__local uchar *sort_tree
+	__local uint *sort_tree
 	)
 {
 	return max_min( MAX, values, sort_tree, 0, NULL );
 }
 
-uchar min_index(
+uint min_index(
 	__local float *values,
-	__local uchar *sort_tree
+	__local uint *sort_tree
 	)
 {
 	return max_min( MIN, values, sort_tree, 0, NULL );
@@ -184,11 +184,11 @@ uchar min_index(
 // This is not used anywhere, but is for me to remember that
 // this will work.
 // Find the max of the first n elements in values, not all of them.
-uchar max_min_index_n(
+uint max_min_index_n(
 	uchar n,
 	MaxMinType type,
 	__local float *values,
-	__local uchar *sort_tree
+	__local uint *sort_tree
 	)
 {
 	size_t local_id = get_local_id( 0 );
@@ -206,11 +206,11 @@ uchar max_min_index_n(
 //  This works like running the first few iterations of
 //   heapsort.
 void n_max_min_indices(
-	uchar n,
+	uint n,
 	MaxMinType type,
 	__local float *values,
-	__local uchar *sort_tree, // 1/2 the size of values
-	__local uchar *results,   // size n
+	__local uint *sort_tree, // 1/2 the size of values
+	__local uint *results,   // size n
 	__local uchar *mask       // the size of values
 	)
 {
@@ -245,8 +245,8 @@ void n_max_min_indices(
 void n_max_indices(
 	uchar n,
 	__local float *values,
-	__local uchar *sort_tree, // 1/2 the size of values
-	__local uchar *results,   // size n
+	__local uint *sort_tree, // 1/2 the size of values
+	__local uint *results,   // size n
 	__local uchar *mask       // the size of values
 	)
 {
@@ -263,8 +263,8 @@ void n_max_indices(
 void n_min_indices(
 	uchar n,
 	__local float *values,
-	__local uchar *sort_tree, // 1/2 the size of values
-	__local uchar *results,   // size n
+	__local uint *sort_tree, // 1/2 the size of values
+	__local uint *results,   // size n
 	__local uchar *mask       // the size of values
 	)
 {

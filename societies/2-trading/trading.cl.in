@@ -16,11 +16,11 @@ uint trading_find_maximum_surplus(
 	uint resource1,
 	uint resource2,
 	__global uint *all_resources,
+	__local uint *sort_tree_scratch,  // num_threads / 2
+	__local float *surpluses_scratch, // num_threads
 	__global SocietiesConfig *config )
 {
 	// NUM_RESOURCES is a proxy for number of threads.
-	__local float surpluses[CONFIG_NUM_THREADS];
-	__local float sort_tree[CONFIG_NUM_THREADS / 2];
 	int offset = 0;
 	size_t local_id = get_local_id( 0 );
 
@@ -55,11 +55,11 @@ uint trading_find_maximum_surplus(
 		else
 			surplus = resource1_gain_utility - resource2_loss_utility;
 
-		surpluses[local_id] = surplus;
+		surpluses_scratch[local_id] = surplus;
 		barrier( CLK_LOCAL_MEM_FENCE );
 		
 		// Find the maximum.
-		max_multiplier = max_index( surpluses, sort_tree );
+		max_multiplier = max_index( surpluses_scratch, sort_tree_scratch );
 
 		// If the maximum is the last thread, we don't know if it was the true maximum.
 		//  In that case, do another round, with the last thread being reconsidered.
@@ -90,6 +90,8 @@ __kernel void trading(
 
 	__local uint menu_1[CONFIG_MENU_SIZE];
 	__local uint menu_2[CONFIG_MENU_SIZE];
+	__local uint sort_tree[CONFIG_NUM_THREADS / 2];
+	__local float float_scratch[CONFIG_NUM_THREADS];
 
 	/// @XXX: maybe after this point, to avoid confusion, rename the agents
 	///  "first mover" and "respondent".
@@ -179,6 +181,8 @@ __kernel void trading(
 			resource_1,
 			resource_2,
 			all_resources,
+			sort_tree,
+			float_scratch,
 			config );
 
 		// Respondent accepts only if it benefits from the trade. The respondent benefits when
