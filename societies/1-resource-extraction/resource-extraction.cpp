@@ -47,7 +47,7 @@ ResourceExtraction::ResourceExtraction(
 	resource_extraction->setLocalArgument( 4, sizeof( cl_uint ) * config.num_resources );
 	resource_extraction->setLocalArgument( 5, sizeof( cl_uint ) * config.num_resources );
 	resource_extraction->setLocalArgument( 6, sizeof( cl_float ) * config.num_resources );
-	resource_extraction->setLocalArgument( 7, sizeof( cl_uchar ) * config.num_resources );
+	resource_extraction->setLocalArgument( 7, sizeof( cl_uint ) * config.num_resources );
 }
 
 ResourceExtraction::~ResourceExtraction()

@@ -7,7 +7,7 @@ __kernel void choose_thread_tester(
 	)
 {
 	volatile __local int counter;
-	__local uchar scratch[255];
+	__local uint scratch[255];
 	size_t local_id = get_local_id( 0 );
 
 	// Seed random number generator

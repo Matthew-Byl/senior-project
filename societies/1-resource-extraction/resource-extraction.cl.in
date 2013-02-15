@@ -51,7 +51,7 @@ void compute_gain_per_minute(
  *  of the resource with the best gain per minute.
  */
 int is_within_epsilon(
-	uchar max_gpm_index,
+	uint max_gpm_index,
 	__local float *gains_per_minute,
 	__global SocietiesConfig *config
 	)
@@ -118,12 +118,12 @@ __kernel void resource_extraction(
 	__local uint *resources,
 	__local uint *experiences,
 	__local float *gains_per_minute,
-	__local uchar *scratch  // 255 * sizeof( uchar )
+	__local uint *scratch  // num_threads * sizeof( uint )
 	)
 {
 	volatile __local int counter;
 	__local int minutes_used;
-	__local uchar chosen_resource;
+	__local uint chosen_resource;
 
 	size_t local_id = get_local_id( 0 );
 	size_t agent_offset = get_local_size( 0 ) * get_global_id( 1 );
@@ -157,7 +157,7 @@ __kernel void resource_extraction(
 	while ( minutes_used < config->num_minutes )
 	{
 		// Find the resource with maximum gain per minute.
-		uchar max_gpm_index = max_index( gains_per_minute, scratch );
+		uint max_gpm_index = max_index( gains_per_minute, scratch );
 //		printf( "Max GPM: %d, %f\n", max_gpm_index, gains_per_minute[max_gpm_index] );
 
 		// Set the random selection counter to 0.

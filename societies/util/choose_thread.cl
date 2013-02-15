@@ -25,14 +25,14 @@
 /**
  * Preconditions: 
  *    *counter = 0
- *    scratch is of size at least sizeof( uchar ) * 256
+ *    scratch is of size at least sizeof( uint ) * 256
  *
  * Postconditions:
  *   there needs to be a local barrier before choose_thread_make_choice can be called.
  */
 void choose_thread_add_to_options( 
 	volatile __local int *counter, 
-	__local uchar *scratch
+	__local uint *scratch
 	)
 {
 	int idx = atomic_inc( counter );
@@ -49,9 +49,9 @@ void choose_thread_add_to_options(
  *   counter > 0
  *   rng_state has been initialized
  */
-uchar choose_thread_make_choice(
+uint choose_thread_make_choice(
 	volatile __local int *counter,
-	__local uchar *scratch,
+	__local uint *scratch,
 	mwc64x_state_t *rng_state
 	)
 {
