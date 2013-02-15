@@ -7,7 +7,7 @@ OCL_CC = $(CC) $(CFLAGS) $(CL_TEST_INCLUDE)
 trading: trading.cl trading.cpp trading.h ../config/config.h
 	$(OCL_CC) trading.cpp ../config/config.cpp -o trading $(OCL_LIBS)
 
-trading.cl: trading.cl.in menu.cl valuation.cl
+trading.cl: trading.cl.in menu.cl valuation.cl ../util/max_min.cl
 	cpp trading.cl.in > trading.cl
 
 clean:

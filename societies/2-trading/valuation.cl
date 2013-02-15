@@ -79,24 +79,25 @@ void valuation_highest_trade_valuation(
 	__local uint *resource_a,
 	__local uint *resource_b,
 	__global uint *all_resources,
+	__local float *internal_valuations_scratch, // config_menu_size^2, which is <= num_threads
+	__local uint *sort_tree, // config_menu_size^2 / 2
 	__global SocietiesConfig *config
 	)
 {
 	size_t local_id = get_local_id( 0 );
 	uint thread_index_1, thread_resource_1;
 	uint thread_index_2, thread_resource_2;
-	__local float internal_valuations[CONFIG_MENU_SIZE * CONFIG_MENU_SIZE];
 
 	// Threads not in a pair still have to participate in
 	//  synchronization and min/max.
 	int is_pair = valuation_resources( &thread_index_1, &thread_index_2, config );
-	thread_resource_1 = menu_a[thread_index1];
-	thread_resource_2 = menu_b[thread_index2];
+	thread_resource_1 = menu_a[thread_index_1];
+	thread_resource_2 = menu_b[thread_index_2];
 
 	// This thread is involved in a pair.
 	if ( is_pair )
 	{
-		internal_valuations[local_id] = valuation_internal_valuation(
+		internal_valuations_scratch[local_id] = valuation_internal_valuation(
 			agent_a,
 			thread_resource_1,
 			thread_resource_2,
@@ -107,12 +108,11 @@ void valuation_highest_trade_valuation(
 	barrier( CLK_LOCAL_MEM_FENCE );
 
 	// Find the maximum.
-	__local uchar sort_tree[(CONFIG_MENU_SIZE * CONFIG_MENU_SIZE) / 2];
 	uint highest_valuation;
 	if ( is_pair )
 	{
 		highest_valuation = max_index(
-			internal_valuations,
+			internal_valuations_scratch,
 			sort_tree
 			);
 	}

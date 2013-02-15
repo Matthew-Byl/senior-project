@@ -92,6 +92,8 @@ __kernel void trading(
 	__local uint menu_2[CONFIG_MENU_SIZE];
 	__local uint sort_tree[CONFIG_NUM_THREADS / 2];
 	__local float float_scratch[CONFIG_NUM_THREADS];
+	__local uint resources_scratch[CONFIG_NUM_THREADS];
+	__local uchar mask_scratch[CONFIG_NUM_THREADS];
 
 	/// @XXX: maybe after this point, to avoid confusion, rename the agents
 	///  "first mover" and "respondent".
@@ -119,6 +121,10 @@ __kernel void trading(
 			all_resources,
 			menu_1,
 			menu_2,
+			resources_scratch,
+			sort_tree,
+			mask_scratch,
+			float_scratch,
 			config
 			);
 		barrier( CLK_LOCAL_MEM_FENCE );
@@ -130,6 +136,8 @@ __kernel void trading(
 			menu_1, menu_2,
 			&resource_1, &resource_2,
 			all_resources,
+			float_scratch,
+			sort_tree,
 			config
 			);
 
