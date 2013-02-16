@@ -71,6 +71,14 @@ uint trading_find_maximum_surplus(
 	int recipient_resource_offset = recipient * CONFIG_NUM_RESOURCES;
 	uint recipient_received_amount = all_resources[recipient_resource_offset + resource_received];
 
+	printf( "Giver has %d of resource %d and %d of resource %d; recipient has %d of resource %d.\n",
+			resource_given_amount,
+			resource_given,
+			resource_received_amount,
+			resource_received,
+			recipient_received_amount,
+			resource_received );
+
 	int maximum_found = FALSE;
 	uint max_multiplier;
 	while ( !maximum_found )
