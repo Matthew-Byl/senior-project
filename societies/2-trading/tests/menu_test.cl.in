@@ -1,0 +1,46 @@
+/**
+ * Test creating the menu of items to be traded.
+ *
+ * @author John Kloosterman
+ * @date Feb. 15, 2013
+ */
+
+#define _OPENCL_
+#include "../menu.cl"
+
+__kernel void
+menu_tester(
+	__global uint *all_resources,
+	__global uint *global_menu_1,
+	__global uint *global_menu_2,
+	__global SocietiesConfig *config
+	)
+{
+	__local uint resources_scratch[CONFIG_NUM_RESOURCES];
+	__local uint sort_tree_scratch[CONFIG_NUM_RESOURCES / 2];
+	__local uchar mask_scratch[CONFIG_NUM_RESOURCES];
+	__local float valuations_scratch[CONFIG_NUM_RESOURCES];
+
+	__local uint menu_1[CONFIG_MENU_SIZE];
+	__local uint menu_2[CONFIG_MENU_SIZE];
+
+	menu_create_menus(
+		0,
+		1,
+		all_resources,
+		menu_1,
+		menu_2,
+		resources_scratch,
+		sort_tree_scratch,
+		mask_scratch,
+		valuations_scratch,
+		config
+		);
+
+	size_t local_id = get_local_id( 0 );
+	if ( local_id < CONFIG_MENU_SIZE )
+	{
+		global_menu_1[local_id] = menu_1[local_id];
+		global_menu_2[local_id] = menu_2[local_id];
+	}
+}
