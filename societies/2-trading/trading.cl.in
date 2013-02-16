@@ -16,12 +16,42 @@
  *    the other agent can't afford the trade.
  */
 
+float trading_utility_difference(
+	uint resource_given,
+	uint resource_received,
+	uint resource_given_held,
+	uint resource_received_held,
+	uint resource_given_loss,
+	uint resource_received_gain,
+	__global SocietiesConfig *config
+	)
+{
+	float resource_given_loss_utility = 
+		u( resource_given_held - resource_given_loss, 
+		   config->resource_D[resource_given], 
+		   config->resource_n[resource_given] )
+		- u( resource_given_held, 
+			 config->resource_D[resource_given], 
+			 config->resource_n[resource_given] );
+	
+	float resource_received_gain_utility = 
+		u( resource_received_held + resource_received_gain, 
+		   config->resource_D[resource_received], 
+		   config->resource_n[resource_received] )
+		- u( resource_received_held, 
+			 config->resource_D[resource_received], 
+			 config->resource_n[resource_received] );
+	
+	return resource_received_gain_utility - resource_given_loss_utility;
+}
+
 // Find the best multiple of ratio:1.
 uint trading_find_maximum_surplus( 
 	uint ratio,
-	uint agent,
-	uint resource1,
-	uint resource2,
+	uint giver,
+	uint recipient,
+	uint resource_given, // resource giver is giving up
+	uint resource_received, // resource giver is receiving
 	__global uint *all_resources,
 	__local uint *sort_tree_scratch,  // num_threads / 2
 	__local float *surpluses_scratch, // num_threads
@@ -33,37 +63,40 @@ uint trading_find_maximum_surplus(
 
 	// Is it faster to get only 1 thread to do this? Do we have to
 	//  use global memory?
-	int resource_offset = agent * config->num_resources;
-	uint resource1_amount = all_resources[resource_offset + resource1];
-	uint resource2_amount = all_resources[resource_offset + resource2];
+	int resource_offset = giver * CONFIG_NUM_RESOURCES;
+	uint resource_given_amount = all_resources[resource_offset + resource_given];
+	uint resource_received_amount = all_resources[resource_offset + resource_received];
+
+	// Check to make sure the recipient can afford trades.
+	int recipient_resource_offset = recipient * CONFIG_NUM_RESOURCES;
+	uint recipient_received_amount = all_resources[recipient_resource_offset + resource_received];
 
 	int maximum_found = FALSE;
 	uint max_multiplier;
 	while ( !maximum_found )
 	{
-		// The multiple of the ratio for this thread
-		float resource1_gain = ratio * ( local_id + offset );
-
-		// The amount of utility the agent gains by getting more resource1.
-		float resource1_gain_utility = 
-			u( resource1_amount + resource1_gain, config->resource_D[resource1], config->resource_n[resource1] )
-			- u( resource1_amount, config->resource_D[resource1], config->resource_n[resource1] );
-
-		// The amount of utility the agent loses by giving up more resource2.
-		float resource2_loss = 1 * ( local_id + offset );
-		float resource2_loss_utility = 
-			u( resource2_amount - resource2_loss, config->resource_D[resource2], config->resource_n[resource2] )
-			- u( resource2_amount, config->resource_D[resource2], config->resource_n[resource2] );
+		// The amount of change in amount of resource1 and resource2
+		float resource_given_loss = 1 * ( local_id + offset );
+		float resource_received_gain = ratio * ( local_id + offset );
 		
 		// If we can't afford this trade, don't consider it.
-		float surplus;
-		if ( resource2_loss > resource2_amount )
+		float surplus = trading_utility_difference(
+			resource_given,
+			resource_received,
+			resource_given_amount,
+			resource_received_amount,
+			resource_given_loss,
+			resource_received_gain,
+			config );
+
+		if ( resource_given_loss > resource_given_amount )
 			surplus = -1;
-		else
-			surplus = resource1_gain_utility - resource2_loss_utility;
+		else if ( resource_received_gain > recipient_received_amount )
+			surplus = -2;
 
 		surpluses_scratch[local_id] = surplus;
 		barrier( CLK_LOCAL_MEM_FENCE );
+		printf( "Surplus for thread %d: %f.\n", local_id, surplus );
 		
 		// Find the maximum.
 		max_multiplier = max_index( surpluses_scratch, sort_tree_scratch );
@@ -81,6 +114,28 @@ uint trading_find_maximum_surplus(
 	}
 
 	return max_multiplier + offset;
+}
+
+
+void trading_make_trade(
+	uint agent_a,
+	uint agent_b,
+	uint resource_a,
+	uint resource_b,
+	uint amount_a,
+	uint amount_b,
+	__global uint *all_resources
+	)
+{
+	int agent_a_offset = ( agent_a * CONFIG_NUM_RESOURCES );
+	all_resources[agent_a_offset + resource_a] -= amount_a;
+	all_resources[agent_a_offset + resource_b] += amount_b;
+
+	int agent_b_offset = ( agent_b * CONFIG_NUM_RESOURCES );
+	all_resources[agent_b_offset + resource_a] += amount_a;
+	all_resources[agent_b_offset + resource_b] -= amount_b;
+
+	barrier( CLK_GLOBAL_MEM_FENCE );
 }
 
 __kernel void trading(
@@ -107,6 +162,9 @@ __kernel void trading(
 	int a_is_first_mover = TRUE;
 	for ( int i = 0; i < ( config->num_trades * 2); i++ )
 	{
+		if ( local_id == 0 )
+			printf( "=== Trade number %d ===\n", i );
+
 		uint first_mover;
 		uint respondent;
 
@@ -120,6 +178,9 @@ __kernel void trading(
 			first_mover = agent_b;
 			respondent = agent_a;
 		}
+
+		if ( local_id == 0 )
+			printf( "Agent %d is first mover, %d respondent.\n", first_mover, respondent );
 
 		// Generate the menus.
 		menu_create_menus(
@@ -147,6 +208,10 @@ __kernel void trading(
 			sort_tree,
 			config
 			);
+		barrier( CLK_LOCAL_MEM_FENCE );
+
+		if ( local_id == 0 )
+			printf( "Trade attempting: first_mover giving %d, receiving %d.\n", resource_1, resource_2 );
 
 		// Calculate agent A and B's internal valuations
 		//  to see if the trade is beneficial and what
@@ -177,6 +242,9 @@ __kernel void trading(
 		{
 			// do something
 		}
+		
+		if ( local_id == 0 )
+			printf( "Valuations: First mover: %f, Respondant: %f\n", first_mover_valuation, respondent_valuation );
 
 		// Bargaining price is the geometric mean of
 		//  Agent A and B's internal valuations.
@@ -184,6 +252,9 @@ __kernel void trading(
 		// Since resources are possessed in integers, this gets
 		//  rounded to nearest integer.
 		int bargaining_price = (int) f_bargaining_price;
+
+		if ( local_id == 0 )
+			printf( "Bargaining price: %f %d.\n", f_bargaining_price, bargaining_price );
 
 		/// @XXX: we don't consider what B can afford when we find maximum
 		/// surplus.
@@ -193,30 +264,33 @@ __kernel void trading(
 		uint maximum_surplus_multiplier = trading_find_maximum_surplus( 
 			bargaining_price,
 			first_mover,
+			respondent,
 			resource_1,
 			resource_2,
 			all_resources,
 			sort_tree,
 			float_scratch,
 			config );
+		barrier( CLK_LOCAL_MEM_FENCE );
+
+		if ( local_id == 0 )
+			printf( "Maximum surplus multiplier: %d\n", maximum_surplus_multiplier );
 
 		// Respondent accepts only if it benefits from the trade. The respondent benefits when
 		//  the utility of the resources received is greater than the loss of
 		//  utility of the resources given up.
-/*
-		if ( trading_respondent_benefits(...) )
+		if ( TRUE /* trading_respondent_benefits(...) */ )
 		{
 			trading_make_trade(
 				first_mover,
 				respondent,
 				resource_1,
 				resource_2,
-				bargaining_price * maximum_surplus_multiplier
+				bargaining_price * maximum_surplus_multiplier,
+				maximum_surplus_multiplier,
+				all_resources
 				);
 		}
-		/// @XXX: The correct type of fence depends on what trading_make_trade does.
-		barrier( CLK_GLOBAL_MEM_FENCE );
-*/
 
 		a_is_first_mover = !a_is_first_mover;
 	}	

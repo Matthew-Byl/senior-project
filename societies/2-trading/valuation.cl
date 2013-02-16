@@ -28,6 +28,7 @@ int valuation_resources(
 	return TRUE;
 }
 
+// Is the amount + 1 the right thing?
 float valuation_internal_valuation(
 	uint agent,
 	uint resource1,
@@ -37,19 +38,19 @@ float valuation_internal_valuation(
 	)
 {
 	// Evaluate MU( outbound )
-	size_t resource1_offset = ( agent * config->num_resources ) + resource1;
+	int resource1_offset = ( agent * CONFIG_NUM_RESOURCES ) + resource1;
 	uint resource1_amount = all_resources[resource1_offset];
 	float resource1_valuation = mu(
-		resource1_amount,
+		resource1_amount + 1,
 		config->resource_D[resource1],
 		config->resource_n[resource1]
 		);
 
 	// Evaluate MU( inboud )
-	size_t resource2_offset = ( agent * config->num_resources ) + resource2;
+	int resource2_offset = ( agent * CONFIG_NUM_RESOURCES ) + resource2;
 	uint resource2_amount = all_resources[resource2_offset];
 	float resource2_valuation = mu(
-		resource2_amount,
+		resource2_amount + 1,
 		config->resource_D[resource2],
 		config->resource_n[resource2]
 		);
