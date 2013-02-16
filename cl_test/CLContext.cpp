@@ -31,7 +31,15 @@ void CLContext::initialize( int platform, int device )
 	if ( myDebug )
 		platforms[platform].getDevices( CL_DEVICE_TYPE_CPU, &myDevices );	
 	else
-		platforms[platform].getDevices( CL_DEVICE_TYPE_GPU, &myDevices );	
+	{
+		try {
+			platforms[platform].getDevices( CL_DEVICE_TYPE_GPU, &myDevices );	
+		} catch ( cl::Error e ) {
+			// If we got no GPU devices, get a CPU.
+			cout << "No GPU, so using a CPU." << endl;
+			platforms[platform].getDevices( CL_DEVICE_TYPE_CPU, &myDevices );
+		}
+	}
 
 	myContext = cl::Context( myDevices, NULL, NULL, NULL );
 	myCommandQueue = cl::CommandQueue( myContext, myDevices[device], 0 );
