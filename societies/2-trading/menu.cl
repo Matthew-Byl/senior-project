@@ -23,7 +23,7 @@ void menu_resource_value(
 	size_t local_id = get_local_id( 0 );
 
 	valuations[local_id] = mu( 
-		agent_resources[local_id],
+		agent_resources[local_id] + 1,
 		config->resource_D[local_id],
 		config->resource_n[local_id]
 	);
@@ -50,8 +50,12 @@ void menu_create_menus(
 	resources_scratch[local_id] = all_resources[resource_offset];
 	barrier( CLK_LOCAL_MEM_FENCE );
 	
+//	printf( "Agent A has %d of resource %d.\n", resources_scratch[local_id], local_id );
+
 	// Find the value of each resource.
 	menu_resource_value( resources_scratch, valuations_scratch, config );
+	barrier( CLK_LOCAL_MEM_FENCE );
+	printf( "Resource %d has value %f.\n", local_id, valuations_scratch[local_id] );
 
 	// Find the minimum config->menu_size ones.
 	n_min_indices(

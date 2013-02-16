@@ -17,7 +17,7 @@ using namespace std;
 int main ( void )
 {
 	SocietiesConfig config = config_generate_default_configuration();
-	config.num_threads = 5;
+	config.num_threads = 20;
 	config.num_agents = 2;
 	config.num_resources = 20;
 	config.menu_size = 5;
@@ -29,8 +29,8 @@ int main ( void )
 	string src((std::istreambuf_iterator<char>(t)),
 			   std::istreambuf_iterator<char>());
 	CLKernel menu_tester( "menu_tester", src, compiler_flags );
-	menu_tester.setGlobalDimensions( 5, 1 );
-	menu_tester.setLocalDimensions( 5, 1 );
+	menu_tester.setGlobalDimensions( config.num_threads, 1 );
+	menu_tester.setLocalDimensions( config.num_threads, 1 );
 
 	// For each agent,
 	// Out of 20 resources, create 4 ones we have too much
