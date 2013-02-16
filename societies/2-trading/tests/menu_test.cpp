@@ -16,6 +16,8 @@ using namespace std;
 
 int main ( void )
 {
+	cout << "Testing building the trading menus..." << endl << flush;
+
 	SocietiesConfig config = config_generate_default_configuration();
 	config.num_threads = 20;
 	config.num_agents = 2;
@@ -67,6 +69,7 @@ int main ( void )
 		config_buffer
 		);
 
+/*
 	cout << "Menu 1: ";
 	for ( int i = 0; i < 5; i++ )
 		cout << host_menu_1[i] << " ";
@@ -76,4 +79,16 @@ int main ( void )
 	for ( int i = 0; i < 5; i++ )
 		cout << host_menu_2[i] << " ";
 	cout << endl;
+*/
+
+	assert( host_menu_1[0] == 3 );
+	assert( host_menu_1[1] == 13 );
+	assert( host_menu_1[2] == 17 );
+	assert( host_menu_1[3] == 8 );
+	assert( host_menu_2[0] == 16 );
+	assert( host_menu_2[1] == 2 );
+	assert( host_menu_2[2] == 4 );
+	assert( host_menu_2[3] == 15 );
+
+	cout << "All tests passed!" << endl << flush;
 }

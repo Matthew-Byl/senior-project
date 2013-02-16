@@ -9,6 +9,13 @@
 #include "menu.cl"
 #include "valuation.cl"
 
+/*
+ * Edge cases to watch out for:
+ *  -when an agent has no units of something on the menu.
+ *  -when an agent can't afford to make an optimal trade, and when
+ *    the other agent can't afford the trade.
+ */
+
 // Find the best multiple of ratio:1.
 uint trading_find_maximum_surplus( 
 	uint ratio,

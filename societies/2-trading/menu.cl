@@ -14,6 +14,13 @@
 /**
  * From the paper: "the value of a resource is simply
  *  the MU of the last unit of each resource they hold.
+ *
+ * I change this, because the MU of a resource we have
+ *  nothing of is undefined. I use the marginal utility of
+ *  the next unit of the resource.
+ *
+ * This has the side effect of making it really valuable to
+ *  have at least 1 of something. But that might be OK.
  */
 void menu_resource_value(
 	__local uint *agent_resources,
@@ -55,7 +62,7 @@ void menu_create_menus(
 	// Find the value of each resource.
 	menu_resource_value( resources_scratch, valuations_scratch, config );
 	barrier( CLK_LOCAL_MEM_FENCE );
-	printf( "Resource %d has value %f.\n", local_id, valuations_scratch[local_id] );
+//	printf( "Resource %d has value %f.\n", local_id, valuations_scratch[local_id] );
 
 	// Find the minimum config->menu_size ones.
 	n_min_indices(

@@ -1,0 +1,56 @@
+/**
+ * Tester for the highest-valuation
+ *  code.
+ */
+
+#define _OPENCL_
+#include "../menu.cl"
+#include "../valuation.cl"
+
+__kernel void
+valuation_test(
+	__global uint *all_resources,
+	__global uint *a_gives,
+	__global uint *a_receives,
+	__global SocietiesConfig *config
+	)
+{
+	__local uint menu_a[CONFIG_MENU_SIZE];
+	__local uint menu_b[CONFIG_MENU_SIZE];
+	__local uint resource_a, resource_b;
+	__local float internal_valuations_scratch[CONFIG_NUM_RESOURCES];
+	__local uint resource_scratch[CONFIG_NUM_RESOURCES];
+	__local uint sort_tree[CONFIG_NUM_RESOURCES / 2];
+	__local uchar mask_scratch[CONFIG_NUM_RESOURCES];
+
+	// Compute menus
+	menu_create_menus(
+		0, 1,
+		all_resources,
+		menu_a, menu_b,
+		resource_scratch,
+		sort_tree,
+		mask_scratch,
+		internal_valuations_scratch,	
+		config
+		);
+	barrier( CLK_LOCAL_MEM_FENCE );
+
+	valuation_highest_trade_valuation(
+		0,
+		menu_a,
+		menu_b,
+		&resource_a, &resource_b,
+		all_resources,
+		internal_valuations_scratch,
+		sort_tree,
+		config
+		);
+	barrier( CLK_LOCAL_MEM_FENCE );
+
+	if ( get_local_id( 0 ) == 0 )
+	{
+		(*a_gives) = resource_a;
+		(*a_receives) = resource_b;
+	}
+}
