@@ -58,7 +58,7 @@ uint trading_find_maximum_surplus(
 	__global SocietiesConfig *config )
 {
 	// NUM_RESOURCES is a proxy for number of threads.
-	int offset = 0;
+	int offset = 1;
 	size_t local_id = get_local_id( 0 );
 
 	// Is it faster to get only 1 thread to do this? Do we have to
@@ -136,12 +136,24 @@ void trading_make_trade(
 	)
 {
 	int agent_a_offset = ( agent_a * CONFIG_NUM_RESOURCES );
+	printf( "A: old resource_a: %d, old resource_b: %d, ", 
+			all_resources[agent_a_offset + resource_a],
+			all_resources[agent_a_offset + resource_b] );
 	all_resources[agent_a_offset + resource_a] -= amount_a;
 	all_resources[agent_a_offset + resource_b] += amount_b;
+	printf( "new resource_a: %d, new resource_b: %d\n", 
+			all_resources[agent_a_offset + resource_a],
+			all_resources[agent_a_offset + resource_b] );
 
 	int agent_b_offset = ( agent_b * CONFIG_NUM_RESOURCES );
+	printf( "B: old resource_a: %d, old resource_b: %d, ", 
+			all_resources[agent_b_offset + resource_a],
+			all_resources[agent_b_offset + resource_b] );
 	all_resources[agent_b_offset + resource_a] += amount_a;
 	all_resources[agent_b_offset + resource_b] -= amount_b;
+	printf( "new resource_a: %d, new resource_b: %d\n", 
+			all_resources[agent_b_offset + resource_a],
+			all_resources[agent_b_offset + resource_b] );
 
 	barrier( CLK_GLOBAL_MEM_FENCE );
 }
@@ -289,15 +301,18 @@ __kernel void trading(
 		//  utility of the resources given up.
 		if ( TRUE /* trading_respondent_benefits(...) */ )
 		{
-			trading_make_trade(
-				first_mover,
-				respondent,
-				resource_1,
-				resource_2,
-				bargaining_price * maximum_surplus_multiplier,
-				maximum_surplus_multiplier,
-				all_resources
-				);
+			if ( local_id == 0 )
+			{
+				trading_make_trade(
+					first_mover,
+					respondent,
+					resource_1,
+					resource_2,
+					maximum_surplus_multiplier,
+					bargaining_price * maximum_surplus_multiplier,
+					all_resources
+					);
+			}
 		}
 
 		a_is_first_mover = !a_is_first_mover;

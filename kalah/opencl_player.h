@@ -19,7 +19,7 @@ class OpenCLPlayer
 public:
 	OpenCLPlayer( int sequentialDepth, std::string src )
 		: mySequentialDepth( sequentialDepth ),
-		  opencl_player( "opencl_player", src, myContext )
+		  opencl_player( "opencl_player", src, "", myContext )
 		{
 		};
 
