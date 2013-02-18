@@ -5,6 +5,8 @@
  * @date Feb. 12, 2013
  */
 
+#pragma OPENCL EXTENSION cl_amd_printf : enable
+
 #define _OPENCL_
 #include "menu.cl"
 #include "valuation.cl"
@@ -46,7 +48,8 @@ float trading_utility_difference(
 }
 
 // Find the best multiple of ratio:1.
-uint trading_find_maximum_surplus( 
+//  return a negative number if no trade is possible.
+int trading_find_maximum_surplus( 
 	uint ratio,
 	uint giver,
 	uint recipient,
@@ -71,6 +74,7 @@ uint trading_find_maximum_surplus(
 	int recipient_resource_offset = recipient * CONFIG_NUM_RESOURCES;
 	uint recipient_received_amount = all_resources[recipient_resource_offset + resource_received];
 
+/*
 	printf( "Giver has %d of resource %d and %d of resource %d; recipient has %d of resource %d.\n",
 			resource_given_amount,
 			resource_given,
@@ -78,6 +82,7 @@ uint trading_find_maximum_surplus(
 			resource_received,
 			recipient_received_amount,
 			resource_received );
+*/
 
 	int maximum_found = FALSE;
 	uint max_multiplier;
@@ -114,6 +119,11 @@ uint trading_find_maximum_surplus(
 		if ( max_multiplier == ( CONFIG_NUM_THREADS - 1 ) )
 		{
 			offset += CONFIG_NUM_THREADS - 2;
+		}
+		else if ( surpluses_scratch[max_multiplier] < 0 )
+		{
+			// The maximum was a negative number, so we can't afford any trade.
+			return -1;
 		}
 		else
 		{
@@ -154,8 +164,6 @@ void trading_make_trade(
 	printf( "new resource_a: %d, new resource_b: %d\n", 
 			all_resources[agent_b_offset + resource_a],
 			all_resources[agent_b_offset + resource_b] );
-
-	barrier( CLK_GLOBAL_MEM_FENCE );
 }
 
 __kernel void trading(
@@ -217,7 +225,7 @@ __kernel void trading(
 			);
 		barrier( CLK_LOCAL_MEM_FENCE );
 
-		__local uint resource_1, resource_2;
+	    __local uint resource_1, resource_2;
 		// The first mover gets to choose its favourite pair.
 		valuation_highest_trade_valuation(
 			first_mover,
@@ -236,25 +244,25 @@ __kernel void trading(
 		// Calculate agent A and B's internal valuations
 		//  to see if the trade is beneficial and what
 		//  the bargaining price will be.
-		__local float first_mover_valuation;
-		__local float respondent_valuation;
-		if ( local_id == 0 )
-		{
+		float first_mover_valuation;
+		float respondent_valuation;
+//		if ( local_id == 0 )
+//		{
 			first_mover_valuation = valuation_internal_valuation(
 				first_mover,
 				resource_1, resource_2,
 				all_resources,
 				config );
-		}
-		else if ( local_id == 1 )
-		{
+//		}
+//		else if ( local_id == 1 )
+//		{
 			respondent_valuation = valuation_internal_valuation(
 				respondent,
 				resource_2, resource_1,
 				all_resources,
 				config );
-		}
-		barrier( CLK_LOCAL_MEM_FENCE );
+//		}
+//		barrier( CLK_LOCAL_MEM_FENCE );
 
 		// Is the trade mutually beneficial? Is this the right way to compute that?
 		if ( first_mover_valuation < 1
@@ -281,7 +289,7 @@ __kernel void trading(
 
 		// First mover optimizes its maximum surplus. We assign one thread to each
 		//  multiplier of more surplus. 
-		uint maximum_surplus_multiplier = trading_find_maximum_surplus( 
+		int maximum_surplus_multiplier = trading_find_maximum_surplus( 
 			bargaining_price,
 			first_mover,
 			respondent,
@@ -299,7 +307,8 @@ __kernel void trading(
 		// Respondent accepts only if it benefits from the trade. The respondent benefits when
 		//  the utility of the resources received is greater than the loss of
 		//  utility of the resources given up.
-		if ( TRUE /* trading_respondent_benefits(...) */ )
+		if ( maximum_surplus_multiplier > 0
+			 && TRUE /* trading_respondent_benefits(...) */ )
 		{
 			if ( local_id == 0 )
 			{
@@ -316,5 +325,6 @@ __kernel void trading(
 		}
 
 		a_is_first_mover = !a_is_first_mover;
+		barrier( CLK_GLOBAL_MEM_FENCE );
 	}	
 }

@@ -54,4 +54,15 @@ int main ( void )
 		config_buffer
 		);
 
+	cout << "=== Results ===" << endl;
+	cout << "Agent 1: ";
+	for ( int i = 0; i < 20; i++ )
+		cout << host_all_resources[i] << " ";
+	cout << endl;
+
+	cout << "Agent 2: ";
+	for ( int i = 0; i < 20; i++ )
+		cout << host_all_resources[20+i] << " ";
+	cout << endl;
+
 }
