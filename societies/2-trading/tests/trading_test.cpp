@@ -17,7 +17,7 @@ int main ( void )
 	config.num_agents = 2;
 	config.num_resources = 20;
 	config.menu_size = 5;
-	config.num_trades = 1;
+	config.num_trades = 3;
 
 	string compiler_flags = config_generate_compiler_flags( config );
 
