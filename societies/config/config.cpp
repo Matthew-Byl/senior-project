@@ -80,5 +80,8 @@ string config_generate_compiler_flags( SocietiesConfig config )
 	// num_threads
 	flags << "-D CONFIG_NUM_THREADS=" << config.num_threads << " ";
 
+	// num_trades
+	flags << "-D CONFIG_NUM_TRADES=" << config.num_trades << " ";
+
 	return flags.str();
 }

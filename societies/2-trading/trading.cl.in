@@ -178,16 +178,73 @@ __kernel void trading(
 	uint agent_a = random_pairs[pair_offset];
 	uint agent_b = random_pairs[pair_offset + 1];
 
-	__local uint menu_1[CONFIG_MENU_SIZE];
-	__local uint menu_2[CONFIG_MENU_SIZE];
+	__local uint menu_a[CONFIG_MENU_SIZE];
+	__local uint menu_b[CONFIG_MENU_SIZE];
 	__local uint sort_tree[CONFIG_NUM_THREADS / 2];
 	__local float float_scratch[CONFIG_NUM_THREADS];
 	__local uint resources_scratch[CONFIG_NUM_THREADS];
 	__local uchar mask_scratch[CONFIG_NUM_THREADS];
 
-	/// @XXX: maybe after this point, to avoid confusion, rename the agents
-	///  "first mover" and "respondent".
+	/* How this works in the Python code:
+	 (1) we generate menus
+	 (2) each agent makes a list of the top num_trades possible trades from
+	     the menus
+	 (3) In the first round, agent a proposes trading the things it wants
+	     to trade the most. Agent A proposes a number to trade, B can
+		 accept or reject. If B rejects, then B proposes a number to
+		 trade, and A can accept or reject.
+	 (4) In the second round, B proposes trading the things it wants the most.
+	 (5) In the third round, A proposes trading its second-favourite pair.
+	*/
+
+	// Generate the menus.
+	menu_create_menus(
+		agent_a,
+		agent_b,
+		all_resources,
+		menu_a,
+		menu_b,
+		resources_scratch,
+		sort_tree,
+		mask_scratch,
+		float_scratch,
+		config
+		);
+	barrier( CLK_LOCAL_MEM_FENCE );
+
+	__local uint2 agent_a_pairs[CONFIG_NUM_TRADES];
+	__local uint2 agent_b_pairs[CONFIG_NUM_TRADES];
+
+	// Compute the num_trades favourite pairs for A.
+	valuation_highest_trade_valuation_pairs(
+		agent_a,
+		menu_a, menu_b,
+		agent_a_pairs,
+		all_resources,
+		float_scratch,
+		sort_tree,
+		resources_scratch,
+		mask_scratch,
+		config
+		);
+
+	valuation_highest_trade_valuation_pairs(
+		agent_b,
+		menu_b, menu_a,
+		agent_b_pairs,
+		all_resources,
+		float_scratch,
+		sort_tree,
+		resources_scratch,
+		mask_scratch,
+		config
+		);
+	barrier( CLK_LOCAL_MEM_FENCE );
+
+	// Do the trades.
 	int a_is_first_mover = TRUE;
+	uint given_resource;
+	uint received_resource;
 	for ( int i = 0; i < ( config->num_trades * 2); i++ )
 	{
 		if ( local_id == 0 )
@@ -196,50 +253,27 @@ __kernel void trading(
 		uint first_mover;
 		uint respondent;
 
+		int pair_id = i / 2;
 		if ( a_is_first_mover )
 		{
 			first_mover = agent_a;
 			respondent = agent_b;
+			given_resource = agent_a_pairs[pair_id].x;
+			received_resource = agent_a_pairs[pair_id].y;
 		}
 		else
 		{
 			first_mover = agent_b;
 			respondent = agent_a;
+			given_resource = agent_b_pairs[pair_id].x;
+			received_resource = agent_b_pairs[pair_id].y;
 		}
 
 		if ( local_id == 0 )
 			printf( "Agent %d is first mover, %d respondent.\n", first_mover, respondent );
 
-		// Generate the menus.
-		menu_create_menus(
-			first_mover,
-			respondent,
-			all_resources,
-			menu_1,
-			menu_2,
-			resources_scratch,
-			sort_tree,
-			mask_scratch,
-			float_scratch,
-			config
-			);
-		barrier( CLK_LOCAL_MEM_FENCE );
-
-	    __local uint resource_1, resource_2;
-		// The first mover gets to choose its favourite pair.
-		valuation_highest_trade_valuation(
-			first_mover,
-			menu_1, menu_2,
-			&resource_1, &resource_2,
-			all_resources,
-			float_scratch,
-			sort_tree,
-			config
-			);
-		barrier( CLK_LOCAL_MEM_FENCE );
-
 		if ( local_id == 0 )
-			printf( "Trade attempting: first_mover giving %d, receiving %d.\n", resource_1, resource_2 );
+			printf( "Trade attempting: first_mover giving %d, receiving %d.\n", given_resource, received_resource );
 
 		// Calculate agent A and B's internal valuations
 		//  to see if the trade is beneficial and what
@@ -250,7 +284,7 @@ __kernel void trading(
 //		{
 			first_mover_valuation = valuation_internal_valuation(
 				first_mover,
-				resource_1, resource_2,
+				given_resource, received_resource,
 				all_resources,
 				config );
 //		}
@@ -258,7 +292,7 @@ __kernel void trading(
 //		{
 			respondent_valuation = valuation_internal_valuation(
 				respondent,
-				resource_2, resource_1,
+				received_resource, given_resource,
 				all_resources,
 				config );
 //		}
@@ -279,13 +313,23 @@ __kernel void trading(
 		float f_bargaining_price = sqrt( first_mover_valuation * respondent_valuation );
 		// Since resources are possessed in integers, this gets
 		//  rounded to nearest integer.
+
+
+		/// @XXX: this isn't right. The closest ratio has to be able to choose the :1 part too.
+/*
+        if tradeRatio <= 1:
+            numBPicked = int(round(1 / tradeRatio))
+            exactNumAPicked = numBPicked * tradeRatio
+            numAPicked = int(round(exactNumAPicked))
+        elif tradeRatio > 1:
+            numBPicked = 1
+            exactNumAPicked = numBPicked * tradeRatio
+            numAPicked = int(round(exactNumAPicked))
+*/
 		int bargaining_price = (int) f_bargaining_price;
 
 		if ( local_id == 0 )
 			printf( "Bargaining price: %f %d.\n", f_bargaining_price, bargaining_price );
-
-		/// @XXX: we don't consider what B can afford when we find maximum
-		/// surplus.
 
 		// First mover optimizes its maximum surplus. We assign one thread to each
 		//  multiplier of more surplus. 
@@ -293,8 +337,8 @@ __kernel void trading(
 			bargaining_price,
 			first_mover,
 			respondent,
-			resource_1,
-			resource_2,
+			given_resource,
+			received_resource,
 			all_resources,
 			sort_tree,
 			float_scratch,
@@ -315,14 +359,17 @@ __kernel void trading(
 				trading_make_trade(
 					first_mover,
 					respondent,
-					resource_1,
-					resource_2,
+					given_resource,
+					received_resource,
 					maximum_surplus_multiplier,
 					bargaining_price * maximum_surplus_multiplier,
 					all_resources
 					);
 			}
 		}
+
+		// If the respondent didn't accept, the respondent gets to choose
+		//  a ratio and propose it to A.
 
 		a_is_first_mover = !a_is_first_mover;
 		barrier( CLK_GLOBAL_MEM_FENCE );

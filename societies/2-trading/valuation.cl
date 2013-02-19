@@ -73,15 +73,16 @@ int valuation_trade_beneficial(
 // menus need to already have been computed.
 // The resource that a wants to trade will be put in resource_a
 //  and resource that a wants to receive will be put in resource_b
-void valuation_highest_trade_valuation(
+void valuation_highest_trade_valuation_pairs(
 	uint agent_a,
 	__local uint *menu_a,
 	__local uint *menu_b,
-	__local uint *resource_a,
-	__local uint *resource_b,
+	__local uint2 *pairs,
 	__global uint *all_resources,
 	__local float *internal_valuations_scratch, // config_menu_size^2, which is <= num_threads
-	__local uint *sort_tree, // config_menu_size^2 / 2
+	__local uint *sort_tree,                    // config_menu_size^2 / 2
+	__local uint *indices_scratch,              // config_num_trades
+	__local uchar *mask_scratch,                // config_menu_size^2
 	__global SocietiesConfig *config
 	)
 {
@@ -108,20 +109,24 @@ void valuation_highest_trade_valuation(
 	}
 	barrier( CLK_LOCAL_MEM_FENCE );
 
-	// Find the maximum.
-	uint highest_valuation;
-	if ( is_pair )
-	{
-		highest_valuation = max_index(
-			internal_valuations_scratch,
-			sort_tree
-			);
-	}
-
-	if ( highest_valuation == local_id )
-	{
-		(*resource_a) = thread_resource_1;
-		(*resource_b) = thread_resource_2;
-	}
+	// Find the indices of the maximum num_trades pairs.
+	n_max_indices(
+		config->num_trades,
+		internal_valuations_scratch,
+		sort_tree,
+		indices_scratch,
+		mask_scratch
+		);
 	barrier( CLK_LOCAL_MEM_FENCE );
+
+	// Turn those indices into pairs.
+	for ( int i = 0; i < config->num_trades; i++ )
+	{
+		if ( local_id == indices_scratch[i] )
+		{
+			pairs[i].x = thread_resource_1;
+			pairs[i].y = thread_resource_2;
+		}
+		barrier( CLK_LOCAL_MEM_FENCE );
+	}
 }
