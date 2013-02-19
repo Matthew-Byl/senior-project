@@ -26,8 +26,8 @@ int main ( void )
 	string src((std::istreambuf_iterator<char>(t)),
 			   std::istreambuf_iterator<char>());
 	CLKernel trading( "trading", src, compiler_flags );
-	trading.setGlobalDimensions( config.num_threads, 1 );
-	trading.setLocalDimensions( config.num_threads, 1 );
+	trading.setGlobalDimensions( 20, 1 );
+	trading.setLocalDimensions( 20, 1 );
 
 	// For each agent,
 	// Out of 20 resources, create 4 ones we have too much
@@ -42,7 +42,7 @@ int main ( void )
 	host_all_resources[17] = 10;
 	host_all_resources[20 + 15] = 10;
 
-	cl_uint host_random_pairs[2] = { 0, 1 };
+	cl_uint host_random_pairs[2] = { 1, 0 };
 
 	CLUnitArgument all_resources( host_all_resources, 40 );
 	CLUnitArgument random_pairs( host_random_pairs, 2 );

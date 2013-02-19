@@ -108,6 +108,7 @@ int trading_find_maximum_surplus(
 		else if ( resource_received_gain > recipient_received_amount )
 			surplus = -2;
 
+		printf( "Thread ID: %d\n", local_id );
 		surpluses_scratch[local_id] = surplus;
 		barrier( CLK_LOCAL_MEM_FENCE );
 		printf( "Surplus for thread %d: %f.\n", local_id, surplus );
@@ -120,6 +121,7 @@ int trading_find_maximum_surplus(
 		if ( max_multiplier == ( CONFIG_NUM_THREADS - 1 ) )
 		{
 			offset += CONFIG_NUM_THREADS - 2;
+			barrier( CLK_LOCAL_MEM_FENCE );
 		}
 		else if ( surpluses_scratch[max_multiplier] < 0 )
 		{
@@ -279,10 +281,24 @@ __kernel void trading(
 		}
 
 		if ( local_id == 0 )
+		{
 			printf( "Agent %d is first mover, %d respondent.\n", first_mover, respondent );
 
-		if ( local_id == 0 )
+			printf( "First mover resources: " );
+			int fm_offset = first_mover * CONFIG_NUM_RESOURCES;
+			for ( int j = 0; j < CONFIG_NUM_RESOURCES; j++ )
+				printf( "%d ", all_resources[fm_offset + j] );
+			printf( "\n" );
+
+			printf( "Respondant resources: " );
+			fm_offset = respondent * CONFIG_NUM_RESOURCES;
+			for ( int j = 0; j < CONFIG_NUM_RESOURCES; j++ )
+				printf( "%d ", all_resources[fm_offset + j] );
+			printf( "\n" );
+
+
 			printf( "Trade attempting: first_mover giving %d, receiving %d.\n", given_resource, received_resource );
+		}
 
 		// Calculate agent A and B's internal valuations
 		//  to see if the trade is beneficial and what
@@ -320,21 +336,8 @@ __kernel void trading(
 		// Bargaining price is the geometric mean of
 		//  Agent A and B's internal valuations.
 		float f_bargaining_price = sqrt( first_mover_valuation * respondent_valuation );
-		// Since resources are possessed in integers, this gets
-		//  rounded to nearest integer.
 
-
-		/// @XXX: this isn't right. The closest ratio has to be able to choose the :1 part too.
-/*
-        if tradeRatio <= 1:
-            numBPicked = int(round(1 / tradeRatio))
-            exactNumAPicked = numBPicked * tradeRatio
-            numAPicked = int(round(exactNumAPicked))
-        elif tradeRatio > 1:
-            numBPicked = 1
-            exactNumAPicked = numBPicked * tradeRatio
-            numAPicked = int(round(exactNumAPicked))
-*/
+		// Calculate a nearby integer ratio for the bargaining price.
 		int num_given, num_received;
 		if ( f_bargaining_price > 1 )
 		{
