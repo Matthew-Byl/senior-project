@@ -203,6 +203,18 @@ void test_n_max_indices( string src )
 	assert( host_results[5] == 15 );
 	cout << "* " << flush;
 
+	// Duplicate values; make sure they're not reused.
+	for ( int i = 0; i < 20; i++ )
+		host_values[i] = 5;
+	n_max_indices_tester( values, results );
+	
+	cout << endl;
+	for ( int i = 0; i < 6; i++ )
+	{
+		cout << host_results[i] << " ";
+	}
+	cout << endl;
+	
 	cout << "All tests passed!" << endl << flush;
 }
 

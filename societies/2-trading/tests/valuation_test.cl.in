@@ -10,8 +10,7 @@
 __kernel void
 valuation_test(
 	__global uint *all_resources,
-	__global uint *a_gives,
-	__global uint *a_receives,
+	__global uint2 *pairs,
 	__global SocietiesConfig *config
 	)
 {
@@ -22,6 +21,8 @@ valuation_test(
 	__local uint resource_scratch[CONFIG_NUM_RESOURCES];
 	__local uint sort_tree[CONFIG_NUM_RESOURCES / 2];
 	__local uchar mask_scratch[CONFIG_NUM_RESOURCES];
+
+	__local uint2 local_pairs[CONFIG_NUM_TRADES];
 
 	// Compute menus
 	menu_create_menus(
@@ -36,21 +37,33 @@ valuation_test(
 		);
 	barrier( CLK_LOCAL_MEM_FENCE );
 
-	valuation_highest_trade_valuation(
+	if ( get_local_id(0) == 0 )
+	{
+		printf( "A menu: " );
+		for ( int i = 0; i < CONFIG_MENU_SIZE; i++ )
+			printf( "%d ", menu_a[i] );
+		printf( "\nB menu: " );
+		for ( int i = 0; i < CONFIG_MENU_SIZE; i++ )
+			printf( "%d ", menu_b[i] );
+		printf( "\n" );
+	}
+
+	valuation_highest_trade_valuation_pairs(
 		0,
 		menu_a,
 		menu_b,
-		&resource_a, &resource_b,
+		local_pairs,
 		all_resources,
 		internal_valuations_scratch,
 		sort_tree,
+		resource_scratch,
+		mask_scratch,
 		config
 		);
 	barrier( CLK_LOCAL_MEM_FENCE );
 
-	if ( get_local_id( 0 ) == 0 )
+	if ( get_local_id( 0 ) < CONFIG_NUM_TRADES )
 	{
-		(*a_gives) = resource_a;
-		(*a_receives) = resource_b;
+		pairs[get_local_id(0)] = local_pairs[get_local_id(0)];
 	}
 }

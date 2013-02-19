@@ -20,6 +20,7 @@ int main ( void )
 	config.num_agents = 2;
 	config.num_resources = 20;
 	config.menu_size = 5;
+	config.num_trades = 5;
 
 	string compiler_flags = config_generate_compiler_flags( config );
 
@@ -43,23 +44,23 @@ int main ( void )
 	// Agent 1: resources 2, 4, 15, and 16 will be the least valuable
 	host_all_resources[4] = 50;
  	host_all_resources[5] = 60;
+ 	host_all_resources[9] = 30;
 	host_all_resources[20 + 9] = 40;
 
-	cl_uint host_a_gives;
-	cl_uint host_a_receives;
+	cl_uint2 host_pairs[5];
 
 	CLUnitArgument all_resources( host_all_resources, 40 );
-	CLUnitArgument a_gives( &host_a_gives, 1 );
-	CLUnitArgument a_receives( &host_a_receives, 1 );
+	CLUnitArgument pairs( host_pairs, 5 );
 	CLUnitArgument config_buffer( "SocietiesConfig", config );
 	
 	valuation_tester(
 		all_resources,
-		a_gives,
-		a_receives,
+		pairs,
 		config_buffer
 		);
 
-	cout << "Gives: " << host_a_gives << endl;
-	cout << "Receives: " << host_a_receives << endl;
+	for ( int i = 0; i < 5; i++ )
+	{
+		cout << "Pair " << i << " resources: " << host_pairs[i].s[0] << " " << host_pairs[i].s[1] << endl;
+	}
 }

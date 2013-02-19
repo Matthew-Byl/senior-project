@@ -96,6 +96,8 @@ void valuation_highest_trade_valuation_pairs(
 	thread_resource_1 = menu_a[thread_index_1];
 	thread_resource_2 = menu_b[thread_index_2];
 
+	printf( "Thread %d (is_pair %d): Resource %d and %d.\n", local_id, is_pair, thread_resource_1, thread_resource_2 );
+
 	// This thread is involved in a pair.
 	if ( is_pair )
 	{
@@ -111,7 +113,7 @@ void valuation_highest_trade_valuation_pairs(
 
 	// Find the indices of the maximum num_trades pairs.
 	n_max_indices(
-		config->num_trades,
+		CONFIG_NUM_TRADES,
 		internal_valuations_scratch,
 		sort_tree,
 		indices_scratch,
@@ -120,10 +122,12 @@ void valuation_highest_trade_valuation_pairs(
 	barrier( CLK_LOCAL_MEM_FENCE );
 
 	// Turn those indices into pairs.
-	for ( int i = 0; i < config->num_trades; i++ )
+	for ( int i = 0; i < CONFIG_NUM_TRADES; i++ )
 	{
 		if ( local_id == indices_scratch[i] )
 		{
+			printf( "%d: Thread %d.\n", i, local_id );
+
 			pairs[i].x = thread_resource_1;
 			pairs[i].y = thread_resource_2;
 		}
