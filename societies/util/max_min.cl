@@ -239,7 +239,7 @@ void n_max_min_indices(
 		{
 			results[i] = val;
 		}
-		else if ( local_id == val )
+		if ( local_id == val )
 		{
 			// Don't reuse this value.
 			mask[local_id] = TRUE;

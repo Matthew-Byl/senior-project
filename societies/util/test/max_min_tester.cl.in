@@ -116,8 +116,10 @@ __kernel void n_max_indices_tester(
 
 	if ( local_id < 10 )
 	{
-		printf( "Sort tree %2d: %d\n", local_id, sort_tree[local_id] );
+		printf( "Sort tree %2d: %d\n", local_id, sort_tree[local_id]);
 	}
+
+	printf( "Mask %2d: %d\n", local_id, (int)mask[local_id] );
 
 	if ( local_id < 6 )
 	{
