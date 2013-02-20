@@ -5,7 +5,7 @@ using namespace std;
 
 CLContext::CLContext()
 {
-	initialize( 0, 0 );
+	initialize( 1, 0 );
 }
 
 CLContext::CLContext( int platform, int device )
