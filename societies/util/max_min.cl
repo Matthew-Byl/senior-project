@@ -125,6 +125,12 @@ void max_min_second_pass(
 				// If the other value is masked, keep
 				//  the current value.
 			}
+			else if ( use_mask
+					  && value_mask[sort_tree[local_id]] )
+			{
+				// If this value is masked, take the other value.
+				sort_tree[local_id] = sort_tree[local_id + stride];
+			} 
 			else if ( type == MAX
 					  && values[sort_tree[local_id + stride]] > values[sort_tree[local_id]] )
 			{

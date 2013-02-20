@@ -114,6 +114,11 @@ __kernel void n_max_indices_tester(
 		mask
 		);
 
+	if ( local_id < 10 )
+	{
+		printf( "Sort tree %2d: %d\n", local_id, sort_tree[local_id] );
+	}
+
 	if ( local_id < 6 )
 	{
 		host_results[local_id] = results[local_id];
