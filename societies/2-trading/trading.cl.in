@@ -11,13 +11,27 @@
 #include "menu.cl"
 #include "valuation.cl"
 
-/*
- * Edge cases to watch out for:
- *  -when an agent has no units of something on the menu.
- *  -when an agent can't afford to make an optimal trade, and when
- *    the other agent can't afford the trade.
+/**
+ * Compute the gain or loss of utility made by
+ *  trading @c resource_given_loss units of 
+ *  @c resource_given for @c resource_received_gain
+ *  units of @c resource_recieved.
+ *
+ * @param resource_given, resource_received
+ *  The resource numbers of the resources given and
+ *  received.
+ * @param resource_given_held, resource_received_held
+ *  The amount of units of the given and received resources
+ *  already held.
+ * @param resource_given_loss, resource_given_gain
+ *  The amounts of the resource that will be involved in
+ *  the exchange.
+ * @param config
+ *  The societies configuration object.
+ *
+ * @return
+ *  The amount of utility gained/lost by making the trade.
  */
-
 float trading_utility_difference(
 	uint resource_given,
 	uint resource_received,
@@ -47,8 +61,36 @@ float trading_utility_difference(
 	return resource_received_gain_utility - resource_given_loss_utility;
 }
 
-// Find the best multiple of ratio:1.
-//  return a negative number if no trade is possible.
+/**
+ * Find the optimal multiple of num_given:num_received
+ *  for agent number @c giver.
+ * For instance, if @c num_given is 1 and @c num_received
+ *  is 2, and the optimal trade at that ratio is given
+ *  3 units or @c resource_given to receive 6 units of
+ *  @c resource_received, this function will return 3.
+ *
+ * @param num_given, num_received
+ *  The ratio of units of resource given to resource received.
+ * @param giver
+ *  The agent who will be giving @c resource_given in the trade.
+ * @param recipient
+ *  The agent who will be giving @c resource_received in the trade.
+ * @param resource_given, resource_received
+ *  The resources involved in the trade.
+ * @param all_resources
+ *  The global resource posession array.
+ * @param sort_tree_scratch
+ *  Scratch local memory, of size at least 
+ *   sizeof( uint ) * ( CONFIG_NUM_THREADS / 2 )
+ * @param surpluses_scratch
+ *  Scratch local memory, or size at least
+ *   sizeof( float ) * ( CONFIG_NUM_THREADS )
+ *
+ * @return
+ *  An integer to multiply the ratio num_received:num_given
+ *   by to make the optimal trade for @c giver.
+ */
+ 
 int trading_find_maximum_surplus( 
 	uint num_given,
 	uint num_received,
@@ -74,16 +116,6 @@ int trading_find_maximum_surplus(
 	// Check to make sure the recipient can afford trades.
 	int recipient_resource_offset = recipient * CONFIG_NUM_RESOURCES;
 	uint recipient_received_amount = all_resources[recipient_resource_offset + resource_received];
-
-/*
-	printf( "Giver has %d of resource %d and %d of resource %d; recipient has %d of resource %d.\n",
-			resource_given_amount,
-			resource_given,
-			resource_received_amount,
-			resource_received,
-			recipient_received_amount,
-			resource_received );
-*/
 
 	int maximum_found = FALSE;
 	uint max_multiplier;
@@ -137,7 +169,24 @@ int trading_find_maximum_surplus(
 	return max_multiplier + offset;
 }
 
-
+/**
+ * Transfer the resources involved in the trade.
+ *
+ * @param agent_a, agent_b
+ *  The agents involved in the trade.
+ * @param resource_a
+ *  The resource @c agent_a is giving up.
+ * @param resource_b
+ *  The resource @c agent_b is giving up.
+ * @param amount_a
+ *  The amount of @c resource_a to transfer from 
+ *  @c agent_a to @c agent_b.
+ * @param amount_b
+ *  The amount of @c resource_b to transfer from 
+ *  @c agent_b to @c agent_a.
+ * @param all_resources
+ *  The global array of all agents' resources.
+ */
 void trading_make_trade(
 	uint agent_a,
 	uint agent_b,
@@ -177,6 +226,19 @@ void trading_make_trade(
 			all_resources[agent_b_offset + resource_b] );
 }
 
+/**
+ * The kernel to perform a trade.
+ *
+ * Dimensions:
+ *  (number of resources)x(pairs of agents)
+ *
+ * @param all_resources
+ *  The array of all agents' resources.
+ * @param random_pairs
+ *  A random permutation of the set [0, CONFIG_NUM_AGENTS - 1]
+ * @param config
+ *  The Societies configuration object.
+ */
 __kernel void trading(
 	__global uint *all_resources,
 	__global uint *random_pairs,

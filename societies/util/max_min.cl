@@ -31,6 +31,28 @@ typedef enum {
 	MIN
 } MaxMinType;
 
+/**
+ * Create the first level of the sort tree by
+ *  comparing adjacent items and putting the 
+ *  index of the larger/smaller in the sort tree.
+ *
+ * @param type
+ *  MAX or MIN
+ * @param values
+ *  The values the max/min is being taken of. It
+ *   must have as many elements as threads calling
+ *   this function.
+ * @param sort_tree
+ *  The location of scratch memory for the sort heap.
+ *   It must have n / 2 elements, if n is the number
+ *   of threads calling this function.
+ * @param use_mask
+ *  Whether or not to use @c value_mask to remove elements
+ *   from consideration.
+ * @param value_mask
+ *  The ith element in @c values will not be considered as
+ *   a candidate for max/min if value_mask[i] is TRUE.
+ */
 void max_min_first_pass(
 	MaxMinType type,
 	__local float *values,
@@ -47,7 +69,6 @@ void max_min_first_pass(
 	{
 		// The index in @gains_per_minute this thread is examining.
 		int real_idx = local_id * 2;
-
 
 		// If there is an odd number of threads, don't read past
 		//  the end of the array.
@@ -90,6 +111,28 @@ void max_min_first_pass(
 	barrier( CLK_LOCAL_MEM_FENCE );
 }	
 
+/**
+ * Find the minimum value from the indices already placed
+ *  in @c sort_tree.
+ *
+ * @param type
+ *  MAX or MIN
+ * @param values
+ *  The values the max/min is being taken of. It
+ *   must have as many elements as threads calling
+ *   this function.
+ * @param sort_tree
+ *  The location of scratch memory for the sort heap.
+ *   It must have n / 2 elements, if n is the number
+ *   of threads calling this function.
+ * @param use_mask
+ *  Whether or not to use @c value_mask to remove elements
+ *   from consideration.
+ * @param value_mask
+ *  The ith element in @c values will not be considered as
+ *   a candidate for max/min if value_mask[i] is TRUE. It must
+ *   have the same number of elements as @c values.
+ */
 void max_min_second_pass(
 	MaxMinType type,
 	__local float *values,
@@ -155,6 +198,29 @@ void max_min_second_pass(
 }
 
 // Precondition: there is at least one value that is not masked.
+
+/**
+ * Find the index of the maximum/minimum value in
+ *  @values.
+ *
+ * @param type
+ *  MAX or MIN
+ * @param values
+ *  The values the max/min is being taken of. It
+ *   must have as many elements as threads calling
+ *   this function.
+ * @param sort_tree
+ *  The location of scratch memory for the sort heap.
+ *   It must have n / 2 elements, if n is the number
+ *   of threads calling this function.
+ * @param use_mask
+ *  Whether or not to use @c value_mask to remove elements
+ *   from consideration.
+ * @param value_mask
+ *  The ith element in @c values will not be considered as
+ *   a candidate for max/min if value_mask[i] is TRUE. It must
+ *   have the same number of elements as @c values.
+ */
 uint max_min(
 	MaxMinType type,
 	__local float *values,
@@ -163,14 +229,27 @@ uint max_min(
 	__local uchar *value_mask
 	)
 {
-	// Pass 1: put the indices of the maximum of every other element
-	//  into the sort tree.
 	max_min_first_pass( type, values, sort_tree, use_mask, value_mask );
 	max_min_second_pass( type, values, sort_tree, use_mask, value_mask );
 
 	return sort_tree[0];
 }
 
+/** 
+ * Find the index of the maximum value in @c values.
+ *
+ * @param values
+ *  The values the max is being taken of. It
+ *   must have as many elements as threads calling
+ *   this function.
+ * @param sort_tree
+ *  The location of scratch memory for the sort heap.
+ *   It must have n / 2 elements, if n is the number
+ *   of threads calling this function.
+ * 
+ * @return
+ *  The index of the maximum value in @c values.
+ */
 uint max_index(
 	__local float *values,
 	__local uint *sort_tree
@@ -179,6 +258,21 @@ uint max_index(
 	return max_min( MAX, values, sort_tree, 0, NULL );
 }
 
+/** 
+ * Find the index of the minimum value in @c values.
+ *
+ * @param values
+ *  The values the min is being taken of. It
+ *   must have as many elements as threads calling
+ *   this function.
+ * @param sort_tree
+ *  The location of scratch memory for the sort heap.
+ *   It must have n / 2 elements, if n is the number
+ *   of threads calling this function.
+ *
+ * @return
+ *  The index of the maximum value in @c values.
+ */
 uint min_index(
 	__local float *values,
 	__local uint *sort_tree
@@ -187,30 +281,28 @@ uint min_index(
 	return max_min( MIN, values, sort_tree, 0, NULL );
 }
 
-// This is not used anywhere, but is for me to remember that
-// this will work.
-// Find the max of the first n elements in values, not all of them.
-uint max_min_index_n(
-	uchar n,
-	MaxMinType type,
-	__local float *values,
-	__local uint *sort_tree
-	)
-{
-	size_t local_id = get_local_id( 0 );
-
-	if ( local_id < n )
-		return max_min( type, values, sort_tree, 0, NULL );
-	else
-	{
-		// You better ignore this.
-		return 0;
-	}
-}
-
-// Find the maximum n values in the array, in sorted order.
-//  This works like running the first few iterations of
-//   heapsort.
+/**
+ * Find the indices of the @c n maximum/minimum 
+ *  values in @c values.
+ *
+ * @param n
+ *  How many maximum/minimum indices to find.
+ * @param type
+ *  MAX or MIN
+ * @param values
+ *  The values the min is being taken of. It
+ *   must have as many elements as threads calling
+ *   this function.
+ * @param sort_tree
+ *  The location of scratch memory for the sort heap.
+ *   It must have n / 2 elements, if n is the number
+ *   of threads calling this function.
+ * @param results
+ *  Where to put the @c n indices. Must have @c n elements.
+ * @param mask
+ *  Scratch space to create a mask in. It must
+ *   have the same number of elements as @c values.
+ */
 void n_max_min_indices(
 	uint n,
 	MaxMinType type,
@@ -248,6 +340,26 @@ void n_max_min_indices(
 	}
 }
 
+/**
+ * Find the indices of the @c n maximum
+ *  values in @c values.
+ *
+ * @param n
+ *  How many maximum indices to find.
+ * @param values
+ *  The values the min is being taken of. It
+ *   must have as many elements as threads calling
+ *   this function.
+ * @param sort_tree
+ *  The location of scratch memory for the sort heap.
+ *   It must have n / 2 elements, if n is the number
+ *   of threads calling this function.
+ * @param results
+ *  Where to put the @c n indices. Must have @c n elements.
+ * @param mask
+ *  Scratch space to create a mask in. It must
+ *   have the same number of elements as @c values.
+ */
 void n_max_indices(
 	uchar n,
 	__local float *values,
@@ -266,6 +378,26 @@ void n_max_indices(
 		);
 }
 
+/**
+ * Find the indices of the @c n minimum
+ *  values in @c values.
+ *
+ * @param n
+ *  How many minimum indices to find.
+ * @param values
+ *  The values the min is being taken of. It
+ *   must have as many elements as threads calling
+ *   this function.
+ * @param sort_tree
+ *  The location of scratch memory for the sort heap.
+ *   It must have n / 2 elements, if n is the number
+ *   of threads calling this function.
+ * @param results
+ *  Where to put the @c n indices. Must have @c n elements.
+ * @param mask
+ *  Scratch space to create a mask in. It must
+ *   have the same number of elements as @c values.
+ */
 void n_min_indices(
 	uchar n,
 	__local float *values,

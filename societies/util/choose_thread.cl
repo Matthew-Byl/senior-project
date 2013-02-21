@@ -18,17 +18,20 @@
  *      they can do something.
  */
 
-/*
- * Way to test: create histogram?
- */
-
 /**
- * Preconditions: 
- *    *counter = 0
- *    scratch is of size at least sizeof( uint ) * 256
+ * All threads that want to be an option
+ *  call this function.
  *
  * Postconditions:
- *   there needs to be a local barrier before choose_thread_make_choice can be called.
+ *   There needs to be a local barrier before 
+ *   choose_thread_make_choice() can be called.
+ * 
+ * @param counter
+ *  A local variable, initialized to 0 before any threads call
+ *   this function.
+ * @param scratch
+ *  An array of size at least
+ *    sizeof( uint ) * CONFIG_NUM_THREADS
  */
 void choose_thread_add_to_options( 
 	volatile __local int *counter, 
@@ -42,12 +45,21 @@ void choose_thread_add_to_options(
 
 /**
  * This should only be called by one thread.
- *   random_offset needs to be different per run and
- *     per workgroup.
  *
  * Preconditions:
  *   counter > 0
  *   rng_state has been initialized
+ * 
+ * @param counter
+ *  The same counter variable passed to choose_thread_add_to_options().
+ * @param scratch
+ *  The same scratch array passed to choose_thread_add_to_options().
+ * @param rng_state
+ *  The state of the random number generator.
+ * 
+ * @return
+ *  The index of one of the threads added with
+ *   choose_thread_add_to_options().
  */
 uint choose_thread_make_choice(
 	volatile __local int *counter,

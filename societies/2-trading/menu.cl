@@ -21,6 +21,13 @@
  *
  * This has the side effect of making it really valuable to
  *  have at least 1 of something. But that might be OK.
+ *
+ * @param agent_resources
+ *  The array to read the amount of resources the agent owns.
+ * @param valuations
+ *  An array to put the valuation of each resource.
+ * @param config
+ *  The societies config object.
  */
 void menu_resource_value(
 	__local uint *agent_resources,
@@ -36,6 +43,32 @@ void menu_resource_value(
 	);
 }
 
+/** 
+ * Create the menus of the @c CONFIG_MENU_SIZE
+ *  least valuable resources two agents own.
+ *
+ * @param agent_a, agent_b
+ *  The agents to compute the menus for.
+ * @param all_resources
+ *  The array of all agents' owned resources.
+ * @param agent_a_menu, agent_b_menu
+ *  Arrays of size CONFIG_MENU_SIZE to put
+ *  the menus for the agents.
+ * @param resources_scratch
+ *  Local memory of at least size
+ *    sizeof( uint ) * CONFIG_NUM_RESOURCES
+ * @param sort_tree_scratch
+ *  Local memory of at least size
+ *    sizeof( uint ) * ( CONFIG_NUM_RESOURCES / 2 )
+ * @param mask_scratch
+ *  Local memory of at least size
+ *    sizeof( uchar ) * CONFIG_NUM_RESOURCES
+ * @param valuations_scratch
+ *  Local memory of at least size
+ *    sizeof( float ) * CONFIG_NUM_RESOURCES
+ * @param config
+ *  The societies configuration object.
+ */
 void menu_create_menus(
 	uint agent_a,
 	uint agent_b,

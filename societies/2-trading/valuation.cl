@@ -5,12 +5,29 @@
  * In this file, each thread is a possible pair of
  *  resources. Therefore, the menu size can't be larger 
  *  than 16, since 16^2 = 256.
+ * 
+ * @author John Kloosterman
+ * @date Feb. 2013
  */
 
 #include "../util/max_min.cl"
 
 // returns TRUE if this thread will be involved, FALSE otherwise.
 //  It depends on the size of the menu.
+
+/**
+ * Determine which two resources this thread corresponds to.
+ *
+ * @param resource_1, resource_2
+ *  Where to put the two resource numbers.
+ * @param config
+ *  The Societies configuration object.
+ *
+ * @return
+ *  TRUE if the current thread corresponds to a
+ *   pair to be considered as a potential trade,
+ *   FALSE otherwise.
+ */
 int valuation_resources( 
 	uint *resource_1,
 	uint *resource_2,
@@ -28,7 +45,19 @@ int valuation_resources(
 	return TRUE;
 }
 
-// Is the amount + 1 the right thing?
+/** 
+ * Compute an agent's internal valuation of one
+ *  resource against another.
+ *
+ * @param agent
+ *  The index of the agent in question.
+ * @param resource1, resource2
+ *  The resources being considered.
+ * @param all_resources
+ *  The array of all agents' resources.
+ * @param config
+ *  The Societies configuration object.
+ */
 float valuation_internal_valuation(
 	uint agent,
 	uint resource1,
@@ -69,10 +98,36 @@ int valuation_trade_beneficial(
 	return TRUE;
 }
 
-// menu is an array of resource #s.
-// menus need to already have been computed.
-// The resource that a wants to trade will be put in resource_a
-//  and resource that a wants to receive will be put in resource_b
+/**
+ * Compute the @c CONFIG_NUM_TRADES best possible
+ *  trades for @c agent_a made up of resources from
+ *  @c menu_a and @c menu_b, and puts them in
+ *  @c pairs.
+ * 
+ * @param agent_a
+ *  The index of the agent in question.
+ * @param menu_a, menu_b
+ *  Agent A and B's menus.
+ * @param pairs
+ *  Where to put the CONFIG_NUM_TRADES top pairs.
+ * @param internal_valuations_scratch
+ *  Local memory, of size 
+ *    sizeof( float ) * ( CONFIG_MENU_SIZE^2 )
+ *  Note that CONFIG_MENU_SIZE^2 <= CONFIG_NUM_THREADS,
+ *   because of restrictions checked by
+ *   config_verify_configuration().
+ * @param sort_tree
+ *  Local memory, of size
+ *    sizeof( uint ) * ( CONFIG_MENU_SIZE^2 / 2 )
+ * @param indices_scratch
+ *  Local memory, of size
+ *    sizeof( uint ) * ( CONFIG_NUM_TRADES )
+ * @param mask_scratch
+ *  Local memory, of size
+ *    sizeof( uchar ) * ( CONFIG_MENU_SIZE^2 )
+ * @param config
+ *  the Societies configuration object.
+ */
 void valuation_highest_trade_valuation_pairs(
 	uint agent_a,
 	__local uint *menu_a,
