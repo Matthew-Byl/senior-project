@@ -1,3 +1,13 @@
+/**
+ * CLFunction encapsulates a non-kernel OpenCL function
+ *  and allows it to be called as if it were a kernel.
+ * It does this by generating a kernel on the fly
+ *  that calls that function.
+ *
+ * @author John Kloosterman
+ * @date December 2012
+ */
+
 #ifndef _CL_FUNCTION_H
 #define _CL_FUNCTION_H
 
@@ -7,7 +17,6 @@
 #include <iostream>
 #include <cassert>
 
-/* Encapsulates an OpenCL function that can be called like normal code. */
 template<class T>
 class CLFunction
 {
@@ -24,6 +33,15 @@ public:
 	virtual ~CLFunction() { }
 
 #ifdef _CPP_11_
+	/*
+	 * If using C++11, you can call a CLFunction like
+	 *  a normal function, since this variadic macro
+	 *  and operator() together allow code like this:
+	 *
+	 * CLFunction<int> someFunction( ... );
+	 * int i = someFunction();
+	 */
+
 	template<class ...Arguments>
 	void setArguments( Arguments... params )
 		{
@@ -46,6 +64,11 @@ public:
 		}
 #endif
 
+	/*
+	 * If not using C++11, you will have to create a 
+	 *  std::vector<CLUnitArgument> of arguments,
+	 *  and call the function using the run() method.
+	 */
 	virtual T run();
 	T run( std::string type );
 
@@ -73,7 +96,18 @@ protected:
 	void enqueueKernel( cl::Kernel &kernel, std::vector<int> &globalDimensions, std::vector<int> &globalOffset, std::vector<int> &localDimensions );
 };
 
-
+/**
+ * Generate the kernel that will be called
+ *  to run the OpenCL function.
+ *
+ * @param type
+ *  The return type of the OpenCL function
+ * @param source
+ *  A string in which to put the OpenCL code
+ *   along with the generated kernel.
+ * @param kernel_name
+ *  A string in which to put the name of the generated kernel
+ */
 template<class T>
 void CLFunction<T>::generateKernelSource( const std::string type, std::string &source, std::string &kernel_name )
 {
@@ -82,6 +116,10 @@ void CLFunction<T>::generateKernelSource( const std::string type, std::string &s
 	kernel_name = generator.getKernelFunction();
 }
 
+/**
+ * Ask all the CLUnitArguments passed to the kernel
+ *  to generate a cl::Buffer to pass to OpenCL.
+ */
 template<class T>
 void CLFunction<T>::generateBuffers()
 {
@@ -93,6 +131,10 @@ void CLFunction<T>::generateBuffers()
 	}
 }
 
+/**
+ * Ask all the OpenCL buffers to copy themselves to the
+ *  device.
+ */
 template<class T>
 void CLFunction<T>::copyBuffersToDevice()
 {
@@ -104,6 +146,19 @@ void CLFunction<T>::copyBuffersToDevice()
 	}
 }
 
+/**
+ * Create a cl::Kernel from given inputs.
+ *
+ * @param src
+ *  The complete source code to compile.
+ * @param kernel_name
+ *  The name of the kernel we are interested in inside the source cdoe.
+ * @param compiler_flags
+ *  Flags to send to the compiler.
+ *
+ * @return
+ *  A cl::Kernel.
+ */
 template<class T>
 cl::Kernel CLFunction<T>::generateKernel( std::string src, std::string kernel_name, std::string compiler_flags )
 {
@@ -132,6 +187,10 @@ cl::Kernel CLFunction<T>::generateKernel( std::string src, std::string kernel_na
 	return myCLKernel;
 }
 
+/**
+ * Ask all the OpenCL buffers to copy themselves 
+ *  back from device.
+ */
 template<class T>
 void CLFunction<T>::copyBuffersFromDevice()
 {
@@ -143,6 +202,16 @@ void CLFunction<T>::copyBuffersFromDevice()
     }
 }
 
+/**
+ * Run a kernel on the device.
+ *
+ * @param kernel
+ *  The kernel to run.
+ * @param globalDimensions, localDimensions
+ *  OpenCL global and local dimensions for the kernel.
+ * @param globalOffset
+ *  OpenCL global offset.
+ */
 template<class T>
 void CLFunction<T>::enqueueKernel( 
 	cl::Kernel &kernel, 
@@ -245,7 +314,11 @@ void CLFunction<T>::enqueueKernel(
 //	queue.enqueueBarrier();
 }
 
-/// @todo: specialize for void, when we return nothing; i.e. run a kernel.
+/**
+ * Run the OpenCL function.
+ *
+ * There is a specialized version for <void> in CLFunction.cpp.
+ */
 template<class T>
 T CLFunction<T>::run( std::string type )
 {
@@ -300,6 +373,9 @@ T CLFunction<T>::run( std::string type )
 	return result;
 }
 
+/** 
+ * Specialization for void.
+ */
 template<>
 void CLFunction<void>::run();
 

@@ -1,5 +1,10 @@
 #include "CLFunction.h"
 
+/*
+ * These need to correspond to the calls
+ *  to _GEN_CL_FUNCTION_RUN_P at the end
+ *  of CLFunction.h.
+ */
 #define _GEN_CL_FUNCTION_RUN( host, kernel ) \
 	template<>								 \
 	host CLFunction<host>::run()			 \
@@ -12,6 +17,9 @@ _GEN_CL_FUNCTION_RUN( cl_float, float )
 _GEN_CL_FUNCTION_RUN( cl_double, double )
 _GEN_CL_FUNCTION_RUN( cl_float3, float3 )
 
+/**
+ * Special case for functions that return void.
+ */
 template<>
 void CLFunction<void>::run()
 {
@@ -20,14 +28,8 @@ void CLFunction<void>::run()
 
 	generateKernelSource( "void", src, kernelFunction );
 
-/*
-	std::cout << "FULL SOURCE" << std::endl;
-	std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
-	std::cout << src << std::endl;
-	std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
-*/
-
 	copyBuffersToDevice();
+
 	cl::Kernel kernel = generateKernel( src, kernelFunction );
 
 	std::vector<int> globalDimensions;

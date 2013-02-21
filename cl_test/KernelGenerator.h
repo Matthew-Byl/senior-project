@@ -1,3 +1,11 @@
+/**
+ * Class to generate an OpenCL kernel
+ *  that calls another OpenCL function.
+ *
+ * @author John Kloosterman
+ * @date December 2012
+ */
+
 #ifndef _KERNEL_GENERATOR_H
 #define _KERNEL_GENERATOR_H
 

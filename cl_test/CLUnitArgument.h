@@ -1,15 +1,36 @@
+/**
+ * CLUnitArgument encapsulates data to send to
+ *  a CLKernel or a CLFunction.
+ *
+ * There are tons of constructors so that type coersion
+ *  will allow for calls like:
+ *
+ *  cl_int i;
+ *  cl_float j;
+ *  CLKernel a_kernel( ... );
+ *  a_kernel( i, j ); // this will only work in C++11
+ *
+ * @author John Kloosterman
+ * @date December 2012
+ */
+
 #ifndef _CL_UNIT_ARGUMENT
 #define _CL_UNIT_ARGUMENT
 
-//#include "CLIncludes.h"
-//#include "CLContext.h"
-//#include <string>
+#include "CLIncludes.h"
+#include "CLContext.h"
+#include <string>
 
-//#include <iostream>
+#include <iostream>
 
 // Don't worry about ___3 types for the time being.
 //  and half* types, which are also typedefed with something
 //  else that makes it impossible for C++ to tell their types apart.
+
+/**
+ * Macro to define constructors for a OpenCL host type,
+ *  its vector types, and arrays of both of those.
+ */
 #define CONSTRUCTORS( type )					\
   CTR( cl_##type, type );						\
   PTR_CTR( cl_##type, type );					\
@@ -57,7 +78,6 @@ public:
 	CONSTRUCTORS( double );
 
 	// Templates for user-defined types.
-
 	// Value constructor
 	template<class T>
 	CLUnitArgument( std::string name, T value );
@@ -111,44 +131,5 @@ CLUnitArgument::CLUnitArgument( std::string name, T *array, size_t elements, boo
 {
 	initialize( name, sizeof( T ) * elements, array, false, true, copyTo, copyBack );
 }
-
-// Allows us to make copies of arguments with their data
-//  without copying the memory buffer and still not
-//  leaking huge chunks of memory.
-//
-// We don't use this yet, and it probably doesn't work.
-/*
-class CLReferenceBuffer
-{
-public:
-	CLReferenceBuffer( void *ptr, size_t size )
-		: mySize( size )
-		{ 
-			myBuffer = malloc( size );
-			memcpy( myBuffer, ptr, size );
-			myReferences = new int( 1 );
-		}
-	CLReferenceBuffer( const CLReferenceBuffer &other )
-		: mySize( other.mySize ), myBuffer( other.myBuffer )
-		{
-			(*myReferences)++;
-		}
-	~CLReferenceBuffer()
-		{
-			myReferences--;
-			if ( !myReferences )
-			{
-				free( myBuffer );
-				delete myReferences;
-			}
-		}
-
-	operator void*() { return myBuffer; };
-private:
-	int *myReferences;
-	size_t mySize;
-	void *myBuffer;
-};
-*/
 
 #endif

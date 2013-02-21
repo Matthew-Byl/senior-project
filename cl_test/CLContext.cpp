@@ -13,6 +13,16 @@ CLContext::CLContext( int platform, int device )
 	initialize( platform, device );
 }
 
+/**
+ * Intialize this CLContext with a given platform
+ *  and device.
+ *
+ * @TODO: device is not actually selectable?
+ *
+ * @param platform, device
+ *  The OpenCL platform and device numbers
+ *  to use for this context.
+ */
 void CLContext::initialize( int platform, int device )
 {
 	char *cl_debug = getenv( "CL_DEBUG" );
@@ -55,6 +65,17 @@ cl::CommandQueue &CLContext::getCommandQueue()
 	return myCommandQueue;
 }
 
+/**
+ * Compile OpenCL source for this platform.
+ *
+ * @param src
+ *  The source code to compile.
+ * @param compiler_flage
+ *  Flags to pass to the OpenCL compiler.
+ *
+ * @return
+ *  A cl::Program
+ */
 cl::Program CLContext::buildProgram( string &src, string &compiler_flags ) const
 {
 //	cout << "*** rebuilding! ***" << endl;
@@ -65,6 +86,7 @@ cl::Program CLContext::buildProgram( string &src, string &compiler_flags ) const
         );
 
 	cl::Program program( myContext, sources );
+
     try {
 		if ( myDebug )
 		{
@@ -73,7 +95,7 @@ cl::Program CLContext::buildProgram( string &src, string &compiler_flags ) const
 				( "-g -O0 " + compiler_flags ).c_str()
 				);
 
-			// @TODO: this should be myDevices[device].
+			// In debug mode, show all status
 			std::cout << "Build Status: "
 					  << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(myDevices[0])
 					  << std::endl;
@@ -88,7 +110,10 @@ cl::Program CLContext::buildProgram( string &src, string &compiler_flags ) const
 		{
 			program.build( myDevices, compiler_flags.c_str() );
 		}
-    } catch ( cl::Error err ) {		
+    } 
+	catch ( cl::Error err ) 
+	{
+		// If there was a compiler error, spit out the errors.
 		std::cout << "Build Status: "
                   << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(myDevices[0])
                   << std::endl;

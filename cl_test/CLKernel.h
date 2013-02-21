@@ -1,3 +1,11 @@
+/**
+ * CLKernel encapsulates an OpenCL kernel that is
+ *  already in a source file.
+ *
+ * @author John Kloosterman
+ * @date December 2012
+ */
+
 #ifndef _CL_KERNEL
 #define _CL_KERNEL
 
