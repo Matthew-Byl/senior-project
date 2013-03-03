@@ -1,0 +1,32 @@
+Passing around pointers to local memory to use as scratch for
+algorithms sucks. There should be a way to allocate and deallocate
+scratch as necessary with a tool like malloc().
+
+So we will do some fake static analysis to find out how much memory
+is allocated, by what, at what time, and use that information to
+allocate a buffer of minimum size at the beginning of the kernel
+and hand out scratch space as needed.
+
+__local void *local_malloc( int unique_id, size_t size );
+void free( int unique_id );
+
+How it might work:
+(1) Find out how much memory is needed at what time.
+	-Compile and run the kernel on the CPU with tons of local
+	 memory. Make malloc() and free() verbose, and catch the
+	 output.
+	-All conditionals will need to be ineffective.
+ 	-Make the condition that any malloc() has to be of a size
+	 computed at compile, not run time. This way, we don't need
+	 to actually run any code.
+
+(2) Run an algorithm to pack the needed blocks of memory at the
+	same time in such a way that minimizes the memory usage but
+	doesn't create fragmentation.
+	-Probably 99% of the time, the oldest malloc will live the longest
+	 (there won't be odd overlappings of lifetimes), so a naive
+	 first-alloc comes before next alloc in memory will be fairly
+	 efficient.
+
+(3) Generate a source file that returns the correct addresses
+	for malloc() with a given id. At runtime, free() won't do anything.

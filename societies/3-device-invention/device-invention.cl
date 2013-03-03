@@ -25,6 +25,7 @@ void invention_pick_resources(
 	__local float *float_scratch, // size num_resources
 	__local uint *sort_tree_scratch,
 	__local uint *mask_scratch,
+    mwc64x_state_t *rng_state
 	)
 {
 	size_t local_id = get_local_id( 0 );
@@ -45,5 +46,13 @@ void invention_pick_resources(
 	// Now resources[0,1] have the two resources with the
 	//  most experience.
 
-
+	if ( local_id == 0 )
+	{
+		for ( int i = 2; i < 6; i++ )
+		{
+			uint random_integer = MWC64X_NextUint( rng_state );
+			resources[i] = random_integer % CONFIG_NUM_RESOURCES;
+		}
+	}
+	barrier( CLK_LOCAL_MEM_FENCE );
 }
