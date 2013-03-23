@@ -168,6 +168,25 @@ int main(int argc, char *argv[])
         TheCompInst.getDiagnostics(), TO);
     TheCompInst.setTarget(TI);
 
+	CompilerInvocation invocation;
+	const char * const options[] = {
+		"-x",
+		"cl",
+		"-I",
+		"libclc/generic/include",
+		"-include",
+		"clc/clc.h",
+		"-I",
+		"/usr/include/clang/3.0/include"
+	};
+	CompilerInvocation::CreateFromArgs(
+		invocation,
+		options,
+		options+8,
+		TheCompInst.getDiagnostics()
+		);	 
+	TheCompInst.setInvocation( &invocation );
+
     TheCompInst.createFileManager();
     FileManager &FileMgr = TheCompInst.getFileManager();
     TheCompInst.createSourceManager(FileMgr);
