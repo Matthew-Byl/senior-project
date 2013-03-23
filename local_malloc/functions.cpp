@@ -57,11 +57,15 @@ public:
 				if ( call->getNumArgs() == 2 )
 				{
 					Expr *size_arg = call->getArg( 0 );
-					if ( isa<IntegerLiteral>(size_arg) )
-					{
+//					if ( isa<IntegerLiteral>(size_arg) )
+//					{
 						llvm::APSInt value;
 
-						size_arg->EvaluateAsInt( value, *ast_context );
+						if ( !size_arg->EvaluateAsInt( value, *ast_context ) )
+						{
+							cout << "Malloc argument not something foldable to an int!" << endl;
+							exit( 1 );
+						}
 
 						if ( FuncName == "local_malloc" )
 						{
@@ -74,11 +78,11 @@ public:
 							myCallGraph.free( (int)value.getLimitedValue() );
 						}
 						
-					}
-					else
-					{
-						cout << "Malloc/free: first argument not an integer literal." << endl;
-					}
+//					}
+//					else
+//					{
+//						cout << "Malloc/free: first argument not an integer literal." << endl;
+//					}
 				}
 				else
 				{
