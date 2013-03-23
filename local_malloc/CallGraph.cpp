@@ -28,12 +28,19 @@ void CallGraph::call( string name )
 int CallGraph::maximum_alloc( string start_function )
 {
 	CallGraphNode *node = myNodeMap[start_function];
+
+
+	// This isn't correct. Figure out the right algorithm
+	//  in the morning.
 	
 	int max = 0;
 	for ( int i = 0; i < node->edges.size(); i++ )
 	{
 		CallGraphEdge *edge = node->edges[i];
-		max += edge->call();
+		int edge_usage = edge->call();
+
+		if ( edge_usage > max )
+			max = edge_usage;
 	}
 
 	return max;

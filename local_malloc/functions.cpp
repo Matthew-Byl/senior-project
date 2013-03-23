@@ -27,6 +27,8 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/ADT/APSInt.h"
 
+#include "CallGraph.h"
+
 using namespace clang;
 using namespace std;
 
@@ -37,8 +39,9 @@ ASTContext *ast_context;
 class MyASTVisitor : public RecursiveASTVisitor<MyASTVisitor>
 {
 public:
-    MyASTVisitor(Rewriter &R)
-	: TheRewriter(R)
+    MyASTVisitor(Rewriter &R, CallGraph &G)
+		: TheRewriter(R),
+		  myCallGraph( G )
 		{}
 
     bool VisitStmt(Stmt *s) {
@@ -60,6 +63,7 @@ public:
 
 						size_arg->EvaluateAsInt( value, *ast_context );
 						cout << "*** Malloc of size " << value.toString(10) << endl;
+						myCallGraph.malloc( (int)value.getLimitedValue() );
 						
 					}
 					else
@@ -75,6 +79,7 @@ public:
 			else
 			{
 				cout << "*** Calling function " << FuncName << endl;
+				myCallGraph.call( FuncName );
 			}
         }
 
@@ -93,6 +98,7 @@ public:
             // Function name
             DeclarationName DeclName = f->getNameInfo().getName();
             string FuncName = DeclName.getAsString();
+			myCallGraph.enter_function( FuncName );
 
 			cout << "Begin function " << FuncName << endl;
         }
@@ -104,6 +110,7 @@ private:
     void AddBraces(Stmt *s);
 
     Rewriter &TheRewriter;
+	CallGraph &myCallGraph;
 };
 
 
@@ -112,8 +119,8 @@ private:
 class MyASTConsumer : public ASTConsumer
 {
 public:
-    MyASTConsumer(Rewriter &R)
-	: Visitor(R)
+    MyASTConsumer(Rewriter &R, CallGraph &G)
+		: Visitor(R, G)
 		{}
 
     // Override the method that gets called for each parsed top-level
@@ -142,6 +149,8 @@ int main(int argc, char *argv[])
     // managing the various objects needed to run the compiler.
     CompilerInstance TheCompInst;
     TheCompInst.createDiagnostics(0, 0);
+
+	CallGraph TheCallGraph;
 
     // Initialize target info with the default triple for our platform.
     TargetOptions TO;
@@ -172,7 +181,7 @@ int main(int argc, char *argv[])
 
     // Create an AST consumer instance which is going to get called by
     // ParseAST.
-    MyASTConsumer TheConsumer(TheRewriter);
+    MyASTConsumer TheConsumer(TheRewriter, TheCallGraph);
 
     // Parse the file to AST, registering our consumer as the AST consumer.
     ParseAST(TheCompInst.getPreprocessor(), &TheConsumer,
@@ -183,6 +192,9 @@ int main(int argc, char *argv[])
     const RewriteBuffer *RewriteBuf =
         TheRewriter.getRewriteBufferFor(SourceMgr.getMainFileID());
 //	llvm::outs() << string(RewriteBuf->begin(), RewriteBuf->end());
+
+	int max_alloc = TheCallGraph.maximum_alloc( "main" );
+	cout << "Maximum allocation: " << max_alloc << endl;
 
 	exit( 0 );
     return 0;

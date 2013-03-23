@@ -11,7 +11,7 @@ int func_2 ( void )
 int func_1 ( void )
 {
 	void *ptr = malloc( 20, 4 );
-	return func_2();	
+	return func_2();
 }
 
 int main ( void )
