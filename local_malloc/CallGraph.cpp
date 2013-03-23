@@ -6,56 +6,56 @@ using namespace std;
 
 void CallGraph::enter_function( string name )
 {
-	CallGraphNode *node = new CallGraphNode;
-	myNodes.push_back( node );
-	myNodeMap.insert( make_pair<string,CallGraphNode*>( name, node ) );
-	myCurrentNode = node;
+	CallGraphFunction *function = new CallGraphFunction;
+	myFunctions.push_back( function );
+	myFunctionMap.insert( make_pair<string,CallGraphFunction*>( name, function ) );
+	myCurrentFunction = function;
 }
 
 void CallGraph::malloc( int size )
 {
-	myCurrentNode->edges.push_back(
-		new CallGraphEdgeMalloc( size )
+	myCurrentFunction->actions.push_back(
+		new CallGraphActionMalloc( size )
 		);
 }
 
 void CallGraph::free( int size )
 {
-	myCurrentNode->edges.push_back(
-		new CallGraphEdgeFree( size )
+	myCurrentFunction->actions.push_back(
+		new CallGraphActionFree( size )
 		);
 }
 
 void CallGraph::call( string name )
 {
-	myCurrentNode->edges.push_back(
-		new CallGraphEdgeCall( name, *this )
+	myCurrentFunction->actions.push_back(
+		new CallGraphActionCall( name, *this )
 		);
 }
 
 int CallGraph::maximum_alloc( string start_function )
 {
-	CallGraphNode *node = myNodeMap[start_function];
+	CallGraphFunction *function = myFunctionMap[start_function];
 
-	if ( node == NULL )
+	if ( function == NULL )
 	{
 		cout << "Ignoring unknown function " << start_function << endl;
 		return 0;
 	}
 	
 	int current_allocation = 0;
-	int current_peak = 0;
+	int peak = 0;
 
-	for ( int i = 0; i < node->edges.size(); i++ )
+	for ( int i = 0; i < function->actions.size(); i++ )
 	{
-		CallGraphEdge *edge = node->edges[i];
-		int edge_usage = edge->call();
+		CallGraphAction *action = function->actions[i];
+		int action_usage = action->call();
 
-		current_allocation += edge_usage;
-		if ( current_allocation > current_peak )
-			current_peak = current_allocation;
+		current_allocation += action_usage;
+		if ( current_allocation > peak )
+			peak = current_allocation;
 	}
 
-	return current_peak;
+	return peak;
 }
 

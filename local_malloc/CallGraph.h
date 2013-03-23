@@ -8,15 +8,15 @@
 class CallGraph;
 
 /*********/
-class CallGraphEdge {
+class CallGraphAction {
 public:
 	virtual int call() = 0;
 };
 
 /**********/
-class CallGraphNode {
+class CallGraphFunction {
 public:
-	std::vector<CallGraphEdge *> edges;
+	std::vector<CallGraphAction *> actions;
 };
 
 /*************/
@@ -30,15 +30,15 @@ public:
 	int maximum_alloc( std::string start_function );
 
 private:
-	CallGraphNode *myCurrentNode;
-	std::vector<CallGraphNode *> myNodes;
-	std::map<std::string, CallGraphNode *> myNodeMap;
+	CallGraphFunction *myCurrentFunction;
+	std::vector<CallGraphFunction *> myFunctions;
+	std::map<std::string, CallGraphFunction *> myFunctionMap;
 };
 
 /**************/
-class CallGraphEdgeMalloc : public CallGraphEdge {
+class CallGraphActionMalloc : public CallGraphAction {
 public:
-	CallGraphEdgeMalloc( int size ) 
+	CallGraphActionMalloc( int size ) 
 	: mySize( size )
 		{
 		};
@@ -51,9 +51,9 @@ private:
 	int mySize;
 };
 
-class CallGraphEdgeFree : public CallGraphEdge {
+class CallGraphActionFree : public CallGraphAction {
 public:
-	CallGraphEdgeFree( int size ) 
+	CallGraphActionFree( int size ) 
 	: mySize( size )
 		{
 		};
@@ -67,9 +67,9 @@ private:
 };
 
 /**********/
-class CallGraphEdgeCall : public CallGraphEdge {
+class CallGraphActionCall : public CallGraphAction {
 public:
-	CallGraphEdgeCall( std::string name, CallGraph &callGraph )
+	CallGraphActionCall( std::string name, CallGraph &callGraph )
 		: myName( name ),
 		  myCallGraph( callGraph )
 		{

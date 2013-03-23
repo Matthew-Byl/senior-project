@@ -38,7 +38,8 @@ __local void *local_malloc( size_t size, LocalMallocState *state )
 	if ( state->offset > state->max_size )
 	{
 		// Is there a way to give better diagnostic information?
-		printf( "local_malloc: buffer overflow.\n" );
+//		printf( "local_malloc: buffer overflow.\n" );
+		return NULL;
 	}
 
 	return state->buffer + state->offset;
