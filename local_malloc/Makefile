@@ -22,8 +22,8 @@ CLANGLIBS = \
 all: functions
 
 
-functions: functions.cpp CallGraph.cpp CallGraph.h
-	$(CXX) functions.cpp CallGraph.cpp $(CFLAGS) -o functions \
+functions: functions.cpp CallGraph.cpp CallGraph.h AllocationAST.cpp AllocationAST.h
+	$(CXX) functions.cpp CallGraph.cpp AllocationAST.cpp $(CFLAGS) -o functions \
               $(CLANG_BUILD_FLAGS) $(CLANGLIBS) `$(LLVM_CONFIG_COMMAND)` -ldl
 clean:
 	rm -rf *.o functions
