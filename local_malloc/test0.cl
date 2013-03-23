@@ -17,10 +17,9 @@ void entry( void )
 	local_malloc_init( buffer, LOCAL_MALLOC_SIZE, &state );
 
 	ptr = local_malloc( 40, &state );
-	local_free( ALLOC_SIZE, &state );
-
 	ptr = local_malloc( ALLOC_SIZE + 20, &state );
 	local_free( 60, &state );
+	local_free( ALLOC_SIZE, &state );
 
 	ptr = local_malloc( 80, &state );
 	local_free( ALLOC_SIZE + 40, &state );
