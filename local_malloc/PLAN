@@ -30,3 +30,14 @@ How it might work:
 
 (3) Generate a source file that returns the correct addresses
 	for malloc() with a given id. At runtime, free() won't do anything.
+	-This won't work because the same id can be called in different
+	 scopes. Just return the current pointer and advance the pointer
+	 by the size asked.
+ 	-Force frees to be in the opposite order as malloc()s. Free()
+	 will decrement the pointer by a given amount.
+
+regex replace:
+    if (
+   with
+    if ( TRUE ||
+   will that have the right precedence to work?
