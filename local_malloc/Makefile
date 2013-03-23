@@ -1,4 +1,4 @@
-CXX = g++ -g
+CXX = clang++ -g
 CFLAGS = -fno-rtti
 
 LLVM_SRC_PATH = /home/john/clang-dev/llvm-3.2.src
@@ -22,8 +22,8 @@ CLANGLIBS = \
 all: functions
 
 
-functions: functions.cpp
-	$(CXX) functions.cpp $(CFLAGS) -o functions \
+functions: functions.cpp CallGraph.cpp CallGraph.h
+	$(CXX) functions.cpp CallGraph.cpp $(CFLAGS) -o functions \
               $(CLANG_BUILD_FLAGS) $(CLANGLIBS) `$(LLVM_CONFIG_COMMAND)` -ldl
 clean:
 	rm -rf *.o functions
