@@ -24,7 +24,7 @@ class CallGraph {
 public:
 	void enter_function( std::string name );
 	void malloc( int size );
-//	void free( int size );
+	void free( int size );
 	void call( std::string name );
 
 	int maximum_alloc( std::string start_function );
@@ -46,6 +46,21 @@ public:
 	virtual int call()
 		{
 			return mySize;
+		}
+private:
+	int mySize;
+};
+
+class CallGraphEdgeFree : public CallGraphEdge {
+public:
+	CallGraphEdgeFree( int size ) 
+	: mySize( size )
+		{
+		};
+
+	virtual int call()
+		{
+			return -mySize;
 		}
 private:
 	int mySize;

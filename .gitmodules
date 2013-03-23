@@ -1,0 +1,3 @@
+[submodule "local_malloc/libclc"]
+	path = local_malloc/libclc
+	url = http://llvm.org/git/libclc.git

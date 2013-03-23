@@ -18,6 +18,13 @@ void CallGraph::malloc( int size )
 		);
 }
 
+void CallGraph::free( int size )
+{
+	myCurrentNode->edges.push_back(
+		new CallGraphEdgeFree( size )
+		);
+}
+
 void CallGraph::call( string name )
 {
 	myCurrentNode->edges.push_back(
@@ -28,21 +35,20 @@ void CallGraph::call( string name )
 int CallGraph::maximum_alloc( string start_function )
 {
 	CallGraphNode *node = myNodeMap[start_function];
-
-
-	// This isn't correct. Figure out the right algorithm
-	//  in the morning.
 	
-	int max = 0;
+	int current_allocation = 0;
+	int current_peak = 0;
+
 	for ( int i = 0; i < node->edges.size(); i++ )
 	{
 		CallGraphEdge *edge = node->edges[i];
 		int edge_usage = edge->call();
 
-		if ( edge_usage > max )
-			max = edge_usage;
+		current_allocation += edge_usage;
+		if ( current_allocation > current_peak )
+			current_peak = current_allocation;
 	}
 
-	return max;
+	return current_peak;
 }
 

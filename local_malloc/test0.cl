@@ -1,22 +1,27 @@
-void *malloc( int size, int size2 )
-{
-	return (void *)0;
-}
+/*
+ * test0: simple allocation and deallocation.
+ */
 
-int func_2 ( void )
-{
-	return 1;
-}
+#include "local_malloc.h"
 
-int func_1 ( void )
-{
-	void *ptr = malloc( 20, 4 );
-	return func_2();
-}
+#define LOCAL_MALLOC_SIZE 200
+#define ALLOC_SIZE 40
 
-int main ( void )
+__kernel
+void entry( void )
 {
-	void *ptr = malloc( 40, 3 );
+	__local char buffer[LOCAL_MALLOC_SIZE];
+	LocalMallocState state;
+	__local void *ptr;
 
-	return func_1();
+	local_malloc_init( buffer, LOCAL_MALLOC_SIZE, &state );
+
+	ptr = local_malloc( 40, &state );
+	local_free( ALLOC_SIZE, &state );
+
+	ptr = local_malloc( ALLOC_SIZE + 20, &state );
+	local_free( 60, &state );
+
+	ptr = local_malloc( 80, &state );
+	local_free( ALLOC_SIZE + 40, &state );
 }

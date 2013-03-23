@@ -62,8 +62,17 @@ public:
 						llvm::APSInt value;
 
 						size_arg->EvaluateAsInt( value, *ast_context );
-						cout << "*** Malloc of size " << value.toString(10) << endl;
-						myCallGraph.malloc( (int)value.getLimitedValue() );
+
+						if ( FuncName == "malloc" )
+						{
+							cout << "*** Malloc of size " << value.toString(10) << endl;
+							myCallGraph.malloc( (int)value.getLimitedValue() );
+						}
+						else
+						{
+							cout << "*** Free of size " << value.toString(10) << endl;
+							myCallGraph.free( (int)value.getLimitedValue() );
+						}
 						
 					}
 					else
