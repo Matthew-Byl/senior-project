@@ -52,7 +52,7 @@ public:
             DeclarationName DeclName = callee->getNameInfo().getName();
             string FuncName = DeclName.getAsString();
 
-			if ( FuncName == "malloc" || FuncName == "free" )
+			if ( FuncName == "local_malloc" || FuncName == "local_free" )
 			{
 				if ( call->getNumArgs() == 2 )
 				{
@@ -63,7 +63,7 @@ public:
 
 						size_arg->EvaluateAsInt( value, *ast_context );
 
-						if ( FuncName == "malloc" )
+						if ( FuncName == "local_malloc" )
 						{
 							cout << "*** Malloc of size " << value.toString(10) << endl;
 							myCallGraph.malloc( (int)value.getLimitedValue() );
@@ -221,7 +221,7 @@ int main(int argc, char *argv[])
         TheRewriter.getRewriteBufferFor(SourceMgr.getMainFileID());
 //	llvm::outs() << string(RewriteBuf->begin(), RewriteBuf->end());
 
-	int max_alloc = TheCallGraph.maximum_alloc( "main" );
+	int max_alloc = TheCallGraph.maximum_alloc( "entry" );
 	cout << "Maximum allocation: " << max_alloc << endl;
 
 	exit( 0 );

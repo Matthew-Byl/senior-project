@@ -1,6 +1,7 @@
 // Mar. 22, 2013
 
 #include "CallGraph.h"
+#include <iostream>
 using namespace std;
 
 void CallGraph::enter_function( string name )
@@ -35,6 +36,12 @@ void CallGraph::call( string name )
 int CallGraph::maximum_alloc( string start_function )
 {
 	CallGraphNode *node = myNodeMap[start_function];
+
+	if ( node == NULL )
+	{
+		cout << "Ignoring unknown function " << start_function << endl;
+		return 0;
+	}
 	
 	int current_allocation = 0;
 	int current_peak = 0;
