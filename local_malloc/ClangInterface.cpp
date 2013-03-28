@@ -55,7 +55,7 @@ ClangInterface::ClangInterface( string fileName )
 		"-I", "libclc/generic/include",
 		"-include", "clc/clc.h",
 		"-I", "/usr/include/clang/3.0/include"
-	};
+		};
 	CompilerInvocation::CreateFromArgs(
 		invocation,
 		options,
@@ -90,4 +90,12 @@ void ClangInterface::processAST( ASTConsumer *astConsumer )
 	   astConsumer,
 	   myCompilerInstance.getASTContext()
 	   );
+}
+
+string ClangInterface::getRewrittenCode()
+{
+    SourceManager &SourceMgr = myRewriter.getSourceMgr();
+
+    const RewriteBuffer &RewriteBuf = myRewriter.getEditBuffer( SourceMgr.getMainFileID() );
+	return string(RewriteBuf.begin(), RewriteBuf.end());
 }

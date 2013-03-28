@@ -28,7 +28,6 @@ private:
 	clang::Rewriter myRewriter;
 	clang::TargetOptions TO;
 	clang::CompilerInvocation invocation;
-
 };
 
 #endif

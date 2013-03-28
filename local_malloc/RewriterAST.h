@@ -4,8 +4,8 @@
  * @date March 28, 2013
  */
 
-#ifndef _ALLOCATION_AST_
-#define _ALLOCATION_AST_
+#ifndef _REWRITER_AST_
+#define _REWRITER_AST_
 
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/RecursiveASTVisitor.h"

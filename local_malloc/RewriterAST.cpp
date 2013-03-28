@@ -64,7 +64,7 @@ bool RewriterASTVisitor::VisitFunctionDecl( FunctionDecl *f )
 	}
 	else
 	{
-		cout << "builtin function: " << funcName << endl;
+//		cout << "builtin function: " << funcName << endl;
 	}
 
 	return true;
