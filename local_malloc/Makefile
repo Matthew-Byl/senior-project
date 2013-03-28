@@ -22,8 +22,8 @@ CLANGLIBS = \
 all: functions
 
 
-functions: CallGraph.cpp CallGraph.h AllocationAST.cpp AllocationAST.h ClangInterface.cpp ClangInterface.h
-	$(CXX) CallGraph.cpp AllocationAST.cpp ClangInterface.cpp $(CFLAGS) -o functions \
+functions: CallGraph.cpp CallGraph.h AllocationAST.cpp AllocationAST.h ClangInterface.cpp ClangInterface.h RewriterAST.cpp RewriterAST.h main.cpp
+	$(CXX) CallGraph.cpp AllocationAST.cpp RewriterAST.cpp ClangInterface.cpp main.cpp $(CFLAGS) -o functions \
               $(CLANG_BUILD_FLAGS) $(CLANGLIBS) `$(LLVM_CONFIG_COMMAND)` -ldl
 clean:
 	rm -rf *.o functions

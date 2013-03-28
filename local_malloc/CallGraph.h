@@ -27,6 +27,7 @@ public:
 	void free( int size );
 	void call( std::string name );
 
+	bool isDefined( std::string name );
 	int maximum_alloc( std::string start_function );
 
 private:

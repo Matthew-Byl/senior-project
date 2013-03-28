@@ -59,3 +59,7 @@ int CallGraph::maximum_alloc( string start_function )
 	return peak;
 }
 
+bool CallGraph::isDefined( string name )
+{
+	return ( myFunctionMap.find( name ) != myFunctionMap.end() );
+}
