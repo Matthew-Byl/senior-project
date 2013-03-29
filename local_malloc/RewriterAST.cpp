@@ -3,6 +3,8 @@
 #include <iostream>
 #include <string>
 
+#include "clang/Lex/Preprocessor.h"
+
 using namespace clang;
 using namespace std;
 
@@ -29,12 +31,13 @@ bool RewriterASTVisitor::VisitStmt( Stmt *s )
 			// For all functions that had bodies in last AST build that
 			//  were not kernels, add a parameter for the local_malloc
 			//  object.
-
+			
 			cout << "call to defined function: " << funcName << endl;
 		}
 		else
 		{
-			cout << "call to builtin function: " << funcName << endl;
+			// For OpenCL built-in functions, don't modify anything
+//			cout << "call to builtin function: " << funcName << endl;
 		}
     }
 
@@ -92,12 +95,31 @@ bool RewriterASTVisitor::VisitFunctionDecl( FunctionDecl *f )
 		//  were not kernels, add a parameter for the local_malloc
 		//  object.
 
-			if ( isOpenCLKernel( f ) )
+		cout << "****** Real function! ******" << endl;
+
+		if ( isOpenCLKernel( f ) )
+		{
+			cout << "Is an openCL kernel." << endl;
+			return true;
+		}
+		else
+		{
+			if ( f->getNumParams() == 0 )
 			{
-				cout << "Is an openCL kernel." << endl;
+				cout << "Returns void. " << endl;
+				return true;
 			}
 
-		cout << "defined function: " << funcName << endl;
+			ParmVarDecl *last_param = f->getParamDecl( f->getNumParams() - 1 );
+			// The locWithOffset brings us after the last param.
+			SourceManager &sourceManager = TheRewriter.getSourceMgr();
+			const LangOptions &langOpts = TheRewriter.getLangOpts();
+			SourceLocation lastParam = last_param->getSourceRange().getEnd();
+//			SourceLocation real_end = clang::Lexer::getLocForEndOfToken( lastParam, 0, sourceManager, langOpts );
+			TheRewriter.InsertText( lastParam, "/* After Last Param */", true, true );
+
+			cout << "defined function: " << funcName << endl;
+		}
 	}
 	else
 	{

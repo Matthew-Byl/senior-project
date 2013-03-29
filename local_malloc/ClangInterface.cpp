@@ -96,6 +96,14 @@ string ClangInterface::getRewrittenCode()
 {
     SourceManager &SourceMgr = myRewriter.getSourceMgr();
 
-    const RewriteBuffer &RewriteBuf = myRewriter.getEditBuffer( SourceMgr.getMainFileID() );
-	return string(RewriteBuf.begin(), RewriteBuf.end());
+	const RewriteBuffer *rewriteBuf =
+		myRewriter.getRewriteBufferFor( SourceMgr.getMainFileID() );
+
+	if ( !rewriteBuf )
+	{
+		const RewriteBuffer &cleanBuf = myRewriter.getEditBuffer( SourceMgr.getMainFileID() );
+		return string(cleanBuf.begin(), cleanBuf.end());
+	}
+	
+	return string( rewriteBuf->begin(), rewriteBuf->end() );
 }

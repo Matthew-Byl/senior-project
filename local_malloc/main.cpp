@@ -24,9 +24,9 @@ int main ( int argc, char *argv[] )
 
 	ClangInterface clangInterface2( argv[1] );
 	RewriterASTConsumer rewriterConsumer( 
-		clangInterface.getRewriter(),
+		clangInterface2.getRewriter(),
 		callGraph,
-		clangInterface.getASTContext()
+		clangInterface2.getASTContext()
 		);
 	clangInterface2.processAST( &rewriterConsumer );
 
