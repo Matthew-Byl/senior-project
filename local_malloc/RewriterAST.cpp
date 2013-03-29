@@ -41,6 +41,38 @@ bool RewriterASTVisitor::VisitStmt( Stmt *s )
 	return true;
 }
 
+bool RewriterASTVisitor::isOpenCLKernel( FunctionDecl *f )
+{
+	if ( !f->hasAttrs() )
+		return false;
+
+	AttrVec &attributes = f->getAttrs();
+	PrintingPolicy policy( TheRewriter.getLangOpts() );
+	policy.Indentation = 0;
+
+	for ( 
+		AttrVec::iterator it = attributes.begin();
+		it != attributes.end();
+		it++
+		)
+	{
+		string attribute_name;
+		llvm::raw_string_ostream attribute_name_stream( attribute_name );
+		(*it)->printPretty( attribute_name_stream, policy );
+
+		// Flushes the stream to the string.
+		attribute_name_stream.str();
+
+		// This is how clang mungs up __kernel.
+		if ( attribute_name == " __attribute__((opencl_kernel_function))" )
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 bool RewriterASTVisitor::VisitFunctionDecl( FunctionDecl *f ) 
 {
 	DeclarationName DeclName = f->getNameInfo().getName();
@@ -59,6 +91,11 @@ bool RewriterASTVisitor::VisitFunctionDecl( FunctionDecl *f )
 		// For all functions that had bodies in last AST build that
 		//  were not kernels, add a parameter for the local_malloc
 		//  object.
+
+			if ( isOpenCLKernel( f ) )
+			{
+				cout << "Is an openCL kernel." << endl;
+			}
 
 		cout << "defined function: " << funcName << endl;
 	}

@@ -29,6 +29,8 @@ public:
     bool VisitFunctionDecl( clang::FunctionDecl *f);
 
 private:
+	bool isOpenCLKernel( clang::FunctionDecl *f );
+
 	clang::Rewriter &TheRewriter;
 	CallGraph &myCallGraph;
 	clang::ASTContext &myASTContext;
