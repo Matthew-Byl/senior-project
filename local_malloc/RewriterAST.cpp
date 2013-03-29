@@ -19,20 +19,38 @@ bool RewriterASTVisitor::VisitStmt( Stmt *s )
 		string funcName = DeclName.getAsString();
 
 		if ( funcName == "local_malloc"
-			 || funcName == "local_free" )
+			 || funcName == "local_free"
+			 || myCallGraph.isDefined( funcName ) )
+			
 		{
 			// For all calls to local_malloc and local_free, add the
 			//  local_malloc parameter.
-		
-			cout << "call to malloc function!" << endl;
-		}
-		else if ( myCallGraph.isDefined( funcName ) )
-		{
+
 			// For all functions that had bodies in last AST build that
 			//  were not kernels, add a parameter for the local_malloc
 			//  object.
-			
-			cout << "call to defined function: " << funcName << endl;
+
+			unsigned numArgs = call->getNumArgs();
+			string add_param_string( "__local_malloc_state" );
+
+			SourceLocation arg_insert_location;
+			if ( numArgs == 0 )
+			{
+				arg_insert_location = call->getRParenLoc();
+			}
+			else
+			{
+				Expr **args = call->getArgs();
+				SourceLocation last_arg = args[numArgs - 1]->getSourceRange().getEnd();
+
+				SourceManager &sourceManager = TheRewriter.getSourceMgr();
+				const LangOptions &langOpts = TheRewriter.getLangOpts();				
+				arg_insert_location = clang::Lexer::getLocForEndOfToken( last_arg, 0, sourceManager, langOpts );
+
+				add_param_string = ", " + add_param_string;
+			}
+
+			TheRewriter.InsertText( arg_insert_location, add_param_string, true, true );
 		}
 		else
 		{
@@ -115,8 +133,8 @@ bool RewriterASTVisitor::VisitFunctionDecl( FunctionDecl *f )
 			SourceManager &sourceManager = TheRewriter.getSourceMgr();
 			const LangOptions &langOpts = TheRewriter.getLangOpts();
 			SourceLocation lastParam = last_param->getSourceRange().getEnd();
-//			SourceLocation real_end = clang::Lexer::getLocForEndOfToken( lastParam, 0, sourceManager, langOpts );
-			TheRewriter.InsertText( lastParam, "/* After Last Param */", true, true );
+			SourceLocation real_end = clang::Lexer::getLocForEndOfToken( lastParam, 0, sourceManager, langOpts );
+			TheRewriter.InsertText( real_end, ", LocalMallocState *__local_malloc_state", true, true );
 
 			cout << "defined function: " << funcName << endl;
 		}
