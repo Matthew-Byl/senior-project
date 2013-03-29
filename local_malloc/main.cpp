@@ -26,7 +26,9 @@ int main ( int argc, char *argv[] )
 	RewriterASTConsumer rewriterConsumer( 
 		clangInterface2.getRewriter(),
 		callGraph,
-		clangInterface2.getASTContext()
+		clangInterface2.getASTContext(),
+		"entry",
+		max_alloc
 		);
 	clangInterface2.processAST( &rewriterConsumer );
 

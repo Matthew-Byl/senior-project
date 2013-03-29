@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <string>
+#include <sstream>
 
 #include "clang/Lex/Preprocessor.h"
 
@@ -55,7 +56,7 @@ bool RewriterASTVisitor::VisitStmt( Stmt *s )
 		else
 		{
 			// For OpenCL built-in functions, don't modify anything
-//			cout << "call to builtin function: " << funcName << endl;
+			cout << "call to builtin function: " << funcName << endl;
 		}
     }
 
@@ -107,6 +108,22 @@ bool RewriterASTVisitor::VisitFunctionDecl( FunctionDecl *f )
 		
 		cout << "malloc function!" << endl;
 	}
+	else if ( funcName == myEntryFunction )
+	{
+		if ( f->hasBody() )
+		{
+			// Put in the prelude.
+			stringstream prelude;
+			prelude << "__local char *__local_malloc_buffer[" << myBufferSize << "];" << endl;
+			prelude << "LocalMallocState __local_malloc_state_backing;" << endl;
+			prelude << "LocalMallocState *__local_malloc_state = &__local_malloc_state_backing;" << endl;
+			prelude << "local_malloc_init( __local_malloc_buffer, " << myBufferSize << ", __local_malloc_state );" << endl;
+			
+			Stmt *FuncBody = f->getBody();
+            SourceLocation ST = FuncBody->getSourceRange().getBegin();
+            TheRewriter.InsertText(ST.getLocWithOffset(1), prelude.str(), true, true);
+		}
+	}
 	else if ( myCallGraph.isDefined( funcName ) )
 	{
 		// For all functions that had bodies in last AST build that
@@ -124,7 +141,10 @@ bool RewriterASTVisitor::VisitFunctionDecl( FunctionDecl *f )
 		{
 			if ( f->getNumParams() == 0 )
 			{
-				cout << "Returns void. " << endl;
+				cout << "Has void as parameter. " << endl;
+
+				// FIND SOME WAY TO DELETE THE VOID.
+
 				return true;
 			}
 

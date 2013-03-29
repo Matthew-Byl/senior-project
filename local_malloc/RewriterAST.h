@@ -19,10 +19,14 @@ public:
     RewriterASTVisitor(
 		clang::Rewriter &R, 
 		CallGraph &G,
-		clang::ASTContext &context )
+		clang::ASTContext &context,
+		std::string entryFunction,
+		unsigned bufferSize )
 		: TheRewriter(R),
 		myCallGraph( G ),
-		myASTContext( context )
+		myASTContext( context ),
+		myEntryFunction( entryFunction ),
+		myBufferSize( bufferSize )
 		{}
 
     bool VisitStmt( clang::Stmt *s);
@@ -34,6 +38,8 @@ private:
 	clang::Rewriter &TheRewriter;
 	CallGraph &myCallGraph;
 	clang::ASTContext &myASTContext;
+	std::string myEntryFunction;
+	unsigned myBufferSize;
 };
 
 
@@ -42,8 +48,13 @@ private:
 class RewriterASTConsumer : public clang::ASTConsumer
 {
 public:
-	RewriterASTConsumer( clang::Rewriter &R, CallGraph &G, clang::ASTContext &context )
-		: Visitor( R, G, context )
+	RewriterASTConsumer( 
+		clang::Rewriter &R, 
+		CallGraph &G, 
+		clang::ASTContext &context,
+		std::string entryFunction,
+		unsigned bufferSize )
+		: Visitor( R, G, context, entryFunction, bufferSize )
 		{}
 
     // Override the method that gets called for each parsed top-level
