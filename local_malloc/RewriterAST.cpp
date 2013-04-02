@@ -143,8 +143,41 @@ bool RewriterASTVisitor::VisitFunctionDecl( FunctionDecl *f )
 			{
 				cout << "Has void as parameter. " << endl;
 
-				// FIND SOME WAY TO DELETE THE VOID.
+				SourceLocation currentLocation = f->getSourceRange().getBegin();
+				SourceManager &sourceManager = TheRewriter.getSourceMgr();
+				
+				SourceLocation openParen, closeParen;
 
+				// Eat characters until we get to an open paren.
+				while ( true )
+				{
+					SourceRange currentRange( currentLocation, currentLocation.getLocWithOffset( 1 ) );
+					string character = TheRewriter.getRewrittenText( currentRange );
+
+					if ( character == "(" )
+						break;
+
+//					cout << "Eating character " << character << endl;
+					currentLocation = currentLocation.getLocWithOffset( 1 );
+				}
+				openParen = currentLocation.getLocWithOffset( 1 );
+
+				while ( true )
+				{
+					SourceRange currentRange( currentLocation, currentLocation.getLocWithOffset( 1 ) );
+					string character = TheRewriter.getRewrittenText( currentRange );
+
+					if ( character == ")" )
+						break;
+
+//					cout << "Eating character " << character << endl;
+					currentLocation = currentLocation.getLocWithOffset( 1 );
+				}
+				closeParen = currentLocation.getLocWithOffset( -1 );
+
+				SourceRange betweenParensRange( openParen, closeParen );
+				TheRewriter.ReplaceText( betweenParensRange, "LocalMallocState *__local_malloc_state" );
+				
 				return true;
 			}
 
