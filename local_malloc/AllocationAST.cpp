@@ -18,7 +18,7 @@ bool AllocationASTVisitor::VisitStmt( Stmt *s )
 		
 		if ( FuncName == "local_malloc" || FuncName == "local_free" )
 		{
-			if ( call->getNumArgs() == 2 )
+			if ( call->getNumArgs() == 1 )
 			{
 				Expr *size_arg = call->getArg( 0 );
 				llvm::APSInt value;

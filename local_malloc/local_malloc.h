@@ -25,6 +25,14 @@ void local_malloc_init(
 	state->buffer = buffer;
 }
 
+#ifdef __LOCAL_MALLOC_ANALYSIS__
+/* Define different prototypes when not actually compiling. */
+
+__local void *local_malloc( size_t size );
+__local void *local_free( size_t size );
+
+#else
+
 /**
  * This needs to be callable by all threads, because
  *  a pointer of the form
@@ -49,5 +57,7 @@ void local_free( size_t size, LocalMallocState *state )
 {
 	state->offset -= size;
 }
+
+#endif
 
 #endif

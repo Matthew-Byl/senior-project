@@ -52,14 +52,16 @@ ClangInterface::ClangInterface( string fileName )
 	//  OpenCL support.
 	const char * const options[] = {
 		"-x", "cl",
-		"-I", "libclc/generic/include",
-		"-include", "clc/clc.h",
-		"-I", "/usr/include/clang/3.0/include"
+//		"-I", "libclc/generic/include",
+//		"-include", "clc/clc.h",
+//		"-I", "/usr/include/clang/3.0/include",
+		"-D", "__LOCAL_MALLOC_ANALYSIS__"
 		};
 	CompilerInvocation::CreateFromArgs(
 		invocation,
 		options,
-		options + 8,
+//		options + 10,
+		options + 4,
 		myCompilerInstance.getDiagnostics()
 		);	 
 	myCompilerInstance.setInvocation( &invocation );

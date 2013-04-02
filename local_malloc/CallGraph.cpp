@@ -61,5 +61,8 @@ int CallGraph::maximum_alloc( string start_function )
 
 bool CallGraph::isDefined( string name )
 {
-	return ( myFunctionMap.find( name ) != myFunctionMap.end() );
+	bool def = myFunctionMap[name] != NULL;
+	cout << "* " << name << " defined: " << def << endl;
+
+	return def;
 }
