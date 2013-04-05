@@ -4,12 +4,18 @@
 \usepackage{listings}
 \begin{document}
 
+\lstset{ 
+  language=C++,
+  belowcaptionskip=1\baselineskip,
+  xleftmargin=\parindent,
+  basicstyle=\footnotesize\ttfamily
+ }
+
 \title{Senior Project: GPU Computing}
 \author{John Kloosterman \\
   \texttt{john.kloosterman@gmail.com}}
 \date{September 2012-May 2013}
 \maketitle
-
 
 
 \section{Test Computer}
@@ -20,7 +26,7 @@ The theoretical peak performance of this system is XXX TFLOPS. This is comparabl
 This system was used for all benchmarks in this report. The CPU used is an Intel Core i7-3770, and the GPU used for benchmarks is the AMD Radeon 7970.
 
 \section{OpenCL Framework}
-OpenCL is designed to be flexible, but this means that it is unwieldly for developers to use. The simplest OpenCL program that runs code on a GPU is [[[]] lines long. The framework is an attempt at making OpenCL kernel calls syntactially as similar as possible to calling a C++ function or method.
+OpenCL is designed to be flexible, but this means that it is unwieldly for developers to use. The simplest OpenCL program that runs code on a GPU is on the order of 50 lines long. The framework is an attempt at making OpenCL kernel calls syntactially as similar as possible to calling a C++ function or method.
 
 \subsection{Functions vs. Kernels}
 The entry point of an OpenCL program is a kernel, marked with the \texttt{\_\_kernel} keyword. This framework wraps around OpenCL's native functionality with the CLKernel class, making it simpler to compile kernels, pass parameters to them, and set the local and global workgroup size of the kernel. An example usage of the CLKernel class is [FILE NAME].
@@ -37,11 +43,27 @@ C++11 constructs allow a class to syntactically behave like a variadic function,
 
 string src; // some kernel source code
 cl_int i, j, k;
-CLKernel theKernel( ''kernel_name'', src );
+CLKernel theKernel( "kernel_name", src );
 theKernel( i, j, k );
 \end{lstlisting}
 
 Microsoft Visual Studio 2008 (the version that AMD's OpenCL tools currently target) does not support C++11. This requires a clunkier syntax:
+
+\begin{lstlisting}
+#include <CLKernel.h>
+#include <vector>
+
+string src; // some kernel source code
+cl_int i, j, k;
+CLKernel theKernel( "kernel_name", src );
+
+std::vector<CLUnitArgument> arguments;
+arguments.push_back( i ); 
+arguments.push_back( j ); 
+arguments.push_back( k ); 
+
+theKernel( arguments );
+\end{lstlisting}
 
 The CLUnitArgument class has constructors for many different types, which means that variables of those types can be passed into a CLKernel or a CLFunction without needing to explicitly create a CLUnitArgument.
 
@@ -51,10 +73,10 @@ I found I was often developing on my laptop, which does not have an OpenCL-suppo
 If the \texttt{CL\_DEBUG} environment variable is set to 1, the framework will compile kernels with debugging symbols and run them on the CPU. This allows for debugging kernels using gdb as described in the AMD OpenCL guide (reference).
 
 \section{Raytracer}
-As a simple application to run on top of my framework, I implemented an OpenCL raytracer for honours credit in CS 352 (Computer Graphics). The raytracer maps one pixel onto one hardware thread.
+As a simple application to run on top of my framework, I implemented an OpenCL raytracer for honours credit in CS 352 (Computer Graphics). The raytracer maps one pixel onto one hardware thread. The objective was for the raytracer to support real-time user interaction.
 
 \subsection{Capabilities}
-The raytracer has two geometric primitives: spheres and planes. Geometry can have a colour or be reflective. There can be any number of geometric primitives.
+The raytracer has two geometric primitives: spheres and planes. Geometry can have a solid colour or be reflective. There can be any number of geometric primitives.
 
 The lighting model takes into account ambient and diffuse lighting. There can be any number of diffuse light sources.
 
@@ -68,13 +90,16 @@ Because OpenCL does not support recursion, reflective surfaces do not behave as 
 \label{fig:reflections}
 \end{figure}
 
+\subsection{User Interface}
+The user interface was implemented in GTK+, with the rendered image being displayed in a \texttt{GtkImage}. This is inefficient, as the image is rendered on the GPU, copied to the CPU, copied to the \texttt{GtkImage}, then pushed back to the GPU. An alternative that trades increased complexity for more performance would be taking advantage of OpenCL's OpenGL interoperability features to draw the image.
+
 \subsection{Performance}
 The raytracer is able to render a 700x700 pixel test scene with 1000 spheres and a moveable diffuse light source at speeds that make it interactive (see figure \ref{fig:testscene}). Using the CPU, this scene takes 1.28 seconds per frame (0.78 frames per second). Using the Radeon 7970, the scene takes 0.055 seconds per frame (18 frames per second). If the number of spheres is reduced to 216, the Radeon 7970 can render the scene at 60 frames per second.
 
 \begin{figure}[ht!]
 \centering
-\includegraphics[width=90mm]{reflections.png}
-\caption{Test scene with 1000 spheres and ground plane}
+\includegraphics[width=90mm]{scene.png}
+\caption{Test scene, featuring 1000 spheres and ground plane}
 \label{fig:testscene}
 \end{figure}
 
@@ -82,9 +107,14 @@ The raytracer is able to render a 700x700 pixel test scene with 1000 spheres and
 This part of the project implemented a minimax player for the Mankalah game introduced in CS 212. Minimax is a much harder algorithm to implement on a GPU than a raytracer, because the minimax tree has dependencies between nodes, and the parallelism is less obvious.
 
 \subsection{Strategy}
-Following REFERENCE, the minimax tree is broken up into layers. On the CPU, the first layers of game boards in the minimax tree are computed and the bottom-level leaf nodes of that tree are put into a C++ vector. The boards in the vector are copied over to the GPU, where 4 more levels of minimax are computed. Because the Mankalah minimax tree has a branching factor of 6, the overwhelming majority of the work is done in the bottom 4 levels of the tree.
+Following previous work on another minimax player implemented in CUDA\cite{rockisuda10}, the minimax tree is broken up into layers. On the CPU, the first layers of game boards in the minimax tree are computed and the bottom-level leaf nodes of that tree are put into a C++ vector. The boards in the vector are copied over to the GPU, where 4 more levels of minimax are computed. Because the Mankalah minimax tree has a branching factor of 6, the overwhelming majority of the work is done in the bottom 4 levels of the tree (see figure \ref{fig:minimaxdiagram}).
 
-INSERT DIAGRAM FROM REFERENCE
+\begin{figure}[ht!]
+\centering
+\includegraphics[width=50mm]{minimax-diagram.png}
+\caption{Sequential and parallel segements of minimax tree, taken from Rocki and Suda\cite{rockisuda10}.}
+\label{fig:minimaxdiagram}
+\end{figure}
 
 \subsection{Performance}
 
@@ -95,5 +125,7 @@ INSERT DIAGRAM FROM REFERENCE
 
 \section{\_\_local Memory malloc()}
 
+\bibliographystyle{plain}
+\bibliography{final-report}
 
 \end{document}
