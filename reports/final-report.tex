@@ -135,18 +135,32 @@ Following previous work on another minimax player implemented in CUDA\cite{rocki
 \section{Economics Simulation}
 As a larger, more complex problem, I worked on implementing a GPU version of an economics simulation used for research in Calvin's economics department.\cite{ditta13} The simulation already exists in Python, but it takes on the order of weeks to run. The simulation consists of a number of agents, which each hold a number of resources, that can harvest resources, invent machines to make harvesting resources more efficent, and trade resources and machines with each other.
 
-This problem has promise for a speedup with a GPU's massive parallelism. Each of the agents in the simulation is largely autonomous, and most of the decisions that agents have to make need to evaluate the relative worth of their resources. Therefore, there is a natural mapping of one hardware thread to one resource, with each agent mapped to its own workgroup.
+This problem has promise for a speedup with a GPU's massive parallelism. Each of the agents in the simulation is largely independent, and most of the decisions that agents have to make need to evaluate the relative worth of their resources. Therefore, there is a natural mapping of one hardware thread to one resource, with each agent mapped to its own workgroup.
 
 I did not complete the reimplementation of the simulation, but have met my objective of applying GPU computing to a complex, real-world problem. The Societies paper\cite{ditta13} breaks the simulation into 6 phases, of which the first 3 are non-trivial, the fourth is very complex, and the last 2 are trivial. I implemented the first 2 phases. This was enough to encounter difficult problems that required very different algorithms to efficiently solve on a GPU.
 
 \subsection{Phase 1: Resource Extraction}
+In this phase, agents harvest resources while there is time left in the ``day''. In each round, agents choose one of the resources that is most valuable for them to have one more unit of. Agents gain experience extracting resources, which reduces the amount of time needed to extract that resource.
+
+The challenges implementing this phase were implementing the maximum and minimum algorithms, creating a mechanism for threads to create a variable-size array of options, and finding a random number generator.
+
+\subsubsection{Array Maximum and Minimum}
+Several times in this simulation, I needed to find the maximum or minimum in an array without modifying the values in the array. The most efficient way to do this with at least 1 thread for every 2 elements is to build a max/min tree, since this allows the maximum or minimum to be found in O(log(n),n) time. Unfortunately, for an array with n elements, this requires a scratch array in \texttt{\_\_local} memory of $\frac{n}{2}$ elements.
+
+The algorithm has two phases. In the first phase, $\frac{n}{2}$ threads compare 2 elements of the original array, and put the largest in the scratch array. In the second phase, $\frac{n}{4}$ threads compare 2 elements of the scratch array, and put the maximum/minimum of the two values in the location of the first value. The second phase iterates, each time with half as many threads, until there is one value left, which is the minimum/maximum.
+
+The implementation of this algorithm is in \texttt{societies/util/max\_min.cl}. This implementation also includes the ability to pass in a mask array, which allows the algorithm to ignore certain values in the array. This permits using the algorithm multiple times to find the maximum/minimum n elements in an array. (See the \texttt{max\_n\_indices()} function.)
+
+\subsubsection{Variable-length Arrays}
+There are cases where one thread needs to make a choice between different values on behalf of the workgroup. One implementation of this idiom can be found in \texttt{societies/util/choose\_thread.cl}, where several threads can register their ability to be chosen, then one thread randomly makes a choice between them. Since not all threads want to be chosen, there needs to be a data structure that can hold a variable number of elements and that all threads can add elements too.
+
+This data structure can be implemented in OpenCL with an atomic counter variable in \texttt{\_\_local} memory initialized to 0, with an array in \texttt{\_\_local} memory that is large enough for the maximum possible number of elements. When a thread wants to add an element, it calls the OpenCL-builtin \texttt{atomic\_inc()} function to increment the counter, and puts a value in the array at the position that \texttt{atomic\_inc()} returns, which is the previous value of the counter variable. After all threads have finished adding values to the array, the counter variable holds the number of items in the array.
+
+\subsubsection{Random Numbers}
+Many of the Societies algorithms required a source of random numbers. On a GPU, this is difficult because there is no hardware source of random numbers, and PRNGs require a unique seed per workgroup so that each workgroup does not generate the same sequence of random numbers. I made use of the MWC64X random number generator, which is ideal for GPUs because it requires very little state to be preserved across runs. I found an OpenCL implementation which was verified against statistical tests.\cite{mwc64x}
 
 \subsection{Phase 2: }
 
-\subsection{Random Numbers}
-Many of the Societies algorithms required a source of random numbers. On a GPU, this is difficult because there is no hardware source of random numbers, and PRNGs require a unique seed per workgroup so that each workgroup does not generate the same sequence of random numbers. I made use of the MWC64X random number generator, which is ideal for GPUs because it requires very little state to be preserved across runs. I found an OpenCL implementation which was verified against statistical tests.\cite{mwc64x}
-
-\subsection{Array maximum and minimum}
 
 \subsection{Testing}
 One weakness of the Python Societies code is that it is not written in a way that makes it easy to test. I made sure to make my code very clean  and wrote unit tests for all my functions, so that my code will be useful to the Societies project in the future. The algorithms I developed to find the maximum and minimum elements in an array I was also careful to test; this code should be useful as a reference for others doing similar work in OpenCL.
