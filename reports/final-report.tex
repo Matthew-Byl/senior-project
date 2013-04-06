@@ -39,9 +39,9 @@ OpenCL is designed to be flexible, but this means that it is unwieldly for devel
 \subsection{Functions vs. Kernels}
 The entry point of an OpenCL program is a kernel, marked with the \texttt{\_\_kernel} keyword. This framework wraps around OpenCL's native functionality with the CLKernel class, making it simpler to compile kernels, pass parameters to them, and set the local and global workgroup size of the kernel. An example usage of the CLKernel class is [FILE NAME].
 
-OpenCL does not support calling non-kernel functions, but these functions need some way to be tested. The \\texttt{CLFunction} class in this framework removes OpenCL's limitation. A kernel to call the function is automatically generated at compile-time, and that kernel is passed to OpenCL. \texttt{CLFunction} will run the function on one thread.
+OpenCL does not support calling non-kernel functions, but these functions need some way to be tested. The \texttt{CLFunction} class in this framework removes OpenCL's limitation. A kernel to call the function is automatically generated at compile-time, and that kernel is passed to OpenCL. \texttt{CLFunction} will run the function on one thread.
 
-More complex functions, especially those that involve threads cooperating on a task with data stored in local memory, cannot be called by \texttt{CLFunction}. One idiom I developed when testing these kinds of functions, is to write a shim kernel that copies data into the correct memory space, calls the function to be tested, then copies the results back to \texttt{\_\_global} memory. (See [FILE NAME] for an example)
+More complex functions, especially those that involve threads cooperating on a task with data stored in local memory, cannot be called by \texttt{CLFunction}. One idiom I developed when testing these kinds of functions, is to write a shim kernel that copies data into the correct memory space, calls the function to be tested, then copies the results back to \texttt{\_\_global} memory. (See \texttt{societies/util/test/max\_min\_tester.cl.in} for an example)
 
 \subsection{Usage}
 C++11 constructs allow a class to syntactically behave like a variadic function, by defining an overloaded () operator using a variadic template. At this time, compilers only partically support the features needed to make using variadic templates elegant. With C++11, a \texttt{CLKernel} or \texttt{CLFunction} can be called like this:
@@ -166,6 +166,26 @@ Many of the Societies algorithms required a source of random numbers. On a GPU, 
 One weakness of the Python Societies code is that it is not written in a way that makes it easy to test. I made sure to make my code very clean  and wrote unit tests for all my functions, so that my code will be useful to the Societies project in the future. The algorithms I developed to find the maximum and minimum elements in an array I was also careful to test; this code should be useful as a reference for others doing similar work in OpenCL.
 
 \section{\_\_local Memory malloc()}
+One problem I ran across when implementing the Societies code was that most functions required many parameters to pass around scratch \texttt{\_\_local} memory that was needed by some algorithm several function calls deep. These scratch buffers needed to be declared at the beginning of a kernel rather then when they were actually used, and I had to keep track of exactly how large they needed to be. Also, because \texttt{\_\_local} memory usage restricts the number of hardware threads that can be concurrently running on the GPU, it is important to minimize the amount used, which means reusing the same buffers when possible. The result is that the complexity of managing buffers of \texttt{\_\_local} memory became a bottleneck.
+
+Because the sizes of all these buffers is known at compile-time, and OpenCL does not support recursion or function pointers, simple static analysis is enough to determine the maximum amount of \texttt{\_\_local} memory a kernel needs. This should make it easy to shift the accounting burden from the programmer onto a tool.
+
+As well, OpenCL does not support global variables, so any state used by a \texttt{malloc()}-like tool needs to be passed as a parameter to every function. This is inconvenient for the programmer, and should be easy for a tool to write into a program.
+
+\subsection{Integration with Clang}
+The Clang C-family compiler is written to be extensible. Clang's abstract syntax tree (AST) includes references to the text that every AST node is built from, which is meant to make it easy for tools to analyze and rewrite source code. Clang's \texttt{Rewriter} class allows for sections of source code to be added, deleted, and moved around. Clang also is used in many OpenCL vendors' backends, which means it natively supports the OpenCL keywords like \texttt{\_\_kernel} and adds these annotations to its AST.
+
+Therefore, this tool links against Clang, and creates an instance of an OpenCL compiler that does semantic analysis but stops before code generation. By using Clang's AST nodes and its \texttt{Rewriter} class, this tool offloads the heavy lifting of parsing and rewriting C source code to Clang.
+
+Because of the tight integration with Clang, the tool is vulnerable to modifications to Clang's internals. The tool was developed against Clang 3.2 and LLVM 3.2.
+
+\subsection{Phase 1: Computing Maximum Allocation}
+The tool registers hooks into Clang's AST processing methods. Whenever a function declaration is encountered, the tool generates a new node in a call graph. Then, whenever a function call or a call to \texttt{local\_malloc()} or \texttt{local\_free()} is encountered, the tool adds these actions to the node in the call graph. Clang's AST nodes for the \texttt{local\_malloc()} and \texttt{local\_free()} have methods that make it easy to get a numerical value for the amount of memory allocated or freed, even when that value is an expression or defined by a preprocessor macro.
+
+After all nodes in the AST have been visited, this call graph is guaranteed to have no cycles, because OpenCL does not support recursion. Therefore, in this call tree, the maximum amount of memory allocated by a function is the maximum amount allocated by any of a function's children plus any memory the function has allocated at the same time.
+
+\subsection{Phase 2: Program Rewriting}
+The tool then revisits all the nodes in the AST again, and rewrites function declarations and calls. To the kernel function, it inserts initialization code and allocates the \texttt{\_\_local} memory buffer at the size computed in the previous phase. The tool adds a state object to every function call and declaration, so that that state object is accessible anywhere in the program.
 
 \bibliographystyle{plain}
 \bibliography{final-report}
