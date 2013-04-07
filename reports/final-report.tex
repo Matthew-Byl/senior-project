@@ -18,6 +18,17 @@
 \date{September 2012-May 2013}
 \maketitle
 
+
+% The final report should be a formal, written paper discussing the nature of the project, the system you built, and the implications for the future. The general sections to include in your final report are as follows:
+% Project vision and overview
+% Background, including research review
+% System design, implementation and testing
+% Results and discussion
+% Conclusions
+% Future work
+% Acknowledgements
+% References
+% Appendixes (if appropriate)
 %%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}
 This is the introduction.
@@ -25,8 +36,6 @@ This is the introduction.
 Main problem I was trying to solve: GPUs are an architecture that has potential for great performance and power improvements, but they are too difficult to use.
 
 Make the parts of your project tell a coherent story about how they fit together. One thing you have done a lot of is algorithms to do fairly simple things on the GPU but don't have a standard library implementation. Idioms like linked lists on CPUs -> idioms like skipping threads for trees on GPUs.
-
-
 
 \tableofcontents
 
@@ -195,6 +204,9 @@ A recursive sequential algorithm was implemented for performance comparisons. As
   \hline
 \end{tabular}
 Since minimax is an embarrasingly parallel problem, a parallel CPU implementation should be able to achieve a speed of $\frac{sequential}{\# cores}$. Since the OpenCL parallel implementation was worse on the CPU than the sequential implementation, which itself can be sped up 4 times on the test system, this illustrates how algorithms tuned for GPUs are very different than ones tuned for CPUs.
+
+\subsection{Testing}
+Along with testing of each of the GPU minimax algorithm's components, I used fuzz testing to ensure that the output of the GPU minimax algorithm was the same as the output of the sequential CPU minimax implementation. This was done by generating random valid boards then running both algorithms on them and comparing the output.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Economics Simulation}
