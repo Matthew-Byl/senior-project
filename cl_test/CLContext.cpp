@@ -1,3 +1,10 @@
+/**
+ * An abstraction of cl::Context.
+ *
+ * @author John Kloosterman
+ * @date December 2012
+ */
+
 #include "CLContext.h"
 #include <iostream>
 #include <cstdlib>
@@ -5,6 +12,8 @@ using namespace std;
 
 CLContext::CLContext()
 {
+	/// @todo: allow some way to change this default using
+	///  environment variables or the like?
 	initialize( 1, 0 );
 }
 
@@ -78,8 +87,6 @@ cl::CommandQueue &CLContext::getCommandQueue()
  */
 cl::Program CLContext::buildProgram( string &src, string &compiler_flags ) const
 {
-//	cout << "*** rebuilding! ***" << endl;
-
 	cl::Program::Sources sources(
         1,
         std::pair<const char *, int>( src.c_str(), (int) src.length() )

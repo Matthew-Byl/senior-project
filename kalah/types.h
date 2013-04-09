@@ -24,6 +24,8 @@
 #define CL_CHAR char
 #endif
 
+// This is only used on the host side, so it's OK to 
+//  use regular types.
 typedef struct
 {
 	int move;

@@ -1,12 +1,17 @@
+/**
+ * Abstraction of a cl::Context. CLFunctions and
+ *  CLKernels can take custom contexts, if you want
+ *  to run on a platform and device other than the default.
+ *
+ * @author John Kloosterman
+ * @date December 2012
+ */
+
 #ifndef _CL_CONTEXT_H
 #define _CL_CONTEXT_H
 
 #define __CL_ENABLE_EXCEPTIONS
 #include <CL/cl.hpp>
-
-/* Convenience class for an OpenCL context, because
-   we need lots of interdependent objects to do anything.
-*/
 
 class CLContext
 {

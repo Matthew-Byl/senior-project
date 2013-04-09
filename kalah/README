@@ -1,0 +1,10 @@
+OpenCL Mankalah Player
+======================
+The Makefile will build two executables:
+	kalah: play a game of Mankalah between 2 players.
+	opencl_player_tests: run the unit and fuzz tests of the OpenCL player.
+
+To change the search depth, change the values in depths.h.
+
+The board evaluation function is fairly simple, and can be improved upon.
+	This function is found in evaluate.c.

@@ -234,6 +234,9 @@ In order to avoid code duplication for the logic for Mankalah boards, the code i
 
 For data structures passed between the host and device, a shared header file can be used. However, it is important to ensure that the layout of the structures are exactly the same. Notably, fundamental times like an \texttt{int} on the device side is not guaranteed to be the same size as an \texttt{int} on the host side. OpenCL provides types on the host prefaced with \texttt{cl\_} that are guaranteed to be the same size as the type without the prefix on the client side (for an \texttt{int} on the device side, a \texttt{cl\_int} is necessary on the host side). I used preprocessor macros to use the correct types depending on where code is compiled.
 
+\subsection{Tree Structures in OpenCL}
+Because there is no dynamic memory allocation in OpenCL, I have stored all trees in arrays. It is common to store binary trees in arrays, where the first child of the node at location $n$ is at location $2n$, and the second at $2n + 1$. This can be generalized to trees of other branching factors. A few support functions for this data structure can be found in \texttt{kalah/tree_array.c}.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Economics Simulation}
 As a larger, more complex problem, I worked on implementing a GPU version of an economics simulation used for research in Calvin's economics department.\cite{ditta13} The simulation already exists in Python, but it takes on the order of weeks to run. The simulation consists of a number of agents, which each hold a number of resources, that can harvest resources, invent machines to make harvesting resources more efficent, and trade resources and machines with each other.

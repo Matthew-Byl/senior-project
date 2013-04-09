@@ -21,6 +21,14 @@ template<class T>
 class CLFunction
 {
 public:
+	/**
+	 * @param function
+	 *  The name of the function to call.
+	 * @param kernel
+	 *  Source code the function is in.
+	 * @param context
+	 *  The CLContext in which to run the function.
+	 */
 	CLFunction( std::string function, 
 				std::string kernel, 
 				CLContext context = CLContext() )
@@ -164,8 +172,6 @@ cl::Kernel CLFunction<T>::generateKernel( std::string src, std::string kernel_na
 {
 	if ( !kernelBuilt )
 	{
-//		std::cout << "Rebuilding kernel: " << kernelBuilt << std::endl;
-
 		cl::Program program = myContext.buildProgram( src, compiler_flags );
 		myCLKernel = cl::Kernel(
 			program,
@@ -178,9 +184,6 @@ cl::Kernel CLFunction<T>::generateKernel( std::string src, std::string kernel_na
 	// Make those buffers arguments for the kernel.
 	for ( unsigned i = 0; i < myBuffers.size(); i++ )
 	{
-//		std::cout << "Setting argument " << i << " of type " << myArguments[i].getType() << std::endl;
-
-//		printf( "Argument %d: %x\n", i, myBuffers[i] );
 		myCLKernel.setArg( i, *myBuffers[i] );
 	}
 

@@ -1,6 +1,6 @@
 /**
  * Class to generate an OpenCL kernel
- *  that calls another OpenCL function.
+ *  that calls an non-kernel OpenCL function.
  *
  * @author John Kloosterman
  * @date December 2012
@@ -13,11 +13,6 @@
 #include <vector>
 
 #include "CLUnitArgument.h"
-
-/*
- * A class to generate an OpenCL kernel that
- *  can test a non-kernel function.
- */
 
 class KernelGenerator
 {

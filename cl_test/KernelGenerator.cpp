@@ -17,6 +17,23 @@ string KernelGenerator::intToString( int i )
     return static_cast<ostringstream*>( &(ostringstream() << i) )->str();
 }
 
+/**
+ * This does a bunch of text processing to turn
+ *  a signature like
+ *
+ *   int some_function ( int a, int b ) { body }
+ *
+ *  into a kernel like
+ * 
+ *   __kernel void _autogen_run_some_function(
+ *       __global int *a,
+ *       __global int *b,
+ *       __global int *ret
+ *     )
+ *   { 
+ *       *ret = some_function( *a, *b );
+ *   }
+ */
 string KernelGenerator::generate()
 {
 	string ret = 
