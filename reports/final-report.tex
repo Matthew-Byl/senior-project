@@ -53,7 +53,10 @@ On Linux, it is currently difficult to have multiple OpenCL platforms installed 
 
 The situation is far easier on Windows, where both AMD and nVidia GPUs were always accessible with OpenCL. The Intel integrated GPU was only available if the system was booted with a display connected to it. AMD has the most robust set of tools for profiling and debugging OpenCL, but these tools only work on Windows in Visual Studio. Therefore, my workflow was to develop on Linux, but ensure that the code was portable to Windows, should I need to test on more GPUs and work with the profiling tools available there.
 
-%%%%%%%%%%%%%%%%%%%%%%5
+\subsection{OpenCL Quirks}
+As of the AMD APP SDK 2.8, for AMD GPUs \texttt{printf()} only reliably works when the tread with local ID (0,0,0) calls it. Sometimes, calls from other threads will make it. As well, \texttt{printf()} often does not work even then if it is inside any kind of conditional structure.
+
+%%%%%%%%%%%%%%%%%%%%%%%
 \section{OpenCL Framework}
 OpenCL is designed to be flexible, but this means that it is unwieldly for developers to use. The simplest OpenCL program that runs code on a GPU is on the order of 50 lines long. The framework is an attempt at making OpenCL kernel calls syntactially as similar as possible to calling a C++ function or method.
 
@@ -139,6 +142,18 @@ The raytracer is able to render a 700x700 pixel test scene with 1000 spheres and
 \label{fig:testscene}
 \end{figure}
 
+\subsection{Discarding Frames}
+The sliders generate GTK+ events, which are processed in callback functions like \texttt{motion\_notify()}. These callbacks call \texttt{run\_kernel()}, which renders the frame. This blocks the main program thread, but mouse drag events on the image still get queued. The effect is that the program can get more and more behind when rendering frames if events are added faster than frames can be rendered. This makes the raytracer feel unresponsive.
+
+To prevent this from happening, after rendering a frame, the callbacks discard all the events on the GTK+ event queue that could cause a new frame to be rendered. This is done by having an \texttt{in\_handler} flag that is set when a callback that is rendering a frame is running. All callbacks that can render a frame check to see if \texttt{in\_handler} is set, and if so, return without rendering the frame. Immediately after rendering a frame, a callback runs this loop:
+
+\begin{lstlisting}
+while ( gtk_events_pending() )
+  gtk_main_iteration();
+\end{lstlisting}
+
+This causes all the queued GTK+ events to be processed; because the \texttt{in\_handler} flag is set, any other callbacks in the queue do not render a frame. The end result is that all the events that could render a new frame are flushed from the queue.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
 \section{Mankalah Minimax AI}
 This part of the project implemented a minimax player for the Mankalah game introduced in CS 212. Minimax is a much harder algorithm to implement on a GPU than a raytracer, because the minimax tree has dependencies between nodes, and the parallelism is less obvious.
@@ -215,7 +230,9 @@ Since minimax is an embarrasingly parallel problem, a parallel CPU implementatio
 Along with testing of each of the GPU minimax algorithm's components, I used fuzz testing to ensure that the output of the GPU minimax algorithm was the same as the output of the sequential CPU minimax implementation. This was done by generating random valid boards then running both algorithms on them and comparing the output.
 
 \subsection{Sharing Code Between Host and Device}
-Talk about how to create .c files that work on both the host and device side. Be careful about types: int != int.
+In order to avoid code duplication for the logic for Mankalah boards, the code in \texttt{board.c} and a few other files is used both on the host and device side. To consolidate all a kernel's dependencies into one file, I used the preprocessor to \texttt{\#include} many \texttt{.c} files into one source file. I have tried consistently use the extension \texttt{.cl.in} for OpenCL source files that need to be preprocessed before they will compile.
+
+For data structures passed between the host and device, a shared header file can be used. However, it is important to ensure that the layout of the structures are exactly the same. Notably, fundamental times like an \texttt{int} on the device side is not guaranteed to be the same size as an \texttt{int} on the host side. OpenCL provides types on the host prefaced with \texttt{cl\_} that are guaranteed to be the same size as the type without the prefix on the client side (for an \texttt{int} on the device side, a \texttt{cl\_int} is necessary on the host side). I used preprocessor macros to use the correct types depending on where code is compiled.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Economics Simulation}

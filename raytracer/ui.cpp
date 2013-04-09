@@ -10,8 +10,6 @@
 #include <gtk/gtk.h>
 #include <png.h>
 
-//#include <google/profiler.h>
-
 #include <string>
 #include <iostream>
 #include <vector>
@@ -144,7 +142,7 @@ static void png_button_clicked( GtkWidget *widget, gpointer data )
 
 	png_write_info(png_ptr, info_ptr);
 
-	// libpng likes to have pointers to rows of pixels.
+	// libpng likes to be passed an array of pointers to rows of pixels.
 	// Happily oblige, however silly because we have all our
 	//  pixels in a continuous buffer.
 	unsigned char *pixels = gdk_pixbuf_get_pixels( gdk_pixel_buffer );
@@ -165,7 +163,6 @@ static void png_button_clicked( GtkWidget *widget, gpointer data )
 static void destroy( GtkWidget *widget,
                      gpointer   data )
 {
-//	ProfilerStop();
     gtk_main_quit ();
 }
 
@@ -263,7 +260,6 @@ static void scroll( GtkWidget *widget, GdkEvent *event, gpointer user_data )
 	//  and the GPU gets behind.
 	while ( gtk_events_pending() )
 		gtk_main_iteration();
-
 
 	in_handler = false;
 }
