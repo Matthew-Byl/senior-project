@@ -101,6 +101,12 @@ I found I was often developing on my laptop, which does not have an OpenCL-suppo
 
 If the \texttt{CL\_DEBUG} environment variable is set to 1, the framework will compile kernels with debugging symbols and run them on the CPU. This allows for debugging kernels using gdb as described in the AMD OpenCL programming guide\cite{amdapp}.
 
+\subsection{Memory Copies}
+One of the main bottlenecks for GPU computing is the time to transfer data from RAM to the GPU, so the framework needs to avoid making any unnecessary copies. By default, all buffers are copied to and from the GPU every time a kernel is scheduled. This produces correct behaviour at the expense of being slow. The constructor for a \texttt{CLUnitArgument} allows developers to specify whether the host memory backing the buffer should be copied to or from the GPU.
+
+\subsection{Lazy Initialization of Buffers}
+
+
 %%%%%%%%%%%%%%%%%%%%%%
 \section{Raytracer}
 As a simple application to run on top of my framework, I implemented an OpenCL raytracer for honours credit in CS 352 (Computer Graphics). The raytracer maps one pixel onto one hardware thread. The objective was for the raytracer to support real-time user interaction.
@@ -208,6 +214,9 @@ Since minimax is an embarrasingly parallel problem, a parallel CPU implementatio
 \subsection{Testing}
 Along with testing of each of the GPU minimax algorithm's components, I used fuzz testing to ensure that the output of the GPU minimax algorithm was the same as the output of the sequential CPU minimax implementation. This was done by generating random valid boards then running both algorithms on them and comparing the output.
 
+\subsection{Sharing Code Between Host and Device}
+Talk about how to create .c files that work on both the host and device side. Be careful about types: int != int.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Economics Simulation}
 As a larger, more complex problem, I worked on implementing a GPU version of an economics simulation used for research in Calvin's economics department.\cite{ditta13} The simulation already exists in Python, but it takes on the order of weeks to run. The simulation consists of a number of agents, which each hold a number of resources, that can harvest resources, invent machines to make harvesting resources more efficent, and trade resources and machines with each other.
@@ -264,8 +273,13 @@ After all nodes in the AST have been visited, this call graph is guaranteed to h
 \subsection{Phase 2: Program Rewriting}
 The tool then revisits all the nodes in the AST again, and rewrites function declarations and calls. To the kernel function, it inserts initialization code and allocates the \texttt{\_\_local} memory buffer at the size computed in the previous phase. The tool adds a state object to every function call and declaration, so that that state object is accessible anywhere in the program.
 
+\subsection{Results}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
 \section{Conclusions}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Future Work}
 
 
 \bibliographystyle{plain}

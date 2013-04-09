@@ -1,3 +1,37 @@
+/**
+ * CLUnitArgument encapsulates data passed to CLKernel 
+ *  and CLFunction.
+ * 
+ * @author John Kloosterman
+ * @date December 2012
+ */
+
+/*
+ * The cl::Buffer object is initialized only right before
+ *  it is needed. The reason: it is important to be able
+ *  to initialize a CLUnitArgument without passing in a
+ *  CLContext so that type coersion can work (e.g. passing
+ *  a cl_int to a CLFunction automatically creates the correct
+ *  CLUnitArgument). cl::Buffers need a cl::Context for initialization.
+ *
+ * However, this causes unexpected behaviour if there are copies of a
+ *  CLUnitArgument being made before the buffer is initialized.
+ *  Each copy will then create their own cl::Buffer. This breaks code
+ *  like this:
+ *
+ *   cl_float array[1024];
+ *   CLUnitArgument arrayArg( "float", array, 1024, false, false );
+ *   someKernel( arrayArg ); // stores data into arrayArg, doesn't copy 
+ *                           // data back to host.
+ *   someOtherKernel( arrayArg ); // reads data someKernel() stored.
+ *
+ * This is because C++ made a copy of arrayArg when its cl::Buffer was
+ *  not initialized, so each copy created its own buffer and the cl::Buffer
+ *  passed to someKernel() and someOtherKernel() was not the same one.
+ * The solution is to call CLUnitArgument::makePersistent() on the buffer
+ *  first.
+ */
+
 #include "CLUnitArgument.h"
 #include <iostream>
 #include <cassert>
@@ -54,8 +88,6 @@ void CLUnitArgument::copy_data(
 	void *ptr
 	)
 {
-//	cout << "** COPYING " << size << " ***" << endl;
-
 	myPtr = malloc( size );
 	memcpy( myPtr, ptr, size );
 }
@@ -69,12 +101,8 @@ CLUnitArgument::CLUnitArgument( const CLUnitArgument &other )
 	  myCopyTo( other.myCopyTo ),
 	  myCopyBack( other.myCopyBack )
 {
-//	printf( "Copying: init: %d, copy: %d\n", myBufferInitialized, myCopy );
-
 	if ( other.myCopy )
 	{
-//		cout << "COPYING DATA!" << endl;
-
 		copy_data( other.mySize, other.myPtr );
 		myBufferInitialized = false;
 	}
@@ -89,7 +117,6 @@ CLUnitArgument::~CLUnitArgument()
 {
 	if ( myCopy )
 	{
-//		cout << "Freeing!" << endl << flush;
 		free( myPtr );
 	}
 }
@@ -98,8 +125,6 @@ cl::Buffer *CLUnitArgument::getBuffer( CLContext &context )
 {
 	if ( !myBufferInitialized )
 	{
-//		cout << "Initializing buffer!" << endl;
-
 		myBuffer = cl::Buffer(
 			context.getContext(),
 			// If we don't supply memory, allocate some for us.
@@ -111,7 +136,6 @@ cl::Buffer *CLUnitArgument::getBuffer( CLContext &context )
 		myBufferInitialized = true;
 	}
 
-//	printf( "Returning buffer %x\n", myBuffer );
 	return &myBuffer;
 }
 
@@ -127,8 +151,6 @@ void CLUnitArgument::copyToDevice( cl::CommandQueue &queue )
 	if ( !myCopyTo )
 		return;
 
-//	cout << "Coyping " << mySize << " bytes to device." << endl;
-
 	queue.enqueueWriteBuffer(
 		myBuffer,
 		CL_TRUE,
@@ -138,6 +160,9 @@ void CLUnitArgument::copyToDevice( cl::CommandQueue &queue )
 	);
 }
 
+/**
+ * See note in CLUnitArgument.h
+ */
 void CLUnitArgument::makePersistent( CLContext &context )
 {
 	myBuffer = cl::Buffer(
@@ -161,8 +186,6 @@ void CLUnitArgument::copyFromDevice( cl::CommandQueue &queue )
 	if ( !myCopyBack )
 		return;
 
-//	cout << "Coyping " << mySize << " bytes back from device." << endl;
-
 	queue.enqueueReadBuffer(
 		myBuffer,
 		CL_TRUE,
@@ -170,8 +193,6 @@ void CLUnitArgument::copyFromDevice( cl::CommandQueue &queue )
 		mySize,
 		myPtr
 	);
-
-//	cout << "Copying back!" << endl;
 }
 
 bool CLUnitArgument::isArray()
