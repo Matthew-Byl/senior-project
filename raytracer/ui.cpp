@@ -203,7 +203,7 @@ static void motion_notify( GtkWidget *widget, GdkEvent *event, gpointer user_dat
 
 	if ( motion->state & GDK_BUTTON1_MASK )
 	{
-		if (!dragging )
+		if ( !dragging )
 		{
 			prev_x = camera_position.s[1];
 			prev_y = camera_position.s[2];
@@ -266,8 +266,6 @@ static void scroll( GtkWidget *widget, GdkEvent *event, gpointer user_data )
 
 int main( int argc, char *argv[] )
 {
-//	ProfilerStart( "raytracer.prof" );
-
 	// Set up scene.
 	setup_scene();
 
