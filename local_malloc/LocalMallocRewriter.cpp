@@ -4,6 +4,7 @@
 #include "AllocationAST.h"
 #include "RewriterAST.h"
 #include <cstdio>
+#include <unistd.h>
 #include <iostream>
 #include <fstream>
 using namespace std;
@@ -11,19 +12,23 @@ using namespace std;
 LocalMallocRewriter::LocalMallocRewriter( string src )
 	: mySrc( src )
 {
+	// Put the source code in a temp file.
+	myTempFileName = strdup( "/tmp/tmpfileXXXXXX" );
+	mkstemp( myTempFileName );
+	ofstream temp_file( myTempFileName );
+	temp_file << mySrc;
+	temp_file.close();
+}
 
+LocalMallocRewriter::~LocalMallocRewriter()
+{
+	unlink( myTempFileName );
+	free( myTempFileName );
 }
 
 string LocalMallocRewriter::rewrite( string entry )
 {
-	// Put the source code in a temp file.
-	char *tmpname = strdup( "/tmp/tmpfileXXXXXX" );
-	mkstemp( tmpname );
-	ofstream temp_file( tmpname );
-	temp_file << mySrc;
-	temp_file.close();
-
-	ClangInterface clangInterface( tmpname );
+	ClangInterface clangInterface( myTempFileName );
 
 	// Find the maximum allocation
 	CallGraph callGraph;
@@ -37,7 +42,7 @@ string LocalMallocRewriter::rewrite( string entry )
 	int max_alloc = callGraph.maximum_alloc( entry );
 	cout << "Maximum allocation: " << max_alloc << endl;
 
-	ClangInterface clangInterface2( tmpname );
+	ClangInterface clangInterface2( myTempFileName );
 	RewriterASTConsumer rewriterConsumer( 
 		clangInterface2.getRewriter(),
 		callGraph,
@@ -49,8 +54,5 @@ string LocalMallocRewriter::rewrite( string entry )
  
     // At this point the rewriter's buffer should be full with the rewritten
     // file contents.
-	free( tmpname );
 	return clangInterface2.getRewrittenCode();
-
-	// We might crash...
 }

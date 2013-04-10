@@ -12,6 +12,7 @@
 class LocalMallocRewriter {
 public:
 	LocalMallocRewriter( std::string src );
+	~LocalMallocRewriter();
 
 	/**
 	 * Get rewritten source code.
@@ -25,4 +26,5 @@ public:
 
 private:
 	std::string mySrc;
+	char *myTempFileName;
 };
