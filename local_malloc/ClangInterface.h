@@ -24,10 +24,10 @@ public:
 	}
 
 private:
-	clang::CompilerInstance myCompilerInstance;
 	clang::Rewriter myRewriter;
-	clang::TargetOptions TO;
-	clang::CompilerInvocation invocation;
+	clang::CompilerInvocation *invocation;
+	clang::TargetOptions *TO;
+	clang::CompilerInstance myCompilerInstance;
 };
 
 #endif

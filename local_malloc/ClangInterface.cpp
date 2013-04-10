@@ -38,15 +38,18 @@ using namespace std;
 
 ClangInterface::ClangInterface( string fileName )
 {
+	TO = new TargetOptions();
+	invocation = new CompilerInvocation();
+
 	cout << "File: " << fileName << endl;
 
     myCompilerInstance.createDiagnostics(0, 0);
 
 	// Target info
-    TO.Triple = llvm::sys::getDefaultTargetTriple();
+    TO->Triple = llvm::sys::getDefaultTargetTriple();
     TargetInfo *TI = TargetInfo::CreateTargetInfo(
-        myCompilerInstance.getDiagnostics(), TO);
-    myCompilerInstance.setTarget(TI);
+        myCompilerInstance.getDiagnostics(), *TO );
+    myCompilerInstance.setTarget( TI );
 
 	// Invocation, including all the headers necessary for
 	//  OpenCL support.
@@ -58,13 +61,13 @@ ClangInterface::ClangInterface( string fileName )
 		"-D", "__LOCAL_MALLOC_ANALYSIS__"
 		};
 	CompilerInvocation::CreateFromArgs(
-		invocation,
+		*invocation,
 		options,
 //		options + 10,
 		options + 4,
 		myCompilerInstance.getDiagnostics()
 		);	 
-	myCompilerInstance.setInvocation( &invocation );
+	myCompilerInstance.setInvocation( invocation );
 
 	// Files
     myCompilerInstance.createFileManager();
