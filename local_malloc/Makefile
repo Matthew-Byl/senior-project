@@ -18,14 +18,18 @@ CLANGLIBS = \
   -lclangAnalysis -lclangARCMigrate -lclangRewriteCore -lclangRewriteFrontend \
   -lclangEdit -lclangAST -lclangLex -lclangBasic -lclangTooling
 
-OBJS = CallGraph.o AllocationAST.o RewriterAST.o ClangInterface.o LocalMallocRewriter.o main.o
+OBJS = CallGraph.o AllocationAST.o RewriterAST.o ClangInterface.o LocalMallocRewriter.o
 
-all: rewriter
+all: rewriter libLocalMallocRewriter.so
 
-rewriter: $(OBJS)
-	$(CXX) $(OBJS) \
+rewriter: $(OBJS) main.o
+	$(CXX) $(OBJS) main.o \
 	    $(CFLAGS) -o rewriter \
         $(CLANG_BUILD_FLAGS) $(CLANGLIBS) `$(LLVM_CONFIG_LIBS_COMMAND)` -ldl
+
+libLocalMallocRewriter.so: $(OBJS)
+	$(CXX) $(OBJS) $(CFLAGS) -o libLocalMallocRewriter.so \
+		$(CLANG_BUILD_FLAGS) $(CLANGLIBS) `$(LLVM_CONFIG_LIBS_COMMAND)` -ldl
 
 %.o: %.cpp *.h
 	clang++ -Wall $(CLANG_BUILD_FLAGS) `$(LLVM_CONFIG_INCLUDES_COMMAND)` -g -c $< -o $@
