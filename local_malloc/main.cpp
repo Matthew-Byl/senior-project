@@ -1,41 +1,20 @@
-#include "ClangInterface.h"
-#include "CallGraph.h"
-#include "AllocationAST.h"
-#include "RewriterAST.h"
+#include "LocalMallocRewriter.h"
 #include <iostream>
+#include <fstream>
+#include <cassert>
+#include <cstdlib>
 using namespace std;
 
 int main ( int argc, char *argv[] )
 {
 	assert( argc == 2 );
 
-	ClangInterface clangInterface( argv[1] );
+	ifstream t( argv[1] );
+	string src( (std::istreambuf_iterator<char>(t) ),
+				std::istreambuf_iterator<char>() );
 
-	CallGraph callGraph;
-	AllocationASTConsumer allocationConsumer( 
-		clangInterface.getRewriter(),
-		callGraph,
-		clangInterface.getASTContext()
-		);
-	clangInterface.processAST( &allocationConsumer );
-
-	int max_alloc = callGraph.maximum_alloc( "entry" );
-	cout << "Maximum allocation: " << max_alloc << endl;
-
-	ClangInterface clangInterface2( argv[1] );
-	RewriterASTConsumer rewriterConsumer( 
-		clangInterface2.getRewriter(),
-		callGraph,
-		clangInterface2.getASTContext(),
-		"entry",
-		max_alloc
-		);
-	clangInterface2.processAST( &rewriterConsumer );
-
- 
-    // At this point the rewriter's buffer should be full with the rewritten
-    // file contents.
-	cout << clangInterface2.getRewrittenCode();
+	LocalMallocRewriter rewriter( src );
+	cout << rewriter.rewrite( "entry" );
 
 	exit( 0 );
 	// There is a bug with the destructor. Solve it later.

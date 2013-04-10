@@ -22,7 +22,7 @@
  *   cl_float array[1024];
  *   CLUnitArgument arrayArg( "float", array, 1024, false, false );
  *   someKernel( arrayArg ); // stores data into arrayArg, doesn't copy 
- *                           // data back to host.
+ *	                        // data back to host.
  *   someOtherKernel( arrayArg ); // reads data someKernel() stored.
  *
  * This is because C++ made a copy of arrayArg when its cl::Buffer was

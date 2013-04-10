@@ -46,6 +46,8 @@ Make the parts of your project tell a coherent story about how they fit together
 \subsection{Hardware}
 This system included four different devices that OpenCL supports: an Intel Core i7-3770K CPU, the integrated Intel HD Graphics 4000 GPU, an AMD Radeon 7970 GPU, and two nVidia GTX 480 GPUs.
 
+The theoretical performance of the Radeon 7970 is much higher than all the other devices combined. However, it also had a small maximum workgroup size of 256, whereas the nVidia GPUs supported workgroup sizes of up to 1024.
+
 This system was used for all benchmarks in this report. The CPU used is an Intel Core i7-3770, and the GPU used for benchmarks is the AMD Radeon 7970. The benchmarks were run on 64-bit Ubuntu 12.10.
 
 \subsection{Software Setup}
@@ -108,7 +110,19 @@ If the \texttt{CL\_DEBUG} environment variable is set to 1, the framework will c
 One of the main bottlenecks for GPU computing is the time to transfer data from RAM to the GPU, so the framework needs to avoid making any unnecessary copies. By default, all buffers are copied to and from the GPU every time a kernel is scheduled. This produces correct behaviour at the expense of being slow. The constructor for a \texttt{CLUnitArgument} allows developers to specify whether the host memory backing the buffer should be copied to or from the GPU.
 
 \subsection{Lazy Initialization of Buffers}
+In order that \texttt{CLUnitArgument}s can be instantiated implicitly by the C++ compiler, their constructors may not take an OpenCL context object. This object is needed in order to create the \texttt{cl::Buffer} that the \texttt{CLUnitArgument} encapsulates. It is passed later to the object by a \texttt{CLFunction} or \texttt{CLKernel} when the \texttt{cl::Buffer} is needed for the first time.
 
+This causes undesired behaviour if a copy of an original \texttt{CLUnitArgument} is what initializes the \texttt{cl:Buffer}, because the reference to the \texttt{cl::Buffer} does not propagate back to the original. C++ creates copies of \texttt{CLUnitArgument}s implicitly whenever they are used as arguments to \texttt{CLKernel}s or \texttt{CLFunction}s. Besides there being extraneous buffers created, this makes it impossible for \texttt{CLUnitArgument}s to store data on the device without copying it back to the host. Code like this then breaks:
+
+\begin{lstlisting}
+cl_float array[1024];
+CLUnitArgument arrayArg( "float", array, 1024, false, false );
+someKernel( arrayArg ); // stores data into arrayArg, doesn't copy
+                        // data back to host.
+someOtherKernel( arrayArg ); // reads data someKernel() stored.
+\end{lstlisting}
+
+The \texttt{CLUnitArgument::makePersistent()} method solves this problem by giving developers a way to create the \texttt{cl::Buffer} before any copies of the \texttt{CLUnitArgument} are made. For an example of where this is necessary, see \texttt{OpenCLPlayer::makeMove()} in \texttt{kalah/opencl\_player.cpp}.
 
 %%%%%%%%%%%%%%%%%%%%%%
 \section{Raytracer}
@@ -235,7 +249,7 @@ In order to avoid code duplication for the logic for Mankalah boards, the code i
 For data structures passed between the host and device, a shared header file can be used. However, it is important to ensure that the layout of the structures are exactly the same. Notably, fundamental times like an \texttt{int} on the device side is not guaranteed to be the same size as an \texttt{int} on the host side. OpenCL provides types on the host prefaced with \texttt{cl\_} that are guaranteed to be the same size as the type without the prefix on the client side (for an \texttt{int} on the device side, a \texttt{cl\_int} is necessary on the host side). I used preprocessor macros to use the correct types depending on where code is compiled.
 
 \subsection{Tree Structures in OpenCL}
-Because there is no dynamic memory allocation in OpenCL, I have stored all trees in arrays. It is common to store binary trees in arrays, where the first child of the node at location $n$ is at location $2n$, and the second at $2n + 1$. This can be generalized to trees of other branching factors. A few support functions for this data structure can be found in \texttt{kalah/tree_array.c}.
+Because there is no dynamic memory allocation in OpenCL, I have stored all trees in arrays. It is common to store binary trees in arrays, where the first child of the node at location $n$ is at location $2n$, and the second at $2n + 1$. This can be generalized to trees of other branching factors. A few support functions for this data structure can be found in \texttt{kalah/tree\_array.c}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Economics Simulation}
@@ -265,11 +279,19 @@ This data structure can be implemented in OpenCL with an atomic counter variable
 \subsubsection{Random Numbers}
 Many of the Societies algorithms required a source of random numbers. On a GPU, this is difficult because there is no hardware source of random numbers, and PRNGs require a unique seed per workgroup so that each workgroup does not generate the same sequence of random numbers. I made use of the MWC64X random number generator, which is ideal for GPUs because it requires very little state to be preserved across runs. I found an OpenCL implementation which was verified against statistical tests.\cite{mwc64x}
 
-\subsection{Phase 2: }
+\subsection{Phase 2: Resource Trading}
 
 
 \subsection{Testing}
 One weakness of the Python Societies code is that it is not written in a way that makes it easy to test. I made sure to make my code very clean  and wrote unit tests for all my functions, so that my code will be useful to the Societies project in the future. The algorithms I developed to find the maximum and minimum elements in an array I was also careful to test; this code should be useful as a reference for others doing similar work in OpenCL.
+
+\subsection{Kernel Size}
+The OpenCL kernels for Societies were relatively large. This is because \texttt{\_\_local} memory cannot be preserved across kernel runs, so splitting up complex tasks into several kernels was not feasible. The Mankalah player has 3 stages that are independent except that the values in \texttt{\_\_local} memory needed to be kept. This is a limitation of the hardware that leaks through as complexity for programmers.
+
+My strategy was to test each of the segments of the kernels independently, so that it was still possible to debug one section of code at a time. However, certain kinds of bugs like race conditions due to missing barriers can only be tested with the kernel as a whole.\footnote{As an aside, CPUs are much more vulnerable to synchronization errors than GPUs, because on a GPU, all hardware threads in a workgroup share an instruction pointer. In fact, the AMD OpenCL backend removes barriers that are made unnecessary by the GPU's architecture.}
+
+\subsection{Configuration Values}
+There were several configuration values that are known at kernel compile time, but at host run time. Some of them, like the number of agents in the simulation, needed to be accessible as preprocessor macros. Another advantage of passing configuration values from the host to the device using preprocessor macros rather than inside a configuration object is that memory accesses can be cut out of 
 
 \section{\_\_local Memory malloc()}
 One problem I ran across when implementing the Societies code was that most functions required many parameters to pass around scratch \texttt{\_\_local} memory that was needed by some algorithm several function calls deep. These scratch buffers needed to be declared at the beginning of a kernel rather then when they were actually used, and I had to keep track of exactly how large they needed to be. Also, because \texttt{\_\_local} memory usage restricts the number of hardware threads that can be concurrently running on the GPU, it is important to minimize the amount used, which means reusing the same buffers when possible. The result is that the complexity of managing buffers of \texttt{\_\_local} memory became a bottleneck.
@@ -292,6 +314,8 @@ After all nodes in the AST have been visited, this call graph is guaranteed to h
 
 \subsection{Phase 2: Program Rewriting}
 The tool then revisits all the nodes in the AST again, and rewrites function declarations and calls. To the kernel function, it inserts initialization code and allocates the \texttt{\_\_local} memory buffer at the size computed in the previous phase. The tool adds a state object to every function call and declaration, so that that state object is accessible anywhere in the program.
+
+\subsection{}
 
 \subsection{Results}
 

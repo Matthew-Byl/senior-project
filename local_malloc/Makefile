@@ -6,10 +6,9 @@ LLVM_BUILD_PATH = /home/john/clang-dev/llvm-build
 
 LLVM_BIN_PATH = $(LLVM_BUILD_PATH)/Debug+Asserts/bin
 LLVM_LIBS=all
-LLVM_CONFIG_COMMAND = $(LLVM_BIN_PATH)/llvm-config --cxxflags --ldflags \
-                                        --libs $(LLVM_LIBS)
-CLANG_BUILD_FLAGS = -I$(LLVM_SRC_PATH)/tools/clang/include \
-                                      -I$(LLVM_BUILD_PATH)/tools/clang/include
+LLVM_CONFIG_INCLUDES_COMMAND = $(LLVM_BIN_PATH)/llvm-config --cxxflags
+LLVM_CONFIG_LIBS_COMMAND = $(LLVM_BIN_PATH)/llvm-config --ldflags --libs $(LLVM_LIBS)
+CLANG_BUILD_FLAGS = -I$(LLVM_SRC_PATH)/tools/clang/include -I$(LLVM_BUILD_PATH)/tools/clang/include
 
 CLANGLIBS = \
   -lclangFrontendTool -lclangFrontend -lclangDriver \
@@ -19,11 +18,17 @@ CLANGLIBS = \
   -lclangAnalysis -lclangARCMigrate -lclangRewriteCore -lclangRewriteFrontend \
   -lclangEdit -lclangAST -lclangLex -lclangBasic -lclangTooling
 
-all: functions
+OBJS = CallGraph.o AllocationAST.o RewriterAST.o ClangInterface.o LocalMallocRewriter.o main.o
 
+all: rewriter
 
-functions: CallGraph.cpp CallGraph.h AllocationAST.cpp AllocationAST.h ClangInterface.cpp ClangInterface.h RewriterAST.cpp RewriterAST.h main.cpp
-	$(CXX) CallGraph.cpp AllocationAST.cpp RewriterAST.cpp ClangInterface.cpp main.cpp $(CFLAGS) -o functions \
-              $(CLANG_BUILD_FLAGS) $(CLANGLIBS) `$(LLVM_CONFIG_COMMAND)` -ldl
+rewriter: $(OBJS)
+	$(CXX) $(OBJS) \
+	    $(CFLAGS) -o rewriter \
+        $(CLANG_BUILD_FLAGS) $(CLANGLIBS) `$(LLVM_CONFIG_LIBS_COMMAND)` -ldl
+
+%.o: %.cpp *.h
+	clang++ -Wall $(CLANG_BUILD_FLAGS) `$(LLVM_CONFIG_INCLUDES_COMMAND)` -g -c $< -o $@
+
 clean:
-	rm -rf *.o functions
+	rm -rf *.o rewriter
