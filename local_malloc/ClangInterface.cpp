@@ -88,6 +88,16 @@ ClangInterface::ClangInterface( string fileName )
         &myCompilerInstance.getPreprocessor());
 }
 
+ClangInterface::~ClangInterface()
+{
+	// This will crash. But any order of the objects in
+	//  the class also crashes. Does Clang have a way to
+	//  deallocate the objects in the proper order?
+
+//	delete invocation;
+//	delete TO;
+}
+
 void ClangInterface::processAST( ASTConsumer *astConsumer )
 {
    ParseAST(

@@ -9,6 +9,7 @@
 class ClangInterface {
 public:
 	ClangInterface( std::string fileName );
+	~ClangInterface();
 
 	void processAST( clang::ASTConsumer *astConsumer );
 	std::string getRewrittenCode();
