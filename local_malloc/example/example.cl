@@ -42,7 +42,7 @@ function_sum(
 	atomic_min( &minimum, values[local_id] )
 
 	// Free scratch memory.
-	free( NUM_THREADS * SIZEOF_INT, values );
+	local_free( NUM_THREADS * SIZEOF_INT, values );
 }
 
 /// @todo: find something less stupid to do.

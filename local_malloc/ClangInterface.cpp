@@ -15,6 +15,7 @@
 #include <cassert>
 
 #define LIBCLC_INCLUDE_PATH "/home/john/senior-project/local_malloc/libclc/generic/include"
+#define LOCAL_MALLOC_INCLUDE_PATH "/home/john/senior-project/local_malloc"
 
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/RecursiveASTVisitor.h"
@@ -57,15 +58,17 @@ ClangInterface::ClangInterface( string fileName )
 	//  OpenCL support.
 	const char * const options[] = {
 		"-x", "cl",
+		"-I", "/usr/include/clang/3.0/include",
+		"-D", "__LOCAL_MALLOC_ANALYSIS__",
 		"-I", LIBCLC_INCLUDE_PATH,
 		"-include", "clc/clc.h",
-		"-I", "/usr/include/clang/3.0/include",
-		"-D", "__LOCAL_MALLOC_ANALYSIS__"
+		"-I", LOCAL_MALLOC_INCLUDE_PATH,
+		"-include", "local_malloc.h"
 		};
 	CompilerInvocation::CreateFromArgs(
 		*invocation,
 		options,
-		options + 10,
+		options + 12,
 		myCompilerInstance.getDiagnostics()
 		);	 
 	myCompilerInstance.setInvocation( invocation );

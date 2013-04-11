@@ -71,7 +71,7 @@ bool AllocationASTVisitor::VisitFunctionDecl( FunctionDecl *f )
             string FuncName = DeclName.getAsString();
 			myCallGraph.enter_function( FuncName );
 
-			cout << "Begin function " << FuncName << endl;
+//			cout << "Begin function " << FuncName << endl;
         }
 
 	return true;

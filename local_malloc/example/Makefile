@@ -8,8 +8,8 @@ example: example.cpp example.cl
 		-L .. -L $(CL_TEST) -L $(OPENCL_LIBS) \
 		-lLocalMallocRewriter -lCLTest -lOpenCL
 
-example.cl: example.cl.in
-	cpp -I .. example.cl.in > example.cl
+# example.cl: example.cl.in
+#	cpp -I .. example.cl.in > example.cl
 
 clean:
 	rm -f example

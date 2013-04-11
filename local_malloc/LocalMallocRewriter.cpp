@@ -22,7 +22,10 @@ LocalMallocRewriter::LocalMallocRewriter( string src )
 
 LocalMallocRewriter::~LocalMallocRewriter()
 {
-	unlink( myTempFileName );
+	if ( unlink( myTempFileName ) != 0 )
+	{
+		perror( "Could not delete temporary file." );
+	}
 	free( myTempFileName );
 }
 
