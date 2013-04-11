@@ -8,6 +8,14 @@
 
 #include "local_malloc.h"
 
+#define SIZEOF_INT 4
+#define NUM_THREADS 256
+
+int function( int i )
+{
+	return i * 2;
+}
+
 __kernel
 void
 function_sum(
@@ -25,7 +33,7 @@ function_sum(
 	barrier( CLK_LOCAL_MEM_FENCE );
 
 	// Allocate scratch __local memory.
-	__local int *values = local_malloc( num_threads * sizeof( int ) );
+	__local int *values = local_malloc( NUM_THREADS * SIZEOF_INT );
 
 	// Run the function at our thread's location.
 	values[local_id] = function( *range_start + local_id );
@@ -34,7 +42,7 @@ function_sum(
 	atomic_min( &minimum, values[local_id] )
 
 	// Free scratch memory.
-	free( num_threads * sizeof( float ), values );
+	free( NUM_THREADS * SIZEOF_INT, values );
 }
 
 /// @todo: find something less stupid to do.

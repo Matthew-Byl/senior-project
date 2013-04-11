@@ -28,11 +28,11 @@ rewriter: $(OBJS) main.o
         $(CLANG_BUILD_FLAGS) $(CLANGLIBS) `$(LLVM_CONFIG_LIBS_COMMAND)` -ldl
 
 libLocalMallocRewriter.so: $(OBJS)
-	$(CXX) $(OBJS) $(CFLAGS) -o libLocalMallocRewriter.so \
+	g++ -Wall -shared $(OBJS) $(CFLAGS) -o libLocalMallocRewriter.so \
 		$(CLANG_BUILD_FLAGS) $(CLANGLIBS) `$(LLVM_CONFIG_LIBS_COMMAND)` -ldl
 
 %.o: %.cpp *.h
-	clang++ -Wall $(CLANG_BUILD_FLAGS) `$(LLVM_CONFIG_INCLUDES_COMMAND)` -g -c $< -o $@
+	clang++ $(CFLAGS) $(CLANG_BUILD_FLAGS) `$(LLVM_CONFIG_INCLUDES_COMMAND)` -g -c $< -o $@
 
 clean:
-	rm -rf *.o rewriter
+	rm -rf *.o rewriter libLocalMallocRewriter.so
