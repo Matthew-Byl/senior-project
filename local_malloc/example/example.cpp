@@ -30,7 +30,7 @@ int main ( int argc, char *argv[] )
 	args.push_back( sum );
 	function_sum( args );
 
-	cout << "Sum was " << host_sum;
+	cout << "Sum was " << host_sum << endl;
 
     return 0;
 }

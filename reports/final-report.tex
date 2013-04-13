@@ -15,7 +15,7 @@
 \title{Senior Project: GPU Computing}
 \author{John Kloosterman \\
   \texttt{john.kloosterman@gmail.com}}
-\date{September 2012-May 2013}
+\date{May 2013}
 \maketitle
 
 
@@ -32,7 +32,7 @@
 %%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}
 
-Graphics Processing Units (GPUs) are ... Although designed for interactive 3D graphics, they can be used for general-purpose computational tasks. This is often called General Purpose GPU (GPGPU) computing. GPUs have significant numerical computational power, and are able to perform computationally-heavy tasks more quickly than CPUs while using less power. Some common applications of GPGPU computing are video encoding, scientific computing, and physics simulation in computer games.
+Graphics Processing Units (GPUs) are data-parallel processors. Although designed for interactive 3D graphics, they can be used for general-purpose computational tasks, which is called General Purpose GPU (GPGPU) computing. GPUs have significant numerical computational power, and are able to perform computationally-heavy tasks more quickly than CPUs while using less power. Some common applications of GPGPU computing are video encoding, scientific computing, and physics simulation in computer games.
 
 However, programming GPUs is a difficult process. The first GPGPU computing was done by writing custom graphics shaders, but once GPU vendors recognized the potential of GPGPU computing, they released frameworks like nVidia's CUDA and the vender-neutral OpenCL to facilitate writing GPGPU programs. However, OpenCL in particular is tedious and difficult to use. This difficulty also gets in the way of testing. As well, there are limitations that GPU architecture places on GPU programs, such as no recursion, no dynamic memory, no global variables, and no function pointers. As a result, many algorithms need substantial reformulations to be run efficiently on a GPU.
 
@@ -55,29 +55,29 @@ Together, these components fulfill the objectives set foward in my proposal of m
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 \section{Test Computer}
-[introduce test system here]. The system was paid for out of Prof. Adams' NSF Grant TUES-2 \#1225739, with the nVidia GPUs provided by nVidia.
+The first part of the project was building a system with GPUs capable of GPGPU computation, for development and testing work. The system was paid for out of Prof. Adams' NSF Grant TUES-2 \#1225739, with the nVidia GPUs provided by nVidia.
 
 \subsection{Hardware}
 This system included four different devices that OpenCL supports: an Intel Core i7-3770K CPU, the integrated Intel HD Graphics 4000 GPU, an AMD Radeon 7970 GPU, and two nVidia GTX 480 GPUs.
 
 The theoretical performance of the Radeon 7970 is much higher than all the other devices combined. However, it also had a small maximum workgroup size of 256, whereas the nVidia GPUs supported workgroup sizes of up to 1024.
 
-This system was used for all benchmarks in this report. The CPU used is an Intel Core i7-3770, and the GPU used for benchmarks is the AMD Radeon 7970. The benchmarks were run on 64-bit Ubuntu 12.10.
+This system, running 64-bit Ubuntu 12.10, was used for all benchmarks in this report. The GPU used for benchmarks is the AMD Radeon 7970.
 
 \subsection{Software Setup}
 On Linux, it is currently difficult to have multiple OpenCL platforms installed at the same time. GPU platforms will only work if the X.org driver for that GPU is currently being used, which meant that I could not use the nVidia GPUs when the AMD GPU was being used to drive the display. As well, Ubuntu would not boot with the nVidia graphics drivers installed when the AMD graphics card was installed in the system. On top of this, the nVidia and Intel platforms inmplemented OpenCL 1.1 whereas the AMD platform implemented OpenCL 1.2, and the headers are incompatible between versions even when only OpenCL 1.1 features are being used. For this reason, I developed exclusively with the AMD APP SDK 2.8 on Linux.
 
-The situation is far easier on Windows, where both AMD and nVidia GPUs were always accessible with OpenCL. The Intel integrated GPU was only available if the system was booted with a display connected to it. AMD has the most robust set of tools for profiling and debugging OpenCL, but these tools only work on Windows in Visual Studio. Therefore, my workflow was to develop on Linux, but ensure that the code was portable to Windows, should I need to test on more GPUs and work with the profiling tools available there.
+The situation is far easier on Windows, where both AMD and nVidia GPUs were always accessible with OpenCL. The Intel integrated GPU was only available if the system was booted with a display connected to it. AMD has the most robust set of tools for profiling and debugging OpenCL, but these tools only work on Windows in Visual Studio. Therefore, my workflow was to develop on Linux, but ensure that the code was portable to Windows, should I need to test on more GPUs and work with the profiling tools available there. Windows portability largely consisted of not relying on C++11 features.
 
 \subsection{OpenCL Quirks}
-As of the AMD APP SDK 2.8, for AMD GPUs \texttt{printf()} only reliably works when the tread with local ID (0,0,0) calls it. Sometimes, calls from other threads will make it. As well, \texttt{printf()} often does not work even then if it is inside any kind of conditional structure.
+As of the AMD APP SDK 2.8, for AMD GPUs \texttt{printf()} only reliably works when the thread with local ID (0,0,0) calls it. Sometimes, calls from other threads will make it. As well, \texttt{printf()} often does not work even then if it is inside any kind of conditional structure.
 
 %%%%%%%%%%%%%%%%%%%%%%%
 \section{OpenCL Framework}
 OpenCL is designed to be flexible, but this means that it is unwieldly for developers to use. The simplest OpenCL program that runs code on a GPU is on the order of 50 lines long. The framework is an attempt at making OpenCL kernel calls syntactially as similar as possible to calling a C++ function or method.
 
 \subsection{Functions vs. Kernels}
-The entry point of an OpenCL program is a kernel, marked with the \texttt{\_\_kernel} keyword. This framework wraps around OpenCL's native functionality with the CLKernel class, making it simpler to compile kernels, pass parameters to them, and set the local and global workgroup size of the kernel. An example usage of the CLKernel class is [FILE NAME].
+The entry point of an OpenCL program is a kernel, marked with the \texttt{\_\_kernel} keyword. This framework wraps around OpenCL's native functionality with the CLKernel class, making it simpler to compile kernels, pass parameters to them, and set the local and global workgroup size of the kernel.
 
 OpenCL does not support calling non-kernel functions, but these functions need some way to be tested. The \texttt{CLFunction} class in this framework removes OpenCL's limitation. A kernel to call the function is automatically generated at compile-time, and that kernel is passed to OpenCL. \texttt{CLFunction} will run the function on one thread.
 
@@ -214,7 +214,7 @@ The minimax scores at a node can be computed in O(log(n),n) time by using $n^{d-
 Because the boards are stored in local memory, and there are sequential dependencies between these steps, all threads for one of these minimax trees must be in the same workgroup. On the Radeon 7970, the maximum work group size is 256. Therefore, for Kalah, with a branching factor of 6, a minimax tree of 4 levels ($6^0 + 6^1 + 6^2 + 6^3 = 259$ nodes) was used, with a workgroup size of $6^3 = 216$. Since there were more nodes in the tree than threads in the workgroup, some threads had to evaluate 2 boards.
 
 \subsection{Increasing Search Depth}
-Because of memory bottlenecks, there is a limit to how many GPU minimax instances can be dispatched efficiently. On the test system, 8 levels of sequential minimax (genering an average of [--] GPU instances) was optimal for performance. As well, as Rocki and Suda\cite{rockisuda10} noted, the search tree has to be traversed twice at this level, once to determine what the leaf nodes are, and second to run the minimax reduction on the nodes.
+Because of memory bottlenecks, there is a limit to how many GPU minimax instances can be dispatched efficiently. On the test system, 10 levels of sequential minimax was optimal for performance. As well, as Rocki and Suda\cite{rockisuda10} noted, the search tree has to be traversed twice at this level, once to determine what the leaf nodes are, and second to run the minimax reduction on the nodes.
 
 Therefore, to gain more search depth, another level of sequential minimax was run above this first round of sequential minimax. Adding more levels at the topmost level of minimax increased the depth of the search but not the number of GPU instances dispatched at one time. Only one traversal of the search tree is necessary at this step.
 
@@ -325,23 +325,22 @@ The tool then revisits all the nodes in the AST again, and rewrites function dec
 \subsection{Including Runtime Code}
 The actual code for the \texttt{local\_malloc()} and \texttt{local\_free()} functions needs to be bundled with the rewritten code. One difficulty is that these functions have a different signature before and after rewriting (because the state object is added as a parameter). Also, OpenCL does not support including header files in its compiler. Therefore, the rewriter injects the needed run-time code at the beginning of the program, with the signatures of \texttt{local\_malloc()} and \texttt{local\_free()} as the programmer expects them defined as prototypes. These prototypes are visible only when a preprocessor macro is defined. This allows Clang to parse the code without errors. This code is left in after rewriting, but the preprocessor macro is no longer defined. This exposes the run-time signatures of \texttt{local\_malloc()} and \texttt{local\_free()} along with their code.
 
-I wrote a small tool that allowed me to embed this source code into the executable of the tool, which means that the tool does not need to find that source code to be able to run.
+I wrote a small tool that allowed me to embed this source code into the executable of the tool, which means that the tool does not need to find that source code file to be able to be used.
 
 \subsection{Results}
-An example program using \texttt{local\_malloc()} is in \texttt{local\_malloc/example}.
+An example program using \texttt{local\_malloc()} is in \texttt{local\_malloc/example}. This example uses the rewriting tool tool to rewrite a kernel using \texttt{local\_malloc()}, then runs it using the OpenCL framework. This program only needed 9 lines devoted to rewriting the kernel and running it on an OpenCL device.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusions}
-OpenCL was difficult to work with, and the limitations it imposed made it difficult to do otherwise-simple tasks like find minimum values in an array. There is a long way to go before GPUs are accessible to non-specialist developers with OpenCL. OpenACC, which is built into a C/C++ compiler and uses \texttt{\#pragma} constructs much like OpenMP is a promising route. However, I do not think OpenACC would have reduced the complexity of writing larger applications like the Societies simulation.
+OpenCL was difficult to work with, and the limitations it imposed made it difficult to do otherwise-simple tasks like find minimum values in an array. There is a long way to go before GPUs are accessible to non-specialist developers with OpenCL. OpenACC, which is built into a C/C++ compiler and uses \texttt{\#pragma} similar to OpenMP is a promising route. However, I do not think OpenACC would have reduced the complexity of writing larger applications like the Societies simulation. The framework was successful at making OpenCL easier to use on the host side, but the OpenCL language created complexity on the device side. More device-side language features, like \texttt{local\_malloc()} would better serve to make the GPU easier to use than more host-side improvements.
 
-
+The Mankalah player and Societies simulation were excellent exercises at designing data-parallel algorithms to solve problems that are not obviously data-parallel. Because of the performance and power benefits of data-parallel architectures, the kind of thinking needed to design these algorithms will only become more relevant. The Mankalah player was also a useful exercise at designing an application that made use of the strengths of all the parts of a heterogeneous architecture. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Future Work}
-Some kind of standard library for OpenCL kernels that could perform tasks like sorting arrays in \texttt{\_\_local} memory efficiently, or finding the minimum $n$ values in an array would make complex kernels much easier to write. In general, OpenCL's API encourages writing small kernels that do one thing, but this conflicts with GPU architecture where it is faster to keep data in \texttt{\_\_local} memory while a large kernel does a lot of processing work on it.
+Some kind of standard library for OpenCL kernels that could perform tasks like sorting arrays in \texttt{\_\_local} memory efficiently, generating pseudorandom numbers, or finding the minimum $n$ values in an array would make complex kernels much easier to write. In general, OpenCL's API encourages writing small kernels that do one thing, but this conflicts with GPU architecture where it is faster to keep data in \texttt{\_\_local} memory while a large kernel does a lot of processing work on it.
 
 There is a lot of space for programming languages to reduce the complexity of writing kernels. The \texttt{local\_malloc()} tool is an example, but the abstractions are able to go higher. OpenCL requires programming from the vantage point of an individual hardware thread, but the individual threads are usually coordinated into tasks, like finding the minimum in an array. Having separate languages or layers of abstraction for the thread-level versus task-level views of a kernel would be useful.
-
 
 \bibliographystyle{plain}
 \bibliography{final-report}

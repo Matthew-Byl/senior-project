@@ -41,6 +41,10 @@ function_sum(
 
 	// Free scratch memory.
 	local_free( NUM_THREADS * SIZEOF_INT );
+	
+	// Copy the result to global memory.
+	if ( local_id == 0 )
+		*sum = minimum;
 }
 
 /// @todo: find something less stupid to do.

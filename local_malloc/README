@@ -7,5 +7,8 @@ In the Makefile, set LLVM_SRC_PATH and LLVM_BUILD_PATH to the correct locations 
 LLVM build. Depending on the flags you gave when configuring LLVM, you may need to
 adjust LLVM_BIN_PATH to Release+Asserts instead of Debug+Asserts.
 
+In ClangInterface.cpp, there is a constant, LIBCLC_INCLUDE_PATH, that needs to point
+to the location of libclc if you want fewer compiler warnings/errors.
+
 The public interface to the library is the LocalMallocRewriter class. See the example
  in the examples/ directory for usage.

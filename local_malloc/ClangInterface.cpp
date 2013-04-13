@@ -15,7 +15,6 @@
 #include <cassert>
 
 #define LIBCLC_INCLUDE_PATH "/home/john/senior-project/local_malloc/libclc/generic/include"
-#define LOCAL_MALLOC_INCLUDE_PATH "/home/john/senior-project/local_malloc"
 
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/RecursiveASTVisitor.h"
@@ -62,13 +61,11 @@ ClangInterface::ClangInterface( string fileName )
 		"-D", "__LOCAL_MALLOC_ANALYSIS__",
 		"-I", LIBCLC_INCLUDE_PATH,
 		"-include", "clc/clc.h",
-		"-I", LOCAL_MALLOC_INCLUDE_PATH,
-		"-include", "local_malloc.h"
 		};
 	CompilerInvocation::CreateFromArgs(
 		*invocation,
 		options,
-		options + 12,
+		options + 10,
 		myCompilerInstance.getDiagnostics()
 		);	 
 	myCompilerInstance.setInvocation( invocation );
