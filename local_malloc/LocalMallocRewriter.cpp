@@ -9,6 +9,9 @@
 #include <fstream>
 using namespace std;
 
+// The source code for the local_malloc header.
+extern string local_malloc_header;
+
 LocalMallocRewriter::LocalMallocRewriter( string src )
 	: mySrc( src )
 {
@@ -16,7 +19,7 @@ LocalMallocRewriter::LocalMallocRewriter( string src )
 	myTempFileName = strdup( "/tmp/tmpfileXXXXXX" );
 	mkstemp( myTempFileName );
 	ofstream temp_file( myTempFileName );
-	temp_file << mySrc;
+	temp_file << local_malloc_header << mySrc;
 	temp_file.close();
 }
 
@@ -58,4 +61,6 @@ string LocalMallocRewriter::rewrite( string entry )
     // At this point the rewriter's buffer should be full with the rewritten
     // file contents.
 	return clangInterface2.getRewrittenCode();
+
+	// Inject the local_malloc code!
 }

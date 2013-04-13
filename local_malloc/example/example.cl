@@ -6,8 +6,6 @@
  * @date April 10, 2013
  */
 
-#include "local_malloc.h"
-
 #define SIZEOF_INT 4
 #define NUM_THREADS 256
 
@@ -38,11 +36,11 @@ function_sum(
 	// Run the function at our thread's location.
 	values[local_id] = function( *range_start + local_id );
 
-	// Find the minimum using atomics.
-	atomic_min( &minimum, values[local_id] )
+	// Find the sum using atomics.
+	atomic_add( &minimum, values[local_id] );
 
 	// Free scratch memory.
-	local_free( NUM_THREADS * SIZEOF_INT, values );
+	local_free( NUM_THREADS * SIZEOF_INT );
 }
 
 /// @todo: find something less stupid to do.

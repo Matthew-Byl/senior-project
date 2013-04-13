@@ -114,7 +114,7 @@ bool RewriterASTVisitor::VisitFunctionDecl( FunctionDecl *f )
 		{
 			// Put in the prelude.
 			stringstream prelude;
-			prelude << "__local char *__local_malloc_buffer[" << myBufferSize << "];" << endl;
+			prelude << "__local char __local_malloc_buffer[" << myBufferSize << "];" << endl;
 			prelude << "LocalMallocState __local_malloc_state_backing;" << endl;
 			prelude << "LocalMallocState *__local_malloc_state = &__local_malloc_state_backing;" << endl;
 			prelude << "local_malloc_init( __local_malloc_buffer, " << myBufferSize << ", __local_malloc_state );" << endl;

@@ -18,7 +18,7 @@ CLANGLIBS = \
   -lclangAnalysis -lclangARCMigrate -lclangRewriteCore -lclangRewriteFrontend \
   -lclangEdit -lclangAST -lclangLex -lclangBasic -lclangTooling
 
-OBJS = CallGraph.o AllocationAST.o RewriterAST.o ClangInterface.o LocalMallocRewriter.o
+OBJS = CallGraph.o AllocationAST.o RewriterAST.o ClangInterface.o LocalMallocRewriter.o MallocHeader.o
 
 all: rewriter libLocalMallocRewriter.so
 
@@ -31,8 +31,11 @@ libLocalMallocRewriter.so: $(OBJS)
 	g++ -Wall -shared $(OBJS) $(CFLAGS) -o libLocalMallocRewriter.so \
 		$(CLANG_BUILD_FLAGS) $(CLANGLIBS) `$(LLVM_CONFIG_LIBS_COMMAND)` -ldl
 
+MallocHeader.cpp: local_malloc.h
+	./embed_src.sh local_malloc.h local_malloc_header > MallocHeader.cpp
+
 %.o: %.cpp *.h
 	clang++ $(CFLAGS) $(CLANG_BUILD_FLAGS) `$(LLVM_CONFIG_INCLUDES_COMMAND)` -g -c $< -o $@
 
 clean:
-	rm -rf *.o rewriter libLocalMallocRewriter.so
+	rm -rf *.o rewriter libLocalMallocRewriter.so MallocHeader.cpp

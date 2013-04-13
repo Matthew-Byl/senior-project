@@ -14,7 +14,7 @@ CLContext::CLContext()
 {
 	/// @todo: allow some way to change this default using
 	///  environment variables or the like?
-	initialize( 1, 0 );
+	initialize( 0, 0 );
 }
 
 CLContext::CLContext( int platform, int device )
