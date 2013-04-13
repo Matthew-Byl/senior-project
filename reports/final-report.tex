@@ -31,17 +31,31 @@
 % Appendixes (if appropriate)
 %%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}
-This is the introduction.
 
-Main problem I was trying to solve: GPUs are an architecture that has potential for great performance and power improvements, but they are too difficult to use.
+Graphics Processing Units (GPUs) are ... Although designed for interactive 3D graphics, they can be used for general-purpose computational tasks. This is often called General Purpose GPU (GPGPU) computing. GPUs have significant numerical computational power, and are able to perform computationally-heavy tasks more quickly than CPUs while using less power. Some common applications of GPGPU computing are video encoding, scientific computing, and physics simulation in computer games.
 
-Make the parts of your project tell a coherent story about how they fit together. One thing you have done a lot of is algorithms to do fairly simple things on the GPU but don't have a standard library implementation. Idioms like linked lists on CPUs -> idioms like skipping threads for trees on GPUs.
+However, programming GPUs is a difficult process. The first GPGPU computing was done by writing custom graphics shaders, but once GPU vendors recognized the potential of GPGPU computing, they released frameworks like nVidia's CUDA and the vender-neutral OpenCL to facilitate writing GPGPU programs. However, OpenCL in particular is tedious and difficult to use. This difficulty also gets in the way of testing. As well, there are limitations that GPU architecture places on GPU programs, such as no recursion, no dynamic memory, no global variables, and no function pointers. As a result, many algorithms need substantial reformulations to be run efficiently on a GPU.
+
+The objective of my senior project was to make programming for GPUs using OpenCL simpler for developers, and to explore how to write efficient programs for GPU architectures. The project fell into four segments:
+
+\begin{enumerate}
+\item
+Building a test computer system for development and benchmarking.
+\item
+Writing a framework around OpenCL.
+\item 
+Designing applications and algorithms that took advantage of GPU architecture, including a raytracer, an artificial intellegence game player, and an economics simulation.
+\item
+Writing a compiler tool to make memory management less complex in OpenCL programs.
+\end{enumerate}
+
+Together, these components fulfill the objectives set foward in my proposal of making OpenCL easier to use for other developers and solving an open problem in GPU computing.
 
 \tableofcontents
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 \section{Test Computer}
-[introduce test system here]. The system was paid for out of NSF Grant \#XXXX, with the nVidia GPUs provided by nVidia.
+[introduce test system here]. The system was paid for out of Prof. Adams' NSF Grant TUES-2 \#1225739, with the nVidia GPUs provided by nVidia.
 
 \subsection{Hardware}
 This system included four different devices that OpenCL supports: an Intel Core i7-3770K CPU, the integrated Intel HD Graphics 4000 GPU, an AMD Radeon 7970 GPU, and two nVidia GTX 480 GPUs.
@@ -206,21 +220,7 @@ Therefore, to gain more search depth, another level of sequential minimax was ru
 
 \subsection{Performance}
 \subsubsection{Optimal Sequential Depth}
-One optimization question is for a minimax tree of a given depth how many levels shuld be computed in each of the 3 minimax stages. The GPU portion is fixed at 4 levels, so the distribution needs to be between the two sequential minimax stages. On the test system, the optimal allocation was XXXXXXXXXXX.
-
-REDO THIS, because for depth 13, (0,10) is fastest, but (0,11) is too large for the GPU. It would make more sense to do depth 14, even though ti would take longer to benchmark.
-
-\begin{tabular}{| l | l | l | l | l |}
-  \hline
-  Pre & Seq & Parallel & Time for 20 & Time for 1 \\
-  \hline
-  0 & 10 & 4 & 188.03s & 9.40s \\
-  1 & 9 & 4 & 221.17s & 11.05s \\ 
-  2 & 8 & 4 & 212.45s & 10.62s \\
-  3 & 7 & 4 & 233.92s & 11.70s \\ 
-  4 & 6 & 4 & 281.78s & 14.09s \\
-  \hline
-\end{tabular}
+One optimization question is for a minimax tree of a given depth how many levels shuld be computed in each of the 3 minimax stages. The GPU portion is fixed at 4 levels, so the distribution needs to be between the two sequential minimax stages. On the test system, the optimal allocation was to do 10 levels on the CPU before moving the boards to the GPU.
 
 \subsubsection{Speedup}
 A recursive sequential algorithm was implemented for performance comparisons. As the table below demonstrates, the using the GPU yielded about a 10x speedup once the problem became sufficiently large. A 10x performance increase for a game with a branching factor of 6 means that the player can look another move ahead in the game.
@@ -252,7 +252,7 @@ In order to avoid code duplication for the logic for Mankalah boards, the code i
 For data structures passed between the host and device, a shared header file can be used. However, it is important to ensure that the layout of the structures are exactly the same. Notably, fundamental times like an \texttt{int} on the device side is not guaranteed to be the same size as an \texttt{int} on the host side. OpenCL provides types on the host prefaced with \texttt{cl\_} that are guaranteed to be the same size as the type without the prefix on the client side (for an \texttt{int} on the device side, a \texttt{cl\_int} is necessary on the host side). I used preprocessor macros to use the correct types depending on where code is compiled.
 
 \subsection{Tree Structures in OpenCL}
-Because there is no dynamic memory allocation in OpenCL, I have stored all trees in arrays. It is common to store binary trees in arrays, where the first child of the node at location $n$ is at location $2n$, and the second at $2n + 1$. This can be generalized to trees of other branching factors. A few support functions for this data structure can be found in \texttt{kalah/tree\_array.c}.
+Because there is no dynamic memory allocation in OpenCL, I have stored all trees in arrays. It is common to store binary trees in arrays, where the first child of the node at location $n$ is at location $2n$, and the second at $2n + 1$. This can be generalized to trees of other branching factors. Support functions for this data structure can be found in \texttt{kalah/tree\_array.c}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Economics Simulation}
@@ -283,7 +283,7 @@ This data structure can be implemented in OpenCL with an atomic counter variable
 Many of the Societies algorithms required a source of random numbers. On a GPU, this is difficult because there is no hardware source of random numbers, and PRNGs require a unique seed per workgroup so that each workgroup does not generate the same sequence of random numbers. I made use of the MWC64X random number generator, which is ideal for GPUs because it requires very little state to be preserved across runs. I found an OpenCL implementation which was verified against statistical tests.\cite{mwc64x}
 
 \subsection{Phase 2: Resource Trading}
-
+The agents are able to trade resources in pairs. The algorithms from the previous phase were sufficient for implementing this phase, except that there had to be an efficient way to randomly pair agents while ensuring that each agent was only in one pair. My solution was to generate a random permutation of the numbers $0 \cdots n-1$ using the ``inside-out'' Fisher-Yates shuffle, where $n$ is the number of agents, on the CPU. This permutation is copied to GPU, where one workgroup is assigned to each pair of agents.
 
 \subsection{Testing}
 One weakness of the Python Societies code is that it is not written in a way that makes it easy to test. I made sure to make my code very clean  and wrote unit tests for all my functions, so that my code will be useful to the Societies project in the future. The algorithms I developed to find the maximum and minimum elements in an array I was also careful to test; this code should be useful as a reference for others doing similar work in OpenCL.
@@ -296,6 +296,10 @@ My strategy was to test each of the segments of the kernels independently, so th
 \subsection{Configuration Values}
 There were several configuration values that are known at kernel compile time, but at host run time. Some of them, like the number of agents in the simulation, needed to be accessible as preprocessor macros. Another advantage of passing configuration values from the host to the device using preprocessor macros rather than inside a configuration object is that memory accesses can be cut out of 
 
+\subsection{Partial Completion}
+As I was starting work on the third phase of the simulation, it was getting unwieldly to program the large and complex kernels. I found that managing buffers of \texttt{\_\_local} memory were the largest source of complexity, and thought approaching that problem would be ultimately more fruitful than finishing the increasingly complex parts of the Societies simulation. In particular, the method by which agents traded higher-order devices in the simulation was complicated, only partially documented in the Societies paper, and the Python source code was obtuse. It would have been more of an exercise in implementing specifications than computer science research.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{\_\_local Memory malloc()}
 One problem I ran across when implementing the Societies code was that most functions required many parameters to pass around scratch \texttt{\_\_local} memory that was needed by some algorithm several function calls deep. These scratch buffers needed to be declared at the beginning of a kernel rather then when they were actually used, and I had to keep track of exactly how large they needed to be. Also, because \texttt{\_\_local} memory usage restricts the number of hardware threads that can be concurrently running on the GPU, it is important to minimize the amount used, which means reusing the same buffers when possible. The result is that the complexity of managing buffers of \texttt{\_\_local} memory became a bottleneck.
 
@@ -328,9 +332,15 @@ An example program using \texttt{local\_malloc()} is in \texttt{local\_malloc/ex
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
 \section{Conclusions}
+OpenCL was difficult to work with, and the limitations it imposed made it difficult to do otherwise-simple tasks like find minimum values in an array. There is a long way to go before GPUs are accessible to non-specialist developers with OpenCL. OpenACC, which is built into a C/C++ compiler and uses \texttt{\#pragma} constructs much like OpenMP is a promising route. However, I do not think OpenACC would have reduced the complexity of writing larger applications like the Societies simulation.
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Future Work}
+Some kind of standard library for OpenCL kernels that could perform tasks like sorting arrays in \texttt{\_\_local} memory efficiently, or finding the minimum $n$ values in an array would make complex kernels much easier to write. In general, OpenCL's API encourages writing small kernels that do one thing, but this conflicts with GPU architecture where it is faster to keep data in \texttt{\_\_local} memory while a large kernel does a lot of processing work on it.
+
+There is a lot of space for programming languages to reduce the complexity of writing kernels. The \texttt{local\_malloc()} tool is an example, but the abstractions are able to go higher. OpenCL requires programming from the vantage point of an individual hardware thread, but the individual threads are usually coordinated into tasks, like finding the minimum in an array. Having separate languages or layers of abstraction for the thread-level versus task-level views of a kernel would be useful.
 
 
 \bibliographystyle{plain}

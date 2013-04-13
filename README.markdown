@@ -8,11 +8,11 @@ This is the code for [John Kloosterman's](http://jkloosterman.net) senior projec
 * reports: the LaTeX source and output for the final report about the project.
 
 Building
-========
+--------
 The top-level Makefile will build cl_test, kalah, and the raytracer.
 
 Dependencies
-============
-cl_test: OpenCL 1.1 or 1.2
-raytracer: GTK+ 2, libpng 1.2.49
-local_malloc: Source and a build of LLVM and Clang version 3.2
+------------
+* cl_test: OpenCL 1.1 or 1.2
+* raytracer: GTK+ 2, libpng 1.2.49
+* local_malloc: Source and a build of LLVM and Clang version 3.2
