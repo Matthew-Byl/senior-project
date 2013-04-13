@@ -1,0 +1,11 @@
+Building this library:
+======================
+You will need a copy of LLVM and Clang. I compiled against LLVM and Clang 3.2; other versions
+might have a slightly different API and require modifications to this library.
+
+In the Makefile, set LLVM_SRC_PATH and LLVM_BUILD_PATH to the correct locations for your
+LLVM build. Depending on the flags you gave when configuring LLVM, you may need to
+adjust LLVM_BIN_PATH to Release+Asserts instead of Debug+Asserts.
+
+The public interface to the library is the LocalMallocRewriter class. See the example
+ in the examples/ directory for usage.

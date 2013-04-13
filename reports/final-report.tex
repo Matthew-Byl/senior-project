@@ -124,6 +124,9 @@ someOtherKernel( arrayArg ); // reads data someKernel() stored.
 
 The \texttt{CLUnitArgument::makePersistent()} method solves this problem by giving developers a way to create the \texttt{cl::Buffer} before any copies of the \texttt{CLUnitArgument} are made. For an example of where this is necessary, see \texttt{OpenCLPlayer::makeMove()} in \texttt{kalah/opencl\_player.cpp}.
 
+\subsection{Examples}
+There is an example usage of this framework in the \texttt{cl\_test/example} directory. All the other components of my project used this library as well, which means they serve as more complicated usage examples.
+
 %%%%%%%%%%%%%%%%%%%%%%
 \section{Raytracer}
 As a simple application to run on top of my framework, I implemented an OpenCL raytracer for honours credit in CS 352 (Computer Graphics). The raytracer maps one pixel onto one hardware thread. The objective was for the raytracer to support real-time user interaction.
@@ -315,9 +318,13 @@ After all nodes in the AST have been visited, this call graph is guaranteed to h
 \subsection{Phase 2: Program Rewriting}
 The tool then revisits all the nodes in the AST again, and rewrites function declarations and calls. To the kernel function, it inserts initialization code and allocates the \texttt{\_\_local} memory buffer at the size computed in the previous phase. The tool adds a state object to every function call and declaration, so that that state object is accessible anywhere in the program.
 
-\subsection{}
+\subsection{Including Runtime Code}
+The actual code for the \texttt{local\_malloc()} and \texttt{local\_free()} functions needs to be bundled with the rewritten code. One difficulty is that these functions have a different signature before and after rewriting (because the state object is added as a parameter). Also, OpenCL does not support including header files in its compiler. Therefore, the rewriter injects the needed run-time code at the beginning of the program, with the signatures of \texttt{local\_malloc()} and \texttt{local\_free()} as the programmer expects them defined as prototypes. These prototypes are visible only when a preprocessor macro is defined. This allows Clang to parse the code without errors. This code is left in after rewriting, but the preprocessor macro is no longer defined. This exposes the run-time signatures of \texttt{local\_malloc()} and \texttt{local\_free()} along with their code.
+
+I wrote a small tool that allowed me to embed this source code into the executable of the tool, which means that the tool does not need to find that source code to be able to run.
 
 \subsection{Results}
+An example program using \texttt{local\_malloc()} is in \texttt{local\_malloc/example}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
 \section{Conclusions}
