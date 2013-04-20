@@ -53,6 +53,25 @@ Together, these components fulfill the objectives set foward in my proposal of m
 
 \tableofcontents
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{OpenCL Overview}
+OpenCL is an API for compiling and executing code on heterogeneous systems (systems with more than one architecture). The most common scenario is running code on a GPU, but OpenCL backends have been written for other types of accelerator cards, such as Intel's Xeon Phi, as wellas devices like dynamically-generated FPGAs. nVidia has a similar API for running code on GPUs called CUDA, but CUDA only supports nVidia GPUs.
+
+% TODO: cite OpenCL spec?
+
+\subsection{Host and Device Side}
+In OpenCL, there is a strict separation between the host side and the device side. The ``host'' must be a CPU; it is responsible for compiling kernels and scheduling data transfers and kernel exections on the device side. The ``device'' is usually a non-CPU, such as a GPU or FPGA. OpenCL ``kernels'' are the only code that can be run on the device side. Devices cannot schedule data transfers or new kernel executions. Host-side code can be written in any language the OpenCL host API has been ported to. Kernels for the device side must be written in OpenCL C, which is a subset of C99.
+
+\subsection{Threads and Workgroups}
+An OpenCL kernel describes what a single hardware thread will do. GPU architectures have hundreds of hardware threads executing in parallel, and threads must be scheduled in groups (typically mutiples of 64). This means that efficient algorithms for GPUs will use many hardware threads. This constrasts with the way threads are used on CPUs, where spawning a thread can be an expensive operation.
+
+Threads are grouped into ``workgroups'', which are limited by the hardware to 256 or 1024 threads. OpenCL organizes the threads in a workgroup into up to 3 dimensions. Threads within a workgroup are able to synchronize with each other to avoid race conditions and nondeterministic behaviour, whereas threads in different workgroups have no way to do any synchronization. Therefore, programming for OpenCL typically requires splitting a problem into blocks of the appropriate size for processing by a single workgroup.
+
+\subsection{Memory Spaces}
+CPUs are able to automatically manage a memory hiearchy, because the small number of threads access relatively few new memory locations per cycle. On a data-parallel architecture like a GPU, the thousands of threads can pull in massive amounts of data per cycle, making caching impossible. Therefore, the burden is shifted to the programmer to organize which data should be stored in which levels of the memory hiearchy.
+
+In OpenCL, video RAM is called \texttt{\_\_global} memory. There is a large amount of it (3GB on the Radeon 7970), but it requires several hundred cycles to access. Each workgroup can allocate an amount of much faster \texttt{\_\_local} memory as a cache or scratch space. A thread can store data in thread-specific, fast registers that are labeled \texttt{\_\_private} memory. In OpenCL, these are completely separate memory spaces; declarations of pointers have to include which memory space they are pointing into.
+
 %%%%%%%%%%%%%%%%%%%%%%%%
 \section{Test Computer}
 The first part of the project was building a system with GPUs capable of GPGPU computation, for development and testing work. The system was paid for out of Prof. Adams' NSF Grant TUES-2 \#1225739, with the nVidia GPUs provided by nVidia.
@@ -70,26 +89,27 @@ On Linux, it is currently difficult to have multiple OpenCL platforms installed 
 The situation is far easier on Windows, where both AMD and nVidia GPUs were always accessible with OpenCL. The Intel integrated GPU was only available if the system was booted with a display connected to it. AMD has the most robust set of tools for profiling and debugging OpenCL, but these tools only work on Windows in Visual Studio. Therefore, my workflow was to develop on Linux, but ensure that the code was portable to Windows, should I need to test on more GPUs and work with the profiling tools available there. Windows portability largely consisted of not relying on C++11 features.
 
 \subsection{OpenCL Quirks}
-As of the AMD APP SDK 2.8, for AMD GPUs \texttt{printf()} only reliably works when the thread with local ID (0,0,0) calls it. Sometimes, calls from other threads will make it. As well, \texttt{printf()} often does not work even then if it is inside any kind of conditional structure.
+As of the AMD APP SDK 2.8, for AMD GPUs \texttt{printf()} only reliably works when the thread in a workgroup with local ID (0,0,0) calls it. Sometimes, calls from other threads will make it. As well, \texttt{printf()} often does not work even then if it is inside any kind of conditional structure.
 
 %%%%%%%%%%%%%%%%%%%%%%%
 \section{OpenCL Framework}
 OpenCL is designed to be flexible, but this means that it is unwieldly for developers to use. The simplest OpenCL program that runs code on a GPU is on the order of 50 lines long. The framework is an attempt at making OpenCL kernel calls syntactially as similar as possible to calling a C++ function or method.
 
 \subsection{Functions vs. Kernels}
-The entry point of an OpenCL program is a kernel, marked with the \texttt{\_\_kernel} keyword. This framework wraps around OpenCL's native functionality with the CLKernel class, making it simpler to compile kernels, pass parameters to them, and set the local and global workgroup size of the kernel.
+OpenCL kernels, code to run on the device side, are marked with the \texttt{\_\_kernel} keyword in an OpenCL C source file. This framework wraps around OpenCL's native host side API by defining the CLKernel class, making it simpler to compile kernels, pass parameters to them, and set the local and global workgroup size of the kernel.
 
-OpenCL does not support calling non-kernel functions, but these functions need some way to be tested. The \texttt{CLFunction} class in this framework removes OpenCL's limitation. A kernel to call the function is automatically generated at compile-time, and that kernel is passed to OpenCL. \texttt{CLFunction} will run the function on one thread.
+OpenCL does not support directly running functions that are not marked as kernels on the device. However, these functions need some way to be tested. The \texttt{CLFunction} class in the framework removes OpenCL's limitation. A kernel to call the function is automatically generated on the host at compile-time, and that kernel is inserted into the source file passed to OpenCL. \texttt{CLFunction} will run the function on one hardware thread on the device.
 
-More complex functions, especially those that involve threads cooperating on a task with data stored in local memory, cannot be called by \texttt{CLFunction}. One idiom I developed when testing these kinds of functions, is to write a shim kernel that copies data into the correct memory space, calls the function to be tested, then copies the results back to \texttt{\_\_global} memory. (See \texttt{societies/util/test/max\_min\_tester.cl.in} for an example)
+Some functions, particularly those that involve threads cooperating on a task with temporary data stored in \texttt{\_\_local} memory, cannot be called by \texttt{CLFunction}. One idiom I developed when testing these kinds of functions is to write a shim kernel that copies data into the correct memory space, calls the function to be tested, then copies the results back to \texttt{\_\_global} memory. This idiom uses \texttt{CLKernel} insead of \texttt{CLFunction}. \\ (See \texttt{societies/util/test/max\_min\_tester.cl.in} for an example.)
 
 \subsection{Usage}
 C++11 constructs allow a class to syntactically behave like a variadic function, by defining an overloaded () operator using a variadic template. At this time, compilers only partically support the features needed to make using variadic templates elegant. With C++11, a \texttt{CLKernel} or \texttt{CLFunction} can be called like this:
 
 \begin{lstlisting}
 #include <CLKernel.h>
+#include <string>
 
-string src; // some kernel source code
+std::string src; // some kernel source code
 cl_int i, j, k;
 CLKernel theKernel( "kernel_name", src );
 theKernel( i, j, k );
@@ -100,8 +120,9 @@ Microsoft Visual Studio 2008 (the version that AMD's OpenCL tools currently targ
 \begin{lstlisting}
 #include <CLKernel.h>
 #include <vector>
+#include <string>
 
-string src; // some kernel source code
+std::string src; // some kernel source code
 cl_int i, j, k;
 CLKernel theKernel( "kernel_name", src );
 
@@ -116,7 +137,7 @@ theKernel( arguments );
 The CLUnitArgument class has constructors for many different types, which means that variables of those types can be passed into a CLKernel or a CLFunction without needing to explicitly create a CLUnitArgument.
 
 \subsection{Other Features}
-I found I was often developing on my laptop, which does not have an OpenCL-supported GPU. The framework automatically degrades to using a CPU if there are no GPUs, so that programs will still run, albeit much more slowly in most cases.
+I found I was often developing on my laptop, which does not have an OpenCL-supported GPU. The framework automatically falls back to using a CPU if there are no GPUs, so that programs will still run.
 
 If the \texttt{CL\_DEBUG} environment variable is set to 1, the framework will compile kernels with debugging symbols and run them on the CPU. This allows for debugging kernels using gdb as described in the AMD OpenCL programming guide\cite{amdapp}.
 
