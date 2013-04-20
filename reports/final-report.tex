@@ -126,7 +126,7 @@ std::string src; // some kernel source code
 cl_int i, j, k;
 CLKernel theKernel( "kernel_name", src );
 
-std::vector<CLUnitArgument> arguments;
+std::vector<CLArgument> arguments;
 arguments.push_back( i ); 
 arguments.push_back( j ); 
 arguments.push_back( k ); 
@@ -134,7 +134,7 @@ arguments.push_back( k );
 theKernel( arguments );
 \end{lstlisting}
 
-The CLUnitArgument class has constructors for many different types, which means that variables of those types can be passed into a CLKernel or a CLFunction without needing to explicitly create a CLUnitArgument.
+The CLArgument class has constructors for many different types, which means that variables of those types can be passed into a CLKernel or a CLFunction without needing to explicitly create a CLArgument.
 
 \subsection{Other Features}
 I found I was often developing on my laptop, which does not have an OpenCL-supported GPU. The framework automatically falls back to using a CPU if there are no GPUs, so that programs will still run.
@@ -142,22 +142,22 @@ I found I was often developing on my laptop, which does not have an OpenCL-suppo
 If the \texttt{CL\_DEBUG} environment variable is set to 1, the framework will compile kernels with debugging symbols and run them on the CPU. This allows for debugging kernels using gdb as described in the AMD OpenCL programming guide\cite{amdapp}.
 
 \subsection{Memory Copies}
-One of the main bottlenecks for GPU computing is the time to transfer data from RAM to the GPU, so the framework needs to avoid making any unnecessary copies. By default, all buffers are copied to and from the GPU every time a kernel is scheduled. This produces correct behaviour at the expense of being slow. The constructor for a \texttt{CLUnitArgument} allows developers to specify whether the host memory backing the buffer should be copied to or from the GPU.
+One of the main bottlenecks for GPU computing is the time to transfer data from RAM to the GPU, so the framework needs to avoid making any unnecessary copies. By default, all buffers are copied to and from the GPU every time a kernel is scheduled. This produces correct behaviour at the expense of being slow. The constructor for a \texttt{CLArgument} allows developers to specify whether the host memory backing the buffer should be copied to or from the GPU.
 
 \subsection{Lazy Initialization of Buffers}
-In order that \texttt{CLUnitArgument}s can be instantiated implicitly by the C++ compiler, their constructors may not take an OpenCL context object. This object is needed in order to create the \texttt{cl::Buffer} that the \texttt{CLUnitArgument} encapsulates. It is passed later to the object by a \texttt{CLFunction} or \texttt{CLKernel} when the \texttt{cl::Buffer} is needed for the first time.
+In order that \texttt{CLArgument}s can be instantiated implicitly by the C++ compiler, their constructors may not take an OpenCL context object. This object is needed in order to create the \texttt{cl::Buffer} that the \texttt{CLArgument} encapsulates. It is passed later to the object by a \texttt{CLFunction} or \texttt{CLKernel} when the \texttt{cl::Buffer} is needed for the first time.
 
-This causes undesired behaviour if a copy of an original \texttt{CLUnitArgument} is what initializes the \texttt{cl:Buffer}, because the reference to the \texttt{cl::Buffer} does not propagate back to the original. C++ creates copies of \texttt{CLUnitArgument}s implicitly whenever they are used as arguments to \texttt{CLKernel}s or \texttt{CLFunction}s. Besides there being extraneous buffers created, this makes it impossible for \texttt{CLUnitArgument}s to store data on the device without copying it back to the host. Code like this then breaks:
+This causes undesired behaviour if a copy of an original \texttt{CLArgument} is what initializes the \texttt{cl:Buffer}, because the reference to the \texttt{cl::Buffer} does not propagate back to the original. C++ creates copies of \texttt{CLArgument}s implicitly whenever they are used as arguments to \texttt{CLKernel}s or \texttt{CLFunction}s. Besides there being extraneous buffers created, this makes it impossible for \texttt{CLArgument}s to store data on the device without copying it back to the host. Code like this then breaks:
 
 \begin{lstlisting}
 cl_float array[1024];
-CLUnitArgument arrayArg( "float", array, 1024, false, false );
+CLArgument arrayArg( "float", array, 1024, false, false );
 someKernel( arrayArg ); // stores data into arrayArg, doesn't copy
                         // data back to host.
 someOtherKernel( arrayArg ); // reads data someKernel() stored.
 \end{lstlisting}
 
-The \texttt{CLUnitArgument::makePersistent()} method solves this problem by giving developers a way to create the \texttt{cl::Buffer} before any copies of the \texttt{CLUnitArgument} are made. For an example of where this is necessary, see \texttt{OpenCLPlayer::makeMove()} in \texttt{kalah/opencl\_player.cpp}.
+The \texttt{CLArgument::makePersistent()} method solves this problem by giving developers a way to create the \texttt{cl::Buffer} before any copies of the \texttt{CLArgument} are made. For an example of where this is necessary, see \texttt{OpenCLPlayer::makeMove()} in \texttt{kalah/opencl\_player.cpp}.
 
 \subsection{Examples}
 There is an example usage of this framework in the \texttt{cl\_test/example} directory. All the other components of my project used this library as well, which means they serve as more complicated usage examples.
