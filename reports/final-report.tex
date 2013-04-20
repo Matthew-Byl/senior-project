@@ -142,12 +142,12 @@ I found I was often developing on my laptop, which does not have an OpenCL-suppo
 If the \texttt{CL\_DEBUG} environment variable is set to 1, the framework will compile kernels with debugging symbols and run them on the CPU. This allows for debugging kernels using gdb as described in the AMD OpenCL programming guide\cite{amdapp}.
 
 \subsection{Memory Copies}
-One of the main bottlenecks for GPU computing is the time to transfer data from RAM to the GPU, so the framework needs to avoid making any unnecessary copies. By default, all buffers are copied to and from the GPU every time a kernel is scheduled. This produces correct behaviour at the expense of being slow. The constructor for a \texttt{CLArgument} allows developers to specify whether the host memory backing the buffer should be copied to or from the GPU.
+One of the main bottlenecks for GPU computing is the time to transfer data from RAM to the GPU, so the framework needs to avoid making any unnecessary copies. By default, all buffers are copied to and from the GPU every time a kernel is scheduled. This produces expected  behaviour at the expense of being slow. The constructor for a \texttt{CLArgument} allows developers to specify whether the host memory backing the buffer should be copied to or from the GPU.
 
 \subsection{Lazy Initialization of Buffers}
-In order that \texttt{CLArgument}s can be instantiated implicitly by the C++ compiler, their constructors may not take an OpenCL context object. This object is needed in order to create the \texttt{cl::Buffer} that the \texttt{CLArgument} encapsulates. It is passed later to the object by a \texttt{CLFunction} or \texttt{CLKernel} when the \texttt{cl::Buffer} is needed for the first time.
+\texttt{CLArgument} is a wrapper around the OpenCL C++ API's \texttt{cl::Buffer} object. \texttt{cl::Buffer} objects are tied to an OpenCL context. However, \texttt{CLArgument}s are not, because they need to be able to be instantiated implicitly by the C++ compiler. The required OpenCL context is passed later to the \texttt{CLArgument} by a \texttt{CLFunction} or \texttt{CLKernel} when the \texttt{cl::Buffer} is needed for the first time.
 
-This causes undesired behaviour if a copy of an original \texttt{CLArgument} is what initializes the \texttt{cl:Buffer}, because the reference to the \texttt{cl::Buffer} does not propagate back to the original. C++ creates copies of \texttt{CLArgument}s implicitly whenever they are used as arguments to \texttt{CLKernel}s or \texttt{CLFunction}s. Besides there being extraneous buffers created, this makes it impossible for \texttt{CLArgument}s to store data on the device without copying it back to the host. Code like this then breaks:
+This causes undesired behaviour if a copy of an original \texttt{CLArgument} is what initializes the \texttt{cl:Buffer}, because the reference to the \texttt{cl::Buffer} does not propagate back to the original. C++ creates copies of \texttt{CLArgument}s implicitly when they are used as arguments to \texttt{CLKernel}s or \texttt{CLFunction}s. (These arguments are not defined as references so that temporaries can be used as arguments.) The result is that \texttt{CLArgument}s cannot point to data stored on the device between function calls that is not copied back to the host. Code like this then breaks:
 
 \begin{lstlisting}
 cl_float array[1024];
@@ -160,11 +160,11 @@ someOtherKernel( arrayArg ); // reads data someKernel() stored.
 The \texttt{CLArgument::makePersistent()} method solves this problem by giving developers a way to create the \texttt{cl::Buffer} before any copies of the \texttt{CLArgument} are made. For an example of where this is necessary, see \texttt{OpenCLPlayer::makeMove()} in \texttt{kalah/opencl\_player.cpp}.
 
 \subsection{Examples}
-There is an example usage of this framework in the \texttt{cl\_test/example} directory. All the other components of my project used this library as well, which means they serve as more complicated usage examples.
+There is an example usage of this framework in the \texttt{cl\_test/example} directory, attached as Appendix A. All the other components of my project used this library as well, which means they serve as more complicated usage examples.
 
 %%%%%%%%%%%%%%%%%%%%%%
 \section{Raytracer}
-As a simple application to run on top of my framework, I implemented an OpenCL raytracer for honours credit in CS 352 (Computer Graphics). The raytracer maps one pixel onto one hardware thread. The objective was for the raytracer to support real-time user interaction.
+As a simple application to run on top of my framework, I implemented an OpenCL raytracer for honours credit in CS 352 (Computer Graphics). To exploit parallelism, the raytracer maps one pixel onto one hardware thread on the OpenCL device, where hardware threads have no overhead to create. The objective was for the raytracer to support real-time user interaction.
 
 \subsection{Capabilities}
 The raytracer has two geometric primitives: spheres and planes. Geometry can have a solid colour or be reflective. There can be any number of geometric primitives.
@@ -172,7 +172,7 @@ The raytracer has two geometric primitives: spheres and planes. Geometry can hav
 The lighting model takes into account ambient and diffuse lighting. There can be any number of diffuse light sources.
 
 \subsection{Limitations}
-Because OpenCL does not support recursion, reflective surfaces do not behave as they do in other raytracers. Reflective surfaces shoot a ray off the reflective surface, and the ray takes the colour of the first object it hits, taking into account only ambient lighting (see Figure \ref{fig:reflections}). Other raytracers are able to take into account other types of lighting from the reflected surface, and can simulate rays being reflected more than once. This is not possible with this implementation, because it would involve a recursive call from the lighting function to the lighting function.
+Because OpenCL does not support recursion, reflective surfaces do not behave as they do in other raytracers. Reflective surfaces shoot a ray off the reflective surface, and that ray takes the colour of the first object it hits, taking into account only ambient lighting (see Figure \ref{fig:reflections}). Recursive raytracers are able to take into account other types of lighting from the reflected surface, and can simulate rays being reflected more than once. This is not possible with this OpenCL implementation, because it would involve a recursive call from the lighting function of the reflective object to the lighting function of the reflected object.
 
 \begin{figure}[ht!]
 \centering
@@ -182,7 +182,14 @@ Because OpenCL does not support recursion, reflective surfaces do not behave as 
 \end{figure}
 
 \subsection{User Interface}
-The user interface was implemented in GTK+, with the rendered image being displayed in a \texttt{GtkImage}. This is inefficient, as the image is rendered on the GPU, copied to the CPU, copied to the \texttt{GtkImage}, then pushed back to the GPU. An alternative that trades increased complexity for more performance would be taking advantage of OpenCL's OpenGL interoperability features to draw the image.
+The user interface was implemented in GTK+ (see figure \ref{fig:raytracerui}), with the rendered image being displayed in a \texttt{GtkImage}. This is inefficient, as the image is rendered on the GPU, copied to the CPU, copied to the \texttt{GtkImage}, then pushed back to the GPU. An alternative that trades increased complexity for more performance would be taking advantage of OpenCL's OpenGL interoperability features to draw the image.
+
+\begin{figure}[ht!]
+\centering
+\includegraphics[width=120mm]{raytracer-ui.png}
+\caption{Raytracer user interface}
+\label{fig:raytracerui}
+\end{figure}
 
 \subsection{Performance}
 The raytracer is able to render a 700x700 pixel test scene with 1000 spheres and a moveable diffuse light source at speeds that make it interactive (see figure \ref{fig:testscene}). Using the CPU, this scene takes 1.28 seconds per frame (0.78 frames per second). Using the Radeon 7970, the scene takes 0.055 seconds per frame (18 frames per second). If the number of spheres is reduced to 216, the Radeon 7970 can render the scene at 60 frames per second.
