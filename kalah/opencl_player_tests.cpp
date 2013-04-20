@@ -146,9 +146,9 @@ void test_generate_boards( string src )
 
 	CLKernel generate_boards_test( "generate_boards_test", src );
 
-	CLUnitArgument host_boards( "Board", boards, 259 );
-	CLUnitArgument start_boards( "Board", &start_board, 1 );
-	vector<CLUnitArgument> args;
+	CLArgument host_boards( "Board", boards, 259 );
+	CLArgument start_boards( "Board", &start_board, 1 );
+	vector<CLArgument> args;
 	args.push_back( start_boards );
 	args.push_back( host_boards );
 	generate_boards_test.setGlobalDimensions( 1, 216 );
@@ -180,8 +180,8 @@ void test_evaluate_boards( string src )
 	Board boards[259];
 
 	CLKernel evaluate_boards_test( "evaluate_boards_test", src );
-	CLUnitArgument host_boards( "Board", boards, 259 );
-	vector<CLUnitArgument> args;
+	CLArgument host_boards( "Board", boards, 259 );
+	vector<CLArgument> args;
 	args.push_back( host_boards );
 	evaluate_boards_test.setGlobalDimensions( 1, 216 );
 	evaluate_boards_test.setLocalDimensions( 1, 216 );	
@@ -264,8 +264,8 @@ void test_minimax( string src )
 	Board boards[259];
 
 	CLKernel minimax_test( "minimax_test", src );
-	CLUnitArgument host_boards( "Board", boards, 259 );
-	vector<CLUnitArgument> args;
+	CLArgument host_boards( "Board", boards, 259 );
+	vector<CLArgument> args;
 	args.push_back( host_boards );
 	minimax_test.setGlobalDimensions( 1, 216 );
 	minimax_test.setLocalDimensions( 1, 216 );
@@ -312,8 +312,8 @@ void test_combination( string src )
 	Board start_boards[256];
 
 	CLKernel opencl_player( "opencl_player", src );
-	CLUnitArgument host_start_boards( "Board", start_boards, 256 );
-	vector<CLUnitArgument> args;
+	CLArgument host_start_boards( "Board", start_boards, 256 );
+	vector<CLArgument> args;
 	args.push_back( host_start_boards );
 	opencl_player.setGlobalDimensions( 256, 216 );
 	opencl_player.setLocalDimensions( 1, 216 );

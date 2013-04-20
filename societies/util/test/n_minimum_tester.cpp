@@ -51,10 +51,10 @@ int main ( void )
 	n_minimum_tester.setLocalArgument( 5, sizeof( cl_uchar ) * 6 );
 	n_minimum_tester.setLocalArgument( 6, sizeof( cl_int ) * 6 );
 
-	CLUnitArgument values1( host_values1, 20 );
-	CLUnitArgument n( &host_n , 1 );
-	CLUnitArgument mins1( host_mins1, 6 );
-	CLUnitArgument indices1( host_indices1, 6 );
+	CLArgument values1( host_values1, 20 );
+	CLArgument n( &host_n , 1 );
+	CLArgument mins1( host_mins1, 6 );
+	CLArgument indices1( host_indices1, 6 );
 
 	n_minimum_tester.setGlobalDimensions( 20, 1 );
 	n_minimum_tester.setLocalDimensions( 20, 1 );

@@ -12,14 +12,14 @@
 #include <string>
 #include <vector>
 
-#include "CLUnitArgument.h"
+#include "CLArgument.h"
 
 class KernelGenerator
 {
 public:
 	KernelGenerator( 
 		std::string function, 
-		std::vector<CLUnitArgument> &arguments, 
+		std::vector<CLArgument> &arguments, 
 		std::string returnType );
 	std::string generate();
 	std::string getKernelFunction();
@@ -27,7 +27,7 @@ public:
 private:
 	std::string myFunction;
 	std::string myReturnType;
-	std::vector<CLUnitArgument> &myArguments;
+	std::vector<CLArgument> &myArguments;
 
 	std::string intToString( int i );
 };

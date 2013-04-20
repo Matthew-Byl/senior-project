@@ -36,10 +36,10 @@ int main()
 		else
 			host_enableds[i] = 0;
 	}
-	CLUnitArgument enableds( host_enableds, 256 );
+	CLArgument enableds( host_enableds, 256 );
 
 	cl_uchar host_chosen;
-	CLUnitArgument chosen( &host_chosen, 1 );
+	CLArgument chosen( &host_chosen, 1 );
 
 	cl_ulong host_random_offset;
 	srand( time( NULL ) );

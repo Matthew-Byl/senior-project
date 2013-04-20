@@ -5,7 +5,7 @@ using namespace std;
 
 KernelGenerator::KernelGenerator( 
 	std::string function, 
-	std::vector<CLUnitArgument> &arguments,
+	std::vector<CLArgument> &arguments,
 	std::string returnType )
 	: myFunction(function), myReturnType( returnType ), myArguments( arguments )
 {

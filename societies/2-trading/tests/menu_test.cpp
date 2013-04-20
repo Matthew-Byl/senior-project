@@ -57,10 +57,10 @@ int main ( void )
 	cl_uint host_menu_1[5];
 	cl_uint host_menu_2[5];
 
-	CLUnitArgument all_resources( host_all_resources, 40 );
-	CLUnitArgument menu_1( host_menu_1, 5 );
-	CLUnitArgument menu_2( host_menu_2, 5 );
-	CLUnitArgument config_buffer( "SocietiesConfig", config );
+	CLArgument all_resources( host_all_resources, 40 );
+	CLArgument menu_1( host_menu_1, 5 );
+	CLArgument menu_2( host_menu_2, 5 );
+	CLArgument config_buffer( "SocietiesConfig", config );
 	
 	menu_tester(
 		all_resources,

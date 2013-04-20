@@ -44,9 +44,9 @@ int main ( void )
 
 	cl_uint host_random_pairs[2] = { 1, 0 };
 
-	CLUnitArgument all_resources( host_all_resources, 40 );
-	CLUnitArgument random_pairs( host_random_pairs, 2 );
-	CLUnitArgument config_buffer( "SocietiesConfig", config );
+	CLArgument all_resources( host_all_resources, 40 );
+	CLArgument random_pairs( host_random_pairs, 2 );
+	CLArgument config_buffer( "SocietiesConfig", config );
 	
 	trading(
 		all_resources,

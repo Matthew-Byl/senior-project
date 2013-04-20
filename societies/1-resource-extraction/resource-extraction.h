@@ -21,10 +21,10 @@ private:
 	void generateRandomOffsets();
 
 	cl_ulong *myRandomOffsets;
-	CLUnitArgument resources;
-	CLUnitArgument experiences;
-	CLUnitArgument random_offsets;
-	CLUnitArgument config;
+	CLArgument resources;
+	CLArgument experiences;
+	CLArgument random_offsets;
+	CLArgument config;
 	CLKernel *resource_extraction;
 	SocietiesConfig &myConfig;
 	unsigned int mySeed;

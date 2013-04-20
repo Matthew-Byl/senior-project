@@ -78,7 +78,7 @@ MinimaxResult OpenCLPlayer::makeMove()
 	}
 
 	// C++ guarantees vector elements are stored contiguously.
-	CLUnitArgument start_boards( 
+	CLArgument start_boards( 
 		"Board", 
 		&myStartBoards[0],
 		myStartBoards.size(), 
@@ -102,7 +102,7 @@ MinimaxResult OpenCLPlayer::makeMove()
 			else
 				items = WORKGROUP_SIZE;
 			
-			vector<CLUnitArgument> args;
+			vector<CLArgument> args;
 			args.push_back( start_boards );
 			opencl_player.setGlobalDimensions( items, 216 );
 			opencl_player.setGlobalOffset( offset, 0 );

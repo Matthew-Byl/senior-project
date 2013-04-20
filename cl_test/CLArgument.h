@@ -1,5 +1,5 @@
 /**
- * CLUnitArgument encapsulates data to pass to
+ * CLArgument encapsulates data to pass to
  *  a CLKernel or a CLFunction.
  *
  * There are lots of automatically generated
@@ -45,14 +45,14 @@
   PTR_CTR( cl_##type##16, type##16 );			
 
 #define CTR( host, kernel )									\
-	CLUnitArgument( host val )								\
+	CLArgument( host val )								\
 	{ initialize( #kernel, sizeof( host ), &val ); }
 
 #define PTR_CTR( host, kernel )										\
-	CLUnitArgument( host *array, size_t elements, bool copyTo = true, bool copyBack = true ) \
+	CLArgument( host *array, size_t elements, bool copyTo = true, bool copyBack = true ) \
 	{ initialize( #kernel, sizeof( host ) * elements, array, false, true, copyTo, copyBack ); }
 
-class CLUnitArgument
+class CLArgument
 {
 public:
 	/**
@@ -63,7 +63,7 @@ public:
 	 * @param ptr
 	 *  A pointer to the object or array
 	 * @param copy
-	 *  Whether the CLUnitArgument should keep a private copy of
+	 *  Whether the CLArgument should keep a private copy of
 	 *   the object.
 	 * @param isArray
 	 *  Whether the object is an array or not.
@@ -74,7 +74,7 @@ public:
 	 *  Whether to copy the contents of the buffer from the device
 	 *   after a kernel using it is done executing.
 	 */
-	CLUnitArgument( 
+	CLArgument( 
 		std::string name, 
 		size_t size, 
 		void *ptr, 
@@ -82,8 +82,8 @@ public:
 		bool isArray = false,
 		bool copyTo = true,
 		bool copyBack = true );
-	CLUnitArgument( const CLUnitArgument &other );
-	~CLUnitArgument();
+	CLArgument( const CLArgument &other );
+	~CLArgument();
 
 	// Add constructors for the value types and
 	//  arrays for all the OpenCL types.
@@ -110,7 +110,7 @@ public:
 	 *  The value.
 	 */
 	template<class T>
-	CLUnitArgument( std::string name, T value );
+	CLArgument( std::string name, T value );
 
 	/**
 	 * Array constructor for user-defined types. Arrays
@@ -129,10 +129,10 @@ public:
 	 *  the device.
 	 */
 	template<class T>
-	CLUnitArgument( std::string name, T *array, size_t elements, bool copyTo = true, bool copyBack = true );
+	CLArgument( std::string name, T *array, size_t elements, bool copyTo = true, bool copyBack = true );
 
 	/**
-	 * Call this if the same CLUnitArgument will be passed
+	 * Call this if the same CLArgument will be passed
 	 *  to more than one kernel or to the same kernel twice,
 	 *  and you want to reuse the same OpenCL buffer.
 	 * For instance, this is needed if one kernel stores 
@@ -171,13 +171,13 @@ private:
 };
 
 template<class T>
-CLUnitArgument::CLUnitArgument( std::string name, T value )
+CLArgument::CLArgument( std::string name, T value )
 {
 	initialize( name, sizeof( T ), &value );
 }
 
 template<class T>
-CLUnitArgument::CLUnitArgument( std::string name, T *array, size_t elements, bool copyTo, bool copyBack )
+CLArgument::CLArgument( std::string name, T *array, size_t elements, bool copyTo, bool copyBack )
 {
 	initialize( name, sizeof( T ) * elements, array, false, true, copyTo, copyBack );
 }

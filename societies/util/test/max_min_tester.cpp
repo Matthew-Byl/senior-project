@@ -25,8 +25,8 @@ void test_first_pass( string src )
 		{ 24, 6.333, 2.1, 9.76, 2.11, 44.2224, 11000, 23 };
 	tree = new cl_uint[4];
 
-    CLUnitArgument floats1( host_floats1, 8 );
-    CLUnitArgument floats1_sort_tree( tree, 4 );
+    CLArgument floats1( host_floats1, 8 );
+    CLArgument floats1_sort_tree( tree, 4 );
 	max_min_first_pass_tester( floats1, floats1_sort_tree );
 
 	cl_uint host_floats1_tree[4] = 
@@ -41,8 +41,8 @@ void test_first_pass( string src )
 		{ 54.2, 9000, 223.5, 222, 43 };
 	tree  = new cl_uint[3];
 
-    CLUnitArgument floats2( host_floats2, 5 );
-    CLUnitArgument floats2_sort_tree( tree, 3 );
+    CLArgument floats2( host_floats2, 5 );
+    CLArgument floats2_sort_tree( tree, 3 );
 	max_min_first_pass_tester.setGlobalDimensions( 5, 1 );
 	max_min_first_pass_tester.setLocalDimensions( 5, 1 );
 	max_min_first_pass_tester( floats2, floats2_sort_tree );
@@ -65,15 +65,15 @@ void test_function( string src )
 
 	CLKernel max_tester( "max_tester", src );
 	cl_uint host_max;
-	CLUnitArgument max( &host_max, 1 );
+	CLArgument max( &host_max, 1 );
 
 	// Nice power of two
 	cl_float host_floats1[] = 
 		{ 24, 6.333, 2.1, 9.76, 2.11, 44.2224, 11000, 23 };
 	cl_uint host_floats1_tree[4];
 
-    CLUnitArgument floats1( host_floats1, 8 );
-    CLUnitArgument floats1_tree( host_floats1_tree, 4 );
+    CLArgument floats1( host_floats1, 8 );
+    CLArgument floats1_tree( host_floats1_tree, 4 );
 	max_tester.setGlobalDimensions( 8, 1 );
 	max_tester.setLocalDimensions( 8, 1 );
 	max_tester( floats1, floats1_tree, max );
@@ -91,8 +91,8 @@ void test_function( string src )
 		{ 54.2, 43, 223.5, 222, 9000 };
 	cl_uint host_floats2_tree[3];
 
-    CLUnitArgument floats2( host_floats2, 5 );
-    CLUnitArgument floats2_sort_tree( host_floats2_tree, 3 );
+    CLArgument floats2( host_floats2, 5 );
+    CLArgument floats2_sort_tree( host_floats2_tree, 3 );
 	max_tester.setGlobalDimensions( 5, 1 );
 	max_tester.setLocalDimensions( 5, 1 );
 	max_tester( floats2, floats2_sort_tree, max );
@@ -116,9 +116,9 @@ void test_mask( string src )
 
 	CLKernel mask_tester( "max_min_mask_tester", src );
 	cl_uint host_min;
-	CLUnitArgument min( &host_min, 1 );
+	CLArgument min( &host_min, 1 );
 	cl_uint host_min_no_mask;
-	CLUnitArgument min_no_mask( &host_min_no_mask, 1 );
+	CLArgument min_no_mask( &host_min_no_mask, 1 );
 
 	cl_float host_values[20] = 
 		{
@@ -144,7 +144,7 @@ void test_mask( string src )
 			100.676 // masked
 		};
 
-	CLUnitArgument values( host_values, 20 );
+	CLArgument values( host_values, 20 );
 	mask_tester.setGlobalDimensions( 20, 1 );
 	mask_tester.setLocalDimensions( 20, 1 );
 	mask_tester( values, min, min_no_mask );
@@ -164,7 +164,7 @@ void test_n_max_indices( string src )
 
 	CLKernel n_max_indices_tester( "n_max_indices_tester", src );
 	cl_uint host_results[6];
-	CLUnitArgument results( host_results, 6 );
+	CLArgument results( host_results, 6 );
 
 	cl_float host_values[20] = 
 		{
@@ -190,7 +190,7 @@ void test_n_max_indices( string src )
 			100.676
 		};
 
-	CLUnitArgument values( host_values, 20 );
+	CLArgument values( host_values, 20 );
 	n_max_indices_tester.setGlobalDimensions( 20, 1 );
 	n_max_indices_tester.setLocalDimensions( 20, 1 );
 	n_max_indices_tester( values, results );

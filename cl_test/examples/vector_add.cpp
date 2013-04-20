@@ -39,20 +39,20 @@ int main ( void )
 	//  size for us.
 	vector_add.setGlobalDimensions( ARRAY_SIZE );
 
-	// Create CLUnitArguments that encapsulate the data in the input
+	// Create CLArguments that encapsulate the data in the input
 	//  and output arrays.
 	//
 	// The framework has templates for cl_float, so it is able to infer
 	//  the size of the data in the arrays automatically.
 	// The default is to copy data both to and from the device. In this
 	//  case, copying it from the device is unnecessary.
-	CLUnitArgument a( host_a, ARRAY_SIZE );
-	CLUnitArgument b( host_b, ARRAY_SIZE );
+	CLArgument a( host_a, ARRAY_SIZE );
+	CLArgument b( host_b, ARRAY_SIZE );
 
-	// This CLUnitArgument could have been declared like the other two,
-	//  but this is how to declare CLUnitArguments for arbitrary
+	// This CLArgument could have been declared like the other two,
+	//  but this is how to declare CLArguments for arbitrary
 	//  types.
-	CLUnitArgument result( 
+	CLArgument result( 
 		"float",                          // type on device side
 		host_result,                      // pointer to data
 		sizeof( cl_float ) * ARRAY_SIZE,  // size of data
@@ -61,7 +61,7 @@ int main ( void )
 		);
 		
 	// Call the kernel.
-	vector<CLUnitArgument> args;
+	vector<CLArgument> args;
 	args.push_back( a );
 	args.push_back( b );
 	args.push_back( result );

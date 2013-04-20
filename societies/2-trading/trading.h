@@ -28,9 +28,9 @@ private:
 	std::minstd_rand0 myGenerator;
 
 	CLKernel *trading_kernel;
-	CLUnitArgument allResources;
-	CLUnitArgument randomPairs;
-	CLUnitArgument configBuffer;
+	CLArgument allResources;
+	CLArgument randomPairs;
+	CLArgument configBuffer;
 };
 
 #endif

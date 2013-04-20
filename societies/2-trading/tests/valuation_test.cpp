@@ -49,9 +49,9 @@ int main ( void )
 
 	cl_uint2 host_pairs[5];
 
-	CLUnitArgument all_resources( host_all_resources, 40 );
-	CLUnitArgument pairs( host_pairs, 5 );
-	CLUnitArgument config_buffer( "SocietiesConfig", config );
+	CLArgument all_resources( host_all_resources, 40 );
+	CLArgument pairs( host_pairs, 5 );
+	CLArgument config_buffer( "SocietiesConfig", config );
 	
 	valuation_tester(
 		all_resources,

@@ -12,7 +12,7 @@
 #define _CL_FUNCTION_H
 
 #include "CLContext.h"
-#include "CLUnitArgument.h"
+#include "CLArgument.h"
 #include "KernelGenerator.h"
 #include <iostream>
 #include <cassert>
@@ -57,9 +57,9 @@ public:
 			//  the more elegant creating the array with an
 			//  initializer list, in order to be compatible with
 			//  my compiler.
-			CLUnitArgument args[] = { params... };
-			size_t size = sizeof( args ) / sizeof( CLUnitArgument );
-			myArguments = std::vector<CLUnitArgument>( args, args + size );
+			CLArgument args[] = { params... };
+			size_t size = sizeof( args ) / sizeof( CLArgument );
+			myArguments = std::vector<CLArgument>( args, args + size );
 
 			generateBuffers();
 		}
@@ -74,13 +74,13 @@ public:
 
 	/*
 	 * If not using C++11, you will have to create a 
-	 *  std::vector<CLUnitArgument> of arguments,
+	 *  std::vector<CLArgument> of arguments,
 	 *  and call the function using the run() method.
 	 */
 	virtual T run();
 	T run( std::string type );
 
-	T operator()( std::vector<CLUnitArgument> arguments )
+	T operator()( std::vector<CLArgument> arguments )
 		{
 			myArguments = arguments;
 			generateBuffers();
@@ -89,7 +89,7 @@ public:
 	
 protected:
 	CLContext myContext;
-	std::vector<CLUnitArgument> myArguments;
+	std::vector<CLArgument> myArguments;
 	std::vector<cl::Buffer*> myBuffers;
 	std::string myFunction;
 	std::string myKernel;
@@ -125,7 +125,7 @@ void CLFunction<T>::generateKernelSource( const std::string type, std::string &s
 }
 
 /**
- * Ask all the CLUnitArguments passed to the kernel
+ * Ask all the CLArguments passed to the kernel
  *  to generate a cl::Buffer to pass to OpenCL.
  */
 template<class T>

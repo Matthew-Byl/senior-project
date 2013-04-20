@@ -1,5 +1,5 @@
 /**
- * CLUnitArgument encapsulates data passed to CLKernel 
+ * CLArgument encapsulates data passed to CLKernel 
  *  and CLFunction.
  * 
  * @author John Kloosterman
@@ -9,18 +9,18 @@
 /*
  * The cl::Buffer object is initialized only right before
  *  it is needed. The reason: it is important to be able
- *  to initialize a CLUnitArgument without passing in a
+ *  to initialize a CLArgument without passing in a
  *  CLContext so that type coersion can work (e.g. passing
  *  a cl_int to a CLFunction automatically creates the correct
- *  CLUnitArgument). cl::Buffers need a cl::Context for initialization.
+ *  CLArgument). cl::Buffers need a cl::Context for initialization.
  *
  * However, this causes unexpected behaviour if there are copies of a
- *  CLUnitArgument being made before the buffer is initialized.
+ *  CLArgument being made before the buffer is initialized.
  *  Each copy will then create their own cl::Buffer. This breaks code
  *  like this:
  *
  *   cl_float array[1024];
- *   CLUnitArgument arrayArg( "float", array, 1024, false, false );
+ *   CLArgument arrayArg( "float", array, 1024, false, false );
  *   someKernel( arrayArg ); // stores data into arrayArg, doesn't copy 
  *	                        // data back to host.
  *   someOtherKernel( arrayArg ); // reads data someKernel() stored.
@@ -28,16 +28,16 @@
  * This is because C++ made a copy of arrayArg when its cl::Buffer was
  *  not initialized, so each copy created its own buffer and the cl::Buffer
  *  passed to someKernel() and someOtherKernel() was not the same one.
- * The solution is to call CLUnitArgument::makePersistent() on the buffer
+ * The solution is to call CLArgument::makePersistent() on the buffer
  *  first.
  */
 
-#include "CLUnitArgument.h"
+#include "CLArgument.h"
 #include <iostream>
 #include <cassert>
 using namespace std;
 
-CLUnitArgument::CLUnitArgument( 
+CLArgument::CLArgument( 
 	string name,
 	size_t size,
 	void *ptr,
@@ -58,7 +58,7 @@ CLUnitArgument::CLUnitArgument(
 		);
 }
 
-void CLUnitArgument::initialize(
+void CLArgument::initialize(
 	string name,
 	size_t size,
 	void *ptr,
@@ -83,7 +83,7 @@ void CLUnitArgument::initialize(
 	myBufferInitialized = false;
 }
 
-void CLUnitArgument::copy_data(
+void CLArgument::copy_data(
 	size_t size,
 	void *ptr
 	)
@@ -92,7 +92,7 @@ void CLUnitArgument::copy_data(
 	memcpy( myPtr, ptr, size );
 }
 
-CLUnitArgument::CLUnitArgument( const CLUnitArgument &other )
+CLArgument::CLArgument( const CLArgument &other )
 	: myBufferInitialized( other.myBufferInitialized ),
 	  mySize( other.mySize ), 
 	  myName( other.myName ), 
@@ -113,7 +113,7 @@ CLUnitArgument::CLUnitArgument( const CLUnitArgument &other )
 	}
 }
 
-CLUnitArgument::~CLUnitArgument()
+CLArgument::~CLArgument()
 {
 	if ( myCopy )
 	{
@@ -121,7 +121,7 @@ CLUnitArgument::~CLUnitArgument()
 	}
 }
 
-cl::Buffer *CLUnitArgument::getBuffer( CLContext &context )
+cl::Buffer *CLArgument::getBuffer( CLContext &context )
 {
 	if ( !myBufferInitialized )
 	{
@@ -139,12 +139,12 @@ cl::Buffer *CLUnitArgument::getBuffer( CLContext &context )
 	return &myBuffer;
 }
 
-std::string CLUnitArgument::getType()
+std::string CLArgument::getType()
 {
 	return myName;
 }
 
-void CLUnitArgument::copyToDevice( cl::CommandQueue &queue )
+void CLArgument::copyToDevice( cl::CommandQueue &queue )
 {
 	assert( myBufferInitialized );
 
@@ -161,9 +161,9 @@ void CLUnitArgument::copyToDevice( cl::CommandQueue &queue )
 }
 
 /**
- * See note in CLUnitArgument.h
+ * See note in CLArgument.h
  */
-void CLUnitArgument::makePersistent( CLContext &context )
+void CLArgument::makePersistent( CLContext &context )
 {
 	myBuffer = cl::Buffer(
 		context.getContext(),
@@ -176,7 +176,7 @@ void CLUnitArgument::makePersistent( CLContext &context )
 	myBufferInitialized = true;
 }
 
-void CLUnitArgument::copyFromDevice( cl::CommandQueue &queue )
+void CLArgument::copyFromDevice( cl::CommandQueue &queue )
 {
 	assert( myBufferInitialized );
 
@@ -195,7 +195,7 @@ void CLUnitArgument::copyFromDevice( cl::CommandQueue &queue )
 	);
 }
 
-bool CLUnitArgument::isArray()
+bool CLArgument::isArray()
 {
 	return myIsArray;
 }

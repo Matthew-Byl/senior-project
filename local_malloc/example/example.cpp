@@ -20,12 +20,12 @@ int main ( int argc, char *argv[] )
 	CLKernel function_sum( "function_sum", rewritten_src );
 	cl_int range_start = 20;
 	cl_int host_sum;
-	CLUnitArgument sum( &host_sum, 1 );
+	CLArgument sum( &host_sum, 1 );
 
 	function_sum.setGlobalDimensions( 256 );
 	function_sum.setLocalDimensions( 256 );
 	
-	vector<CLUnitArgument> args;
+	vector<CLArgument> args;
 	args.push_back( range_start );
 	args.push_back( sum );
 	function_sum( args );

@@ -3,8 +3,6 @@
 #include <fstream>
 #include <string>
 
-//#include <google/profiler.h>
-
 using namespace std;
 
 CLRenderer::CLRenderer( 
@@ -31,10 +29,10 @@ void CLRenderer::render(
 {
 	size_t pixel_buffer_size = myWidth * myHeight * 4;
 
-	CLUnitArgument world_arg( "Object", world, num_objects, true, false );
-	CLUnitArgument lights_arg( "Light", lights, num_lights, true, false );
+	CLArgument world_arg( "Object", world, num_objects, true, false );
+	CLArgument lights_arg( "Light", lights, num_lights, true, false );
 
-	vector<CLUnitArgument> args;
+	vector<CLArgument> args;
 	args.push_back( pixbuf_arg );
 	args.push_back( world_arg );
 	args.push_back( lights_arg );
