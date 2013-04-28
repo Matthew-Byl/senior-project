@@ -202,9 +202,9 @@ The raytracer is able to render a 700x700 pixel test scene with 1000 spheres and
 \end{figure}
 
 \subsection{Discarding Frames}
-The sliders generate GTK+ events, which are processed in callback functions like \texttt{motion\_notify()}. These callbacks call \texttt{run\_kernel()}, which renders the frame. This blocks the main program thread, but mouse drag events on the image still get queued. The effect is that the program can get more and more behind when rendering frames if events are added faster than frames can be rendered. This makes the raytracer feel unresponsive.
+Moving the light source or camera generates GTK+ events, which are processed in callback functions like \texttt{motion\_notify()}. These callbacks call \texttt{run\_kernel()}, which renders the frame on the GPU. This blocks the main program thread, but mouse drag events on the image still get queued. The effect is that the program can get more and more behind when rendering frames if events that render frames are added to the queue faster than frames can be rendered. This makes the raytracer feel unresponsive.
 
-To prevent this from happening, after rendering a frame, the callbacks discard all the events on the GTK+ event queue that could cause a new frame to be rendered. This is done by having an \texttt{in\_handler} flag that is set when a callback that is rendering a frame is running. All callbacks that can render a frame check to see if \texttt{in\_handler} is set, and if so, return without rendering the frame. Immediately after rendering a frame, a callback runs this loop:
+To prevent this from happening, after rendering a frame, the callbacks discard all the intermediate events on the GTK+ event queue that could cause a new frame to be rendered. This is done by having an \texttt{in\_handler} flag that is set when a callback that is rendering a frame is running. All callbacks that can render a frame check to see if \texttt{in\_handler} is set, and if so, return without rendering the frame. Immediately after rendering a frame, a callback runs this loop:
 
 \begin{lstlisting}
 while ( gtk_events_pending() )
@@ -218,73 +218,85 @@ This causes all the queued GTK+ events to be processed; because the \texttt{in\_
 This part of the project implemented a minimax player for the Mankalah game introduced in CS 212. Minimax is a much harder algorithm to implement on a GPU than a raytracer, because the minimax tree has dependencies between nodes, and the parallelism is less obvious.
 
 \subsection{Strategy}
-Following previous work on another minimax player implemented in CUDA\cite{rockisuda10}, the minimax tree is broken up into layers. On the CPU, the first layers of game boards in the minimax tree are computed and the bottom-level leaf nodes of that tree are put into a C++ vector. The boards in the vector are copied over to the GPU, where 4 more levels of minimax are computed. Because the Mankalah minimax tree has a branching factor of 6, the overwhelming majority of the work is done in the bottom 4 levels of the tree (see figure \ref{fig:minimaxdiagram}).
+Following previous work on another minimax player implemented in CUDA\cite{rockisuda10}, the minimax tree is broken up into layers. (See figure \ref{fig:mankalahdepths}.) This implementation has 3. There are two layers of minimax computed sequentially on the CPU. The leaf nodes of the first layer serve as inputs for the second layer. The bottom-level leaf nodes of the second layer are copied over to the GPU, where 4 more levels of minimax are computed in parallel. Because the Mankalah minimax tree has a branching factor of 6, the overwhelming majority of the work is done in the bottom 4 levels of the tree.
 
 \begin{figure}[ht!]
 \centering
-\includegraphics[width=50mm]{minimax-diagram.png}
-\caption{Sequential and parallel segements of minimax tree, taken from Rocki and Suda\cite{rockisuda10}.}
-\label{fig:minimaxdiagram}
+\includegraphics[width=120mm]{mankalah-depths.png}
+\caption{An example of how a minimax tree of depth 14 would be built out of the two sequential layers and one parallel layer of minimax.}
+\label{fig:mankalahdepths}
 \end{figure}
 
 The algorithm run on the GPU for evaluating the bottom layers of the minimax tree is as follows:
 
 \subsubsection{Generating boards}
-In this step, the game boards that represent the game tree for the next number of moves are generated from the start board. The tree is stored in global memory in an array, where the child of the node stored at location n in the array is at location 6n + 1. This can be computed in O(log(n)) time with $n^{d}$ threads, by having the first thread compute the first node, 6 threads compute the first level of child nodes, 36 threads compute the second level, and so on.
+In this step, the game boards that represent the game tree for the next number of moves are generated from the start board. The tree is stored in \texttt{\_\_local} memory in an array, where the child of the node stored at location n in the array is at location 6n + 1, as the minimax tree for Mankalah has a branching factor of 6. This can be computed in O(log(n)) time with $b^{d}$ threads (see figure \ref{fig:mankalahterms}), by having the first thread generate the first node, 6 threads generate the first level of child nodes, 36 threads generate the second level, and so on.
 
 \subsubsection{Evaluating boards}
-In the standard minimax algorithm, the evaluate function needs to be computed only for boards at the leaf nodes of the game tree. Because all threads execute the same instruction counter, however, it is not slower to run the function on all the generated boards. This saves time in a later step, as should the game end at a stage before the bottom level of the minimax tree, the board is already evaluated.
+In the standard minimax algorithm, the evaluate function needs to be computed only for boards that are leaf nodes of the game tree. Because all threads execute the same instruction counter, however, it is not slower to run the function on all the generated boards. This saves time in the next step, as should the game end at a stage before the bottom level of the minimax tree, the board is already evaluated.
 
 \subsubsection{Minimax}
-The minimax scores at a node can be computed in O(log(n),n) time by using $n^{d-1}$ threads to compute the minimax values for the nodes one level above the leaf nodes, $n^{d-2}$ threads to compute the minimax values for the nodes 2 levels about the leaf nodes, and so on. After this process, the parent node for the game tree stores the minimax value for the tree.
+The minimax scores at a node can be computed in $O(log(n),b^{d})$ time by using $b^{d-1}$ threads to compute the minimax values for the nodes one level above the leaf nodes, $b^{d-2}$ threads to compute the minimax values for the nodes 2 levels about the leaf nodes, and so on. After this process, the parent node for the game tree stores the minimax value for the tree.
+
+\begin{figure}[ht!]
+\centering
+\includegraphics[width=70mm]{mankalah-terms.png}
+\caption{An example of how a minimax tree of depth 14 would be built out of the two sequential layers and one parallel layer of minimax.}
+\label{fig:mankalahterms}
+\end{figure}
 
 \subsubsection{Limitations}
-Because the boards are stored in local memory, and there are sequential dependencies between these steps, all threads for one of these minimax trees must be in the same workgroup. On the Radeon 7970, the maximum work group size is 256. Therefore, for Kalah, with a branching factor of 6, a minimax tree of 4 levels ($6^0 + 6^1 + 6^2 + 6^3 = 259$ nodes) was used, with a workgroup size of $6^3 = 216$. Since there were more nodes in the tree than threads in the workgroup, some threads had to evaluate 2 boards.
+Because the boards are stored in local memory, and there is sequential dependency between the 3 steps of the algorithm, all threads for one of these minimax trees must be in the same workgroup. On the Radeon 7970, the maximum work group size is 256. Therefore, for Kalah, with a branching factor of 6, a minimax tree of 4 levels ($6^0 + 6^1 + 6^2 + 6^3 = 259$ nodes) was used, with a workgroup size of $6^3 = 216$.
+
+Since there were more nodes in the tree than threads in the workgroup, some threads had to evaluate 2 boards. This was judged to be a better design than using a tree of depth 3 (where no thread would have to evaluate 2 boards), because each workgroup could do 6 times as much work in the tree-based stages with one additional step, while the cost of running the evaluate function is relatively small. As well, on the Radeon 7970, threads are scheduled on the hardware in multiples of 64 (see the AMD documentation\cite{amdapp}, pg. 5-21), so a tree of depth 4 has $256 - 216 = 40$ unused threads per workgroup (16\%), whereas a tree of depth 3 has $64 - 43 = 21$ unused threads per workgroup (32\%).
 
 \subsection{Increasing Search Depth}
-Because of memory bottlenecks, there is a limit to how many GPU minimax instances can be dispatched efficiently. On the test system, 10 levels of sequential minimax was optimal for performance. As well, as Rocki and Suda\cite{rockisuda10} noted, the search tree has to be traversed twice at this level, once to determine what the leaf nodes are, and second to run the minimax reduction on the nodes.
+Because of memory bottlenecks, there is a limit to how many GPU minimax instances can be dispatched efficiently at one time. On the test system, 10 levels of sequential minimax was optimal for performance. As well, as Rocki and Suda\cite{rockisuda10} noted, the search tree has to be traversed twice at this level, once to determine what the leaf nodes are, and second to run the minimax reduction on the nodes after the parallel level has run.
 
-Therefore, to gain more search depth, another level of sequential minimax was run above this first round of sequential minimax. Adding more levels at the topmost level of minimax increased the depth of the search but not the number of GPU instances dispatched at one time. Only one traversal of the search tree is necessary at this step.
+Therefore, to gain more search depth, another level of sequential minimax was run above this first round of sequential minimax. Adding more levels at the topmost level of minimax increased the depth of the search tree but not the number of GPU instances dispatched at one time. Only one traversal of the search tree is necessary inside this layer.
 
 \subsection{Performance}
 \subsubsection{Optimal Sequential Depth}
-One optimization question is for a minimax tree of a given depth how many levels shuld be computed in each of the 3 minimax stages. The GPU portion is fixed at 4 levels, so the distribution needs to be between the two sequential minimax stages. On the test system, the optimal allocation was to do 10 levels on the CPU before moving the boards to the GPU.
+One optimization question is for a minimax tree of a given depth how many levels shuld be computed in each of the 3 minimax stages. The GPU portion is fixed at 4 levels, so the distribution needs to be between the two sequential minimax stages. On the test system, the optimal allocation was to do 10 levels on the second sequential level before moving the boards to the GPU. This was determined by timing tests on different distributions of depths between the the first and second sequential levels.
 
 \subsubsection{Speedup}
-A recursive sequential algorithm was implemented for performance comparisons. As the table below demonstrates, the using the GPU yielded about a 10x speedup once the problem became sufficiently large. A 10x performance increase for a game with a branching factor of 6 means that the player can look another move ahead in the game.
+A recursive sequential algorithm was implemented for performance comparisons. As the table below demonstrates, the using the GPU yielded about a 10x speedup once the problem became sufficiently large. A 10x performance increase for a game with a branching factor of 6 means that the minimax player can look about one more move ahead in the game in the same amount of time. This table compares the wall-clock time to run a minimax search of a given depth using the sequential CPU implementation and the 3-level OpenCL parallel algorithm.
 
-\begin{tabular}{| l | l | l | l | l |}
+\begin{tabular}{| l | l | l | l |}
   \hline
-  Depth & Sequential (s) & CPU OpenCL (s) & GPU OpenCL (s) & Speedup\\
+  Depth & Sequential (s) & GPU OpenCL (s) & Speedup\\
   \hline
-  4 & 0.000068 & 0.000656 & 0.000919 & 0.07x \\
-  5 & 0.000343 & 0.008957 & 0.000907 & 0.37x \\
-  6 & 0.001658 & 0.004544 & 0.001054 & 1.57x \\
-  7 & 0.008301 & 0.023702 & 0.001382 & 6.00x \\
-  8 & 0.040561 & 0.102351 & 0.005487 & 7.39x \\
-  9 & 0.203477 & 0.516266 & 0.021644 & 9.40x \\
-  10 & 0.980497 & 2.61265 & 0.1048 & 9.35x \\
-  11 & 4.80143 & 11.0873 & 0.438745 & 10.9x \\
-  12 & 23.4349 & 60.0211 & 2.23596 & 10.5x \\
-  13 & 113.512 & 231.792 & 9.41622 & 12.1x \\
+  4 & 0.000068 & 0.000919 & 0.07x \\
+  5 & 0.000343 & 0.000907 & 0.37x \\
+  6 & 0.001658 & 0.001054 & 1.57x \\
+  7 & 0.008301 & 0.001382 & 6.00x \\
+  8 & 0.040561 & 0.005487 & 7.39x \\
+  9 & 0.203477 & 0.021644 & 9.40x \\
+  10 & 0.980497 & 0.1048 & 9.35x \\
+  11 & 4.80143 & 0.438745 & 10.9x \\
+  12 & 23.4349 & 2.23596 & 10.5x \\
+  13 & 113.512 & 9.41622 & 12.1x \\
   \hline
 \end{tabular}
-Since minimax is an embarrasingly parallel problem, a parallel CPU implementation should be able to achieve a speed of $\frac{sequential}{\# cores}$. Since the OpenCL parallel implementation was worse on the CPU than the sequential implementation, which itself can be sped up 4 times on the test system, this illustrates how algorithms tuned for GPUs are very different than ones tuned for CPUs.
+
+Since minimax is an embarrasingly parallel problem, a parallel CPU implementation should be able to achieve a speed of $\frac{sequential}{\# cores}$, or 8x on the test system. The GPU was able to best that.
+
+The time it took to run the OpenCL parallel implementation on the CPU was also measured. It took several times longer to run than the sequential algorithm. This demonstrates how optimizing algorithms for CPUs and GPUs requires completely different assumptions, even if OpenCL is able to run the same code on both.
 
 \subsection{Testing}
-Along with testing of each of the GPU minimax algorithm's components, I used fuzz testing to ensure that the output of the GPU minimax algorithm was the same as the output of the sequential CPU minimax implementation. This was done by generating random valid boards then running both algorithms on them and comparing the output.
+Along with testing of each of the GPU minimax algorithm's components, I used fuzz testing to ensure that the output of the GPU minimax algorithm was the same as the output of the sequential CPU minimax implementation. This was done by generating random valid boards then running the sequential and GPU OpenCL algorithms on them and comparing their output.
 
 \subsection{Sharing Code Between Host and Device}
-In order to avoid code duplication for the logic for Mankalah boards, the code in \texttt{board.c} and a few other files is used both on the host and device side. To consolidate all a kernel's dependencies into one file, I used the preprocessor to \texttt{\#include} many \texttt{.c} files into one source file. I have tried consistently use the extension \texttt{.cl.in} for OpenCL source files that need to be preprocessed before they will compile.
+In order to avoid code duplication for the Mankalah board logic, the code in \texttt{board.c} and a few other files is used both on the host and device side. To consolidate all a kernel's dependencies into one file, I used the preprocessor to \texttt{\#include} many \texttt{.c} files into one source file. I have tried consistently use the extension \texttt{.cl.in} for OpenCL source files that need to be preprocessed before they will compile.
 
-For data structures passed between the host and device, a shared header file can be used. However, it is important to ensure that the layout of the structures are exactly the same. Notably, fundamental times like an \texttt{int} on the device side is not guaranteed to be the same size as an \texttt{int} on the host side. OpenCL provides types on the host prefaced with \texttt{cl\_} that are guaranteed to be the same size as the type without the prefix on the client side (for an \texttt{int} on the device side, a \texttt{cl\_int} is necessary on the host side). I used preprocessor macros to use the correct types depending on where code is compiled.
+For data structures passed between the host and device, a shared header file can be used. However, it is important to ensure that the layout of the structures are exactly the same. Notably, fundamental types like \texttt{int} on the device side are not guaranteed to be the same size as \texttt{int} on the host side. OpenCL provides types on the host prefaced with \texttt{cl\_} that are guaranteed to be the same size as the type without the prefix on the client side (for an \texttt{int} on the device side, a \texttt{cl\_int} is necessary on the host side). I used preprocessor macros to use the correct names for the types depending on where the shared code is compiled.
 
 \subsection{Tree Structures in OpenCL}
-Because there is no dynamic memory allocation in OpenCL, I have stored all trees in arrays. It is common to store binary trees in arrays, where the first child of the node at location $n$ is at location $2n$, and the second at $2n + 1$. This can be generalized to trees of other branching factors. Support functions for this data structure can be found in \texttt{kalah/tree\_array.c}.
+Because there is no dynamic memory allocation in OpenCL, I have stored all trees in arrays. It is common to store binary trees in arrays, where the first child of the node at index $n$ is at index $2n$, and the second at $2n + 1$. This can be generalized to trees of other branching factors. Support functions for this data structure can be found in \texttt{kalah/tree\_array.c}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Economics Simulation}
-As a larger, more complex problem, I worked on implementing a GPU version of an economics simulation used for research in Calvin's economics department.\cite{ditta13} The simulation already exists in Python, but it takes on the order of weeks to run. The simulation consists of a number of agents, which each hold a number of resources, that can harvest resources, invent machines to make harvesting resources more efficent, and trade resources and machines with each other.
+As a larger, more complex problem, I worked on implementing a GPU version of an economics simulation used for research in Calvin's economics department.\cite{ditta13} The simulation already exists in Python, but it takes on the order of weeks to run, making it a good candidate for technology to speed it up. The simulation consists of a number of agents, which each hold a number of resources, that can harvest resources, invent machines to make harvesting resources more efficent, and trade resources and machines with each other.
 
 This problem has promise for a speedup with a GPU's massive parallelism. Each of the agents in the simulation is largely independent, and most of the decisions that agents have to make need to evaluate the relative worth of their resources. Therefore, there is a natural mapping of one hardware thread to one resource, with each agent mapped to its own workgroup.
 
@@ -362,7 +374,7 @@ An example program using \texttt{local\_malloc()} is in \texttt{local\_malloc/ex
 \section{Conclusions}
 OpenCL was difficult to work with, and the limitations it imposed made it difficult to do otherwise-simple tasks like find minimum values in an array. There is a long way to go before GPUs are accessible to non-specialist developers with OpenCL. OpenACC, which is built into a C/C++ compiler and uses \texttt{\#pragma} similar to OpenMP is a promising route. However, I do not think OpenACC would have reduced the complexity of writing larger applications like the Societies simulation. The framework was successful at making OpenCL easier to use on the host side, but the OpenCL language created complexity on the device side. More device-side language features, like \texttt{local\_malloc()} would better serve to make the GPU easier to use than more host-side improvements.
 
-The Mankalah player and Societies simulation were excellent exercises at designing data-parallel algorithms to solve problems that are not obviously data-parallel. Because of the performance and power benefits of data-parallel architectures, the kind of thinking needed to design these algorithms will only become more relevant. The Mankalah player was also a useful exercise at designing an application that made use of the strengths of all the parts of a heterogeneous architecture. 
+The Mankalah player and Societies simulation were excellent exercises at designing data-parallel algorithms to solve problems that are not obviously data-parallel. Because of the performance and power benefits of data-parallel architectures, the kind of thinking needed to design these algorithms will only become more relevant. These are the only applications I know of that treat the GPU as a nearly general-purpose architecture, where most of an application can be hosted, instead of only offloading computation-intensive fragments of an application to it. The Mankalah player was also a useful exercise at designing an application that made use of the strengths of all the parts of a heterogeneous architecture. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Future Work}
