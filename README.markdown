@@ -11,6 +11,10 @@ Building
 --------
 The top-level Makefile will build cl_test, kalah, and the raytracer.
 
+There are references to the OpenCL library and include paths in most Makefiles. You will need to edit these if you are not using the AMD APP SDK on 64-bit Linux.
+
+The Makefiles use Clang (clang++) as the default C++ compiler. If Clang is not installed, this will need to be changed to use GCC (g++).
+
 Dependencies
 ------------
 * cl_test: OpenCL 1.1 or 1.2
