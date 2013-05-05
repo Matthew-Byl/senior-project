@@ -16,6 +16,9 @@ int main ( int argc, char *argv[] )
 	LocalMallocRewriter rewriter( src );
 	string rewritten_src = rewriter.rewrite( "function_sum" );
 
+	cout << "Rewritten source code: " << endl;
+	cout << rewritten_src << endl;
+
 	// Run the kernel.
 	CLKernel function_sum( "function_sum", rewritten_src );
 	cl_int range_start = 20;

@@ -11,7 +11,14 @@
 
 int function( int i )
 {
-	return i * 2;
+	int ret;
+
+	__local int *useless_ptr = local_malloc( SIZEOF_INT );
+	*useless_ptr = i * 2;
+	ret = *useless_ptr;
+	local_free( SIZEOF_INT );
+
+	return ret;
 }
 
 __kernel
@@ -23,11 +30,11 @@ function_sum(
 {
 	size_t num_threads = get_local_size( 0 );
 	size_t local_id = get_local_id( 0 );
-	__local int minimum;
+	__local int local_sum;
 
-	// Initialize the minimum value.
+	// Initialize the sum.
 	if ( local_id == 0 )
-		minimum = 32768;
+		local_sum = 0;
 	barrier( CLK_LOCAL_MEM_FENCE );
 
 	// Allocate scratch __local memory.
@@ -37,14 +44,12 @@ function_sum(
 	values[local_id] = function( *range_start + local_id );
 
 	// Find the sum using atomics.
-	atomic_add( &minimum, values[local_id] );
+	atomic_add( &local_sum, values[local_id] );
 
 	// Free scratch memory.
 	local_free( NUM_THREADS * SIZEOF_INT );
 	
 	// Copy the result to global memory.
 	if ( local_id == 0 )
-		*sum = minimum;
+		*sum = local_sum;
 }
-
-/// @todo: find something less stupid to do.

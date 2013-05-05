@@ -61,7 +61,7 @@ Together, these components fulfill the objectives set foward in my proposal of m
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{OpenCL Overview}
-OpenCL is an API for compiling and executing code on heterogeneous systems (systems with more than one architecture). The most common scenario is running code on a GPU, but OpenCL backends have been written for other types of accelerator cards, such as Intel's Xeon Phi, as wellas devices like dynamically-generated FPGAs. nVidia has a similar API for running code on GPUs called CUDA, but CUDA only supports nVidia GPUs.
+OpenCL is an API for compiling and executing code on heterogeneous systems (systems with more than one architecture). The most common scenario is running code on a GPU, but OpenCL backends have been written for other types of accelerator cards, such as Intel's Xeon Phi, as well as devices like dynamically-generated FPGAs. nVidia has a similar API for running code on GPUs called CUDA, but CUDA only supports nVidia GPUs.
 
 % TODO: cite OpenCL spec?
 
@@ -71,7 +71,7 @@ In OpenCL, there is a strict separation between the host side and the device sid
 \subsection{Threads and Workgroups}
 An OpenCL kernel describes what a single hardware thread will do. GPU architectures have hundreds of hardware threads executing in parallel, and threads must be scheduled in groups (typically mutiples of 64). This means that efficient algorithms for GPUs will use many hardware threads. This constrasts with the way threads are used on CPUs, where spawning a thread can be an expensive operation.
 
-Threads are grouped into ``workgroups'', which are limited by the hardware to 256 or 1024 threads. OpenCL organizes the threads in a workgroup into up to 3 dimensions. Threads within a workgroup are able to synchronize with each other to avoid race conditions and nondeterministic behaviour, whereas threads in different workgroups have no way to do any synchronization. Therefore, programming for OpenCL typically requires splitting a problem into blocks of the appropriate size for processing by a single workgroup.
+Threads are grouped into ``workgroups'', which are limited by the hardware to typically 256 or 1024 threads. OpenCL organizes the threads in a workgroup into up to 3 dimensions. Threads within a workgroup are able to synchronize with each other to avoid race conditions and nondeterministic behaviour, whereas threads in different workgroups have no way to do any synchronization. Therefore, programming for OpenCL typically requires splitting a problem into blocks of the appropriate size for processing by a single workgroup.
 
 \subsection{Memory Spaces}
 CPUs are able to automatically manage a memory hiearchy, because the small number of threads access relatively few new memory locations per cycle. On a data-parallel architecture like a GPU, the thousands of threads can pull in massive amounts of data per cycle, making caching impossible. Therefore, the burden is shifted to the programmer to organize which data should be stored in which levels of the memory hiearchy.
@@ -99,10 +99,10 @@ As of the AMD APP SDK 2.8, for AMD GPUs \texttt{printf()} only reliably works wh
 
 %%%%%%%%%%%%%%%%%%%%%%%
 \section{OpenCL Framework}
-OpenCL is designed to be flexible, but this means that it is unwieldly for developers to use. The simplest OpenCL program that runs code on a GPU is on the order of 50 lines long. The framework is an attempt at making OpenCL kernel calls syntactially as similar as possible to calling a C++ function or method.
+OpenCL is designed to be flexible, but this means that it is unwieldly for developers to use. The simplest OpenCL program that runs code on a GPU is on the order of 20 lines of boilerplate long. The framework is an attempt at making OpenCL kernel calls syntactially as similar as possible to calling a C++ function or method.
 
 \subsection{Functions vs. Kernels}
-OpenCL kernels, code to run on the device side, are marked with the \texttt{\_\_kernel} keyword in an OpenCL C source file. This framework wraps around OpenCL's native host side API by defining the CLKernel class, making it simpler to compile kernels, pass parameters to them, and set the local and global workgroup size of the kernel.
+OpenCL kernels, code that runs on the device side, are marked with the \texttt{\_\_kernel} keyword in an OpenCL C source file. This framework wraps around OpenCL's native host side API by defining the CLKernel class, making it simpler to compile kernels, pass parameters to them, and set the local and global workgroup size of the kernel.
 
 OpenCL does not support directly running functions that are not marked as kernels on the device. However, these functions need some way to be tested. The \texttt{CLFunction} class in the framework removes OpenCL's limitation. A kernel to call the function is automatically generated on the host at compile-time, and that kernel is inserted into the source file passed to OpenCL. \texttt{CLFunction} will run the function on one hardware thread on the device.
 
@@ -236,8 +236,8 @@ Following previous work on another minimax player implemented in CUDA\cite{rocki
 
 \begin{figure}[ht!]
 \centering
-\includegraphics[width=150mm]{mankalah-depths.png}
-\caption{An example of how a minimax tree of depth 14 would be built out of the two sequential layers and one parallel layer of minimax.}
+\includegraphics[width=110mm]{mankalah-depths.png}
+\caption{An example of how a minimax tree of depth 16 would be built out of the two sequential layers and one parallel layer of minimax.}
 \label{fig:mankalahdepths}
 \end{figure}
 
@@ -260,7 +260,7 @@ The minimax scores at a node can be computed in $O(log(n),b^{d})$ time by using 
 \end{figure}
 
 \subsubsection{Limitations}
-Because the boards are stored in local memory, and there is sequential dependency between the 3 steps of the algorithm, all threads for one of these minimax trees must be in the same workgroup. On the Radeon 7970, the maximum work group size is 256. Therefore, for Kalah, with a branching factor of 6, a minimax tree of 4 levels ($6^0 + 6^1 + 6^2 + 6^3 = 259$ nodes) was used, with a workgroup size of $6^3 = 216$.
+Because the boards are stored in local memory, and there is sequential dependency between the 3 steps of the algorithm, all threads for one of these minimax trees must be in the same workgroup. On the Radeon 7970, the maximum work group size is 256. Therefore, for Kalah, with a branching factor of 6, a minimax tree of 4 levels ($6^0 + 6^1 + 6^2 + 6^3 = 259$ nodes) was used, with a workgroup size of $6^3 = 216$ threads.
 
 Since there were more nodes in the tree than threads in the workgroup, some threads had to evaluate 2 boards. This was judged to be a better design than using a tree of depth 3 (where no thread would have to evaluate 2 boards), because each workgroup could do 6 times as much work in the tree-based stages with one additional step, while the cost of running the evaluate function is relatively small. As well, on the Radeon 7970, threads are scheduled on the hardware in multiples of 64 (see the AMD documentation\cite{amdapp}, pg. 5-21), so a tree of depth 4 has $256 - 216 = 40$ unused threads per workgroup (16\%), whereas a tree of depth 3 has $64 - 43 = 21$ unused threads per workgroup (32\%).
 
@@ -324,14 +324,14 @@ The challenges implementing this phase were implementing the maximum and minimum
 \subsubsection{Array Maximum and Minimum}
 Several times in this simulation, I needed to find the maximum or minimum in an array without modifying the values in the array. The most efficient way to do this with at least 1 thread for every 2 elements is to build a max/min tree, since this allows the maximum or minimum to be found in O(log(n),n) time. Unfortunately, for an array with n elements, this requires a scratch array in scarce \texttt{\_\_local} memory of $\frac{n}{2}$ elements.
 
-The algorithm has two phases. In the first phase, $\frac{n}{2}$ threads each compare 2 elements of the original array, and put the largest in the scratch array. In the second phase, $\frac{n}{4}$ threads compare 2 elements of the scratch array, and put the maximum/minimum of the two values in the location of the first value. The second phase iterates, each time with half as many threads, until there is one value left, which is the minimum/maximum of the entire array.
+The algorithm has two phases. In the first phase, $\frac{n}{2}$ threads each compare 2 elements of the original array, and put the largest in the scratch array. In the second phase, $\frac{n}{4}$ threads compare 2 elements of the scratch array, and put the maximum/minimum of the two values in the location of the first value. The second phase iterates, each time with half as many threads, until there is one value left, which is the maximum/minimum of the entire array.
 
 The implementation of this algorithm is in \texttt{societies/util/max\_min.cl}. This implementation also includes the ability to pass in a mask array, which allows the algorithm to ignore certain values in the array. This permits using the algorithm multiple times to find sets of arbitary numbers of maximum/minimum elements in a given array. (See the \texttt{max\_n\_indices()} function.)
 
 \begin{figure}[ht!]
 \centering
 \includegraphics[width=70mm]{tree-maximum.png}
-\caption{Thread-comparison mappings for minimum/maximum algorithm}
+\caption{Thread to comparison mappings for maximum/minimum algorithm}
 \label{fig:treemaximum}
 \end{figure}
 
@@ -388,33 +388,142 @@ The tool registers hooks into Clang's AST processing methods, which are called a
 After all nodes in the AST have been visited, this call graph is guaranteed to have no cycles, because OpenCL does not support recursion. Therefore, in this call tree, the maximum amount of memory allocated by a function is the maximum amount allocated by any of a function's children plus any memory the function has allocated at the same time.
 
 \subsection{Phase 2: Program Rewriting}
-The tool then revisits all the nodes in the AST again, and rewrites function declarations and calls. To the kernel function, it inserts initialization code and allocates the \texttt{\_\_local} memory buffer at the size computed in the previous phase. The tool adds a state object to every function call and declaration, so that that state object is accessible anywhere in the program.
+The tool then revisits all the nodes in the AST and rewrites function declarations and calls. To the kernel function, it inserts initialization code and allocates a \texttt{\_\_local} memory buffer of the size computed in the previous phase. The tool adds a state object to every function call and declaration, so that that state object is accessible anywhere in the program.
+
+\subsubsection{Code Before Rewriting}
+\begin{lstlisting}
+#define SIZEOF_INT 4
+#define NUM_THREADS 256
+
+int function( int i )
+{
+    int ret;
+
+    __local int *useless_ptr = local_malloc( SIZEOF_INT );
+    *useless_ptr = i * 2;
+    ret = *useless_ptr;
+    local_free( SIZEOF_INT );
+
+    return ret;
+}
+
+__kernel
+void
+function_sum(
+    __global int *range_start,
+    __global int *sum
+)
+{
+    size_t num_threads = get_local_size( 0 );
+    size_t local_id = get_local_id( 0 );
+    __local int local_sum;
+
+    // Initialize the sum.
+    if ( local_id == 0 )
+        local_sum = 0;
+    barrier( CLK_LOCAL_MEM_FENCE );
+
+    // Allocate scratch __local memory.
+    __local int *values = local_malloc( NUM_THREADS * SIZEOF_INT );
+
+    // Run the function at our thread's location.
+    values[local_id] = function( *range_start + local_id );
+
+    // Find the sum using atomics.
+    atomic_add( &local_sum, values[local_id] );
+
+    // Free scratch memory.
+    local_free( NUM_THREADS * SIZEOF_INT );
+  
+    // Copy the result to global memory.
+    if ( local_id == 0 )
+        *sum = local_sum;
+}
+\end{lstlisting}
+
+\subsubsection{Code After Rewriting}
+\begin{lstlisting}
+/* Snip: embedded local_malloc implementation code */
+
+#define SIZEOF_INT 4
+#define NUM_THREADS 256
+
+int function( int i, LocalMallocState *__local_malloc_state )
+{
+    int ret;
+
+    __local int *useless_ptr = local_malloc( SIZEOF_INT, __local_malloc_state );
+    *useless_ptr = i * 2;
+    ret = *useless_ptr;
+    local_free( SIZEOF_INT, __local_malloc_state );
+
+    return ret;
+}
+
+__kernel
+void
+function_sum(
+    __global int *range_start,
+    __global int *sum
+)
+{
+    __local char __local_malloc_buffer[1028];
+    LocalMallocState __local_malloc_state_backing;
+    LocalMallocState *__local_malloc_state = &__local_malloc_state_backing;
+    local_malloc_init( __local_malloc_buffer, 1028, __local_malloc_state );
+
+    size_t num_threads = get_local_size( 0 );
+    size_t local_id = get_local_id( 0 );
+    __local int local_sum;
+
+    // Initialize the sum.
+    if ( local_id == 0 )
+        local_sum = 0;
+    barrier( CLK_LOCAL_MEM_FENCE );
+
+    // Allocate scratch __local memory.
+    __local int *values = local_malloc( NUM_THREADS * SIZEOF_INT, __local_malloc_state );
+
+    // Run the function at our thread's location.
+    values[local_id] = function( *range_start + local_id, __local_malloc_state );
+
+    // Find the sum using atomics.
+    atomic_add( &local_sum, values[local_id] );
+
+    // Free scratch memory.
+    local_free( NUM_THREADS * SIZEOF_INT, __local_malloc_state );
+
+    // Copy the result to global memory.
+    if ( local_id == 0 )
+        *sum = local_sum;
+}
+\end{lstlisting}
 
 \subsection{Including Runtime Code}
-The actual code for the \texttt{local\_malloc()} and \texttt{local\_free()} functions needs to be bundled with the rewritten code. One difficulty is that these functions have a different signature before and after rewriting (because the state object is added as a parameter). Also, OpenCL does not support including header files in its compiler. Therefore, the rewriter injects the needed run-time code at the beginning of the program, with the signatures of \texttt{local\_malloc()} and \texttt{local\_free()} as the programmer expects them defined as prototypes. These prototypes are visible only when a preprocessor macro is defined. This allows Clang to parse the code without errors. This code is left in after rewriting, but the preprocessor macro is no longer defined. This exposes the run-time signatures of \texttt{local\_malloc()} and \texttt{local\_free()} along with their code.
+The actual code for the \texttt{local\_malloc()} and \texttt{local\_free()} functions needs to be bundled with the rewritten code. One difficulty is that these functions have a different signature before and after rewriting (because the state object is added as a parameter). Also, OpenCL does not support including header files in its compiler. Therefore, the rewriter injects the needed run-time code at the beginning of the program, with the signatures of \texttt{local\_malloc()} and \texttt{local\_free()} as the programmer expects them defined as prototypes. These prototypes are visible only when a preprocessor macro is defined, which is defined for the first pass. This allows Clang to parse the code without errors. This code is left in after rewriting, but the preprocessor macro is no longer defined. This exposes the run-time signatures of \texttt{local\_malloc()} and \texttt{local\_free()} along with their code.
 
-I wrote a small tool that allowed me to embed this source code into the executable of the tool, which means that the tool does not need to find that source code file to be able to be used.
+I wrote a small tool that allowed me to embed the \texttt{local\_malloc()} support code into the executable of the tool, which means that the tool does not need to find a source code file at runtime.
 
 \subsection{Results}
-An example program using \texttt{local\_malloc()} is in \texttt{local\_malloc/example}. This example uses the rewriting tool tool to rewrite a kernel using \texttt{local\_malloc()}, then runs it using the OpenCL framework. This program only needed 9 lines devoted to rewriting the kernel and running it on an OpenCL device.
+An example program using \texttt{local\_malloc()} is in \texttt{local\_malloc/example}. This example uses the rewriting tool to rewrite a kernel using \texttt{local\_malloc()}, then runs it using the OpenCL framework. The overhead of using this tool to rewrite the program source code is only 2 lines.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusions}
-OpenCL was difficult to work with, and the limitations it imposed made it difficult to do otherwise-simple tasks like find minimum values in an array. There is a long way to go before GPUs are accessible to non-specialist developers with OpenCL. OpenACC, which is built into a C/C++ compiler and uses \texttt{\#pragma} similar to OpenMP is a promising route. However, I do not think OpenACC would have reduced the complexity of writing larger applications like the Societies simulation. The framework was successful at making OpenCL easier to use on the host side, but the OpenCL language created complexity on the device side. More device-side language features, like \texttt{local\_malloc()} would better serve to make the GPU easier to use than more host-side improvements.
+OpenCL was difficult to work with, and the limitations it imposed made it difficult to do otherwise-simple tasks like find minimum values in an array. There is a long way to go before GPUs are accessible to non-specialist developers with OpenCL. OpenACC, which is built into a C/C++ compiler and uses \texttt{\#pragma} directives similar to OpenMP, is a promising route. However, I do not think OpenACC would have reduced the complexity of writing larger applications like the Societies simulation. The framework I developed was successful at making OpenCL easier to use on the host side, but the OpenCL language created complexity on the device side. It is on the device side, rather than the host side, where the most work is needed, with tools along the lines of \texttt{local\_malloc()} in this project.
 
-The Mankalah player and Societies simulation were excellent exercises at designing data-parallel algorithms to solve problems that are not obviously data-parallel. Because of the performance and power benefits of data-parallel architectures, the kind of thinking needed to design these algorithms will only become more relevant. These are the only applications I know of that treat the GPU as a nearly general-purpose architecture, where most of an application can be hosted, instead of only offloading computation-intensive fragments of an application to it. The Mankalah player was also a useful exercise at designing an application that made use of the strengths of all the parts of a heterogeneous architecture. 
+The Mankalah player and Societies simulation were excellent exercises at designing data-parallel algorithms to solve problems that are not obviously data-parallel. Because of the performance and power benefits of data-parallel architectures, the kind of thinking needed to design these algorithms will only become more relevant. The Mankalah player was also a useful exercise at designing an application that made use of the strengths of all the parts of a heterogeneous architecture. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Future Work}
 Some kind of standard library for OpenCL kernels that could perform tasks like sorting arrays in \texttt{\_\_local} memory efficiently, generating pseudorandom numbers, or finding the minimum $n$ values in an array would make complex kernels much easier to write. In general, OpenCL's API encourages writing small kernels that do one thing, but this conflicts with GPU architecture where it is faster to keep data in \texttt{\_\_local} memory while a large kernel does a lot of processing work on it.
 
-There is a lot of space for programming languages to reduce the complexity of writing kernels. The \texttt{local\_malloc()} tool is an example, but the abstractions are able to go higher. OpenCL requires programming from the vantage point of an individual hardware thread, but the individual threads are usually coordinated into tasks, like finding the minimum in an array. Having separate languages or layers of abstraction for the thread-level versus task-level views of a kernel would be useful.
+There is space for adding layers of abstraction to the OpenCL C language. The most complex kernels I wrote involved lots of coordination across threads, like what was needed for the maximum/minimum or minimax algorithms. It would be more natural to program at the workgroup level rather than at the thread level for these kernels.
 
 \bibliographystyle{plain}
 \bibliography{final-report}
 
 %%% Begin Appendices
-\iffalse
+%\iffalse
 \appendix
 \section{Source Code Listings}
 
@@ -424,7 +533,7 @@ There is a lot of space for programming languages to reduce the complexity of wr
 \subsubsection*{Makefile}
 \lstinputlisting{../Makefile}
 
-\subsection*{cl\_test}
+\subsection{cl\_test}
 \subsubsection*{cl\_test/CLArgument.cpp}
 \lstinputlisting{../cl_test/CLArgument.cpp}
 
@@ -476,7 +585,7 @@ There is a lot of space for programming languages to reduce the complexity of wr
 \subsubsection*{cl\_test/README}
 \lstinputlisting{../cl_test/README}
 
-\subsection*{kalah}
+\subsection{kalah}
 \subsubsection*{kalah/board.c}
 \lstinputlisting{../kalah/board.c}
 
@@ -531,7 +640,7 @@ There is a lot of space for programming languages to reduce the complexity of wr
 \subsubsection*{kalah/types.h}
 \lstinputlisting{../kalah/types.h}
 
-\subsection*{local\_malloc}
+\subsection{local\_malloc}
 \subsubsection*{local\_malloc/AllocationAST.cpp}
 \lstinputlisting{../local_malloc/AllocationAST.cpp}
 
@@ -601,7 +710,7 @@ There is a lot of space for programming languages to reduce the complexity of wr
 \subsubsection*{local\_malloc/test2.cl}
 \lstinputlisting{../local_malloc/test2.cl}
 
-\subsection*{raytracer}
+\subsection{raytracer}
 \subsubsection*{raytracer/CLRenderer.cpp}
 \lstinputlisting{../raytracer/CLRenderer.cpp}
 
@@ -623,7 +732,7 @@ There is a lot of space for programming languages to reduce the complexity of wr
 \subsubsection*{raytracer/ui.cpp}
 \lstinputlisting{../raytracer/ui.cpp}
 
-\subsection*{societies}
+\subsection{societies}
 \subsubsection*{societies/1-resource-extraction/effort.cl}
 \lstinputlisting{../societies/1-resource-extraction/effort.cl}
 
@@ -761,5 +870,5 @@ There is a lot of space for programming languages to reduce the complexity of wr
 
 \subsubsection*{societies/util/types.h}
 \lstinputlisting{../societies/util/types.h}
-\fi
+%\fi
 \end{document}
