@@ -3,6 +3,9 @@
 \usepackage{graphicx}
 \usepackage{listings}
 \usepackage{url}
+
+\usepackage[margin=1.25in]{geometry}
+
 \begin{document}
 
 \lstset{ 
@@ -138,6 +141,14 @@ theKernel( arguments );
 
 The CLArgument class has constructors for many different types, which means that variables of those types can be passed into a CLKernel or a CLFunction without needing to explicitly create a CLArgument.
 
+% Class Diagram
+\begin{figure}[ht!]
+\centering
+\includegraphics[width=120mm]{class-diagram.png}
+\caption{Framework class diagram}
+\label{fig:classdiagram}
+\end{figure}
+
 \subsection{Other Features}
 I found I was often developing on my laptop, which does not have an OpenCL-supported GPU. The framework automatically falls back to using a CPU if there are no GPUs, so that programs will still run.
 
@@ -224,7 +235,7 @@ Following previous work on another minimax player implemented in CUDA\cite{rocki
 
 \begin{figure}[ht!]
 \centering
-\includegraphics[width=120mm]{mankalah-depths.png}
+\includegraphics[width=150mm]{mankalah-depths.png}
 \caption{An example of how a minimax tree of depth 14 would be built out of the two sequential layers and one parallel layer of minimax.}
 \label{fig:mankalahdepths}
 \end{figure}
@@ -242,8 +253,8 @@ The minimax scores at a node can be computed in $O(log(n),b^{d})$ time by using 
 
 \begin{figure}[ht!]
 \centering
-\includegraphics[width=70mm]{mankalah-terms.png}
-\caption{An example of how a minimax tree of depth 14 would be built out of the two sequential layers and one parallel layer of minimax.}
+\includegraphics[width=100mm]{mankalah-terms.png}
+\caption{Variable letter meanings}
 \label{fig:mankalahterms}
 \end{figure}
 
@@ -388,6 +399,7 @@ There is a lot of space for programming languages to reduce the complexity of wr
 \bibliography{final-report}
 
 %%% Begin Appendices
+\iffalse
 \appendix
 \section{Source Code Listings}
 
@@ -734,5 +746,5 @@ There is a lot of space for programming languages to reduce the complexity of wr
 
 \subsubsection*{societies/util/types.h}
 \lstinputlisting{../societies/util/types.h}
-
+\fi
 \end{document}
