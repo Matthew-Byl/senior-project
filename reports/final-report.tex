@@ -3,6 +3,7 @@
 \usepackage{graphicx}
 \usepackage{listings}
 \usepackage{url}
+\usepackage{hyperref}
 
 \usepackage[margin=1.25in]{geometry}
 
@@ -327,9 +328,12 @@ The algorithm has two phases. In the first phase, $\frac{n}{2}$ threads each com
 
 The implementation of this algorithm is in \texttt{societies/util/max\_min.cl}. This implementation also includes the ability to pass in a mask array, which allows the algorithm to ignore certain values in the array. This permits using the algorithm multiple times to find sets of arbitary numbers of maximum/minimum elements in a given array. (See the \texttt{max\_n\_indices()} function.)
 
-%%%%%%%%%%%%%%%%%%%%%%%%
-% DIAGRAM GOES HERE
-%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{figure}[ht!]
+\centering
+\includegraphics[width=70mm]{tree-maximum.png}
+\caption{Thread-comparison mappings for minimum/maximum algorithm}
+\label{fig:treemaximum}
+\end{figure}
 
 \subsubsection{Variable-length Arrays}
 There are cases where one thread needs to make a choice between different values on behalf of the workgroup. One implementation of this idiom can be found in \texttt{societies/util/choose\_thread.cl}, where several threads can register their ability to be chosen, then one thread randomly makes a choice between them. Since not all threads want to be chosen, there needs to be a data structure that can hold a variable number of elements and that all threads can add elements too.
