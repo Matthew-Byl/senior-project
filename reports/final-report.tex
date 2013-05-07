@@ -3,7 +3,7 @@
 \usepackage{graphicx}
 \usepackage{listings}
 \usepackage{url}
-\usepackage{hyperref}
+\usepackage[hidelinks]{hyperref}
 
 \usepackage[margin=1.25in]{geometry}
 
@@ -74,7 +74,7 @@ An OpenCL kernel describes what a single hardware thread will do. GPU architectu
 Threads are grouped into ``workgroups'', which are limited by the hardware to typically 256 or 1024 threads. OpenCL organizes the threads in a workgroup into up to 3 dimensions. Threads within a workgroup are able to synchronize with each other to avoid race conditions and nondeterministic behaviour, whereas threads in different workgroups have no way to do any synchronization. Therefore, programming for OpenCL typically requires splitting a problem into blocks of the appropriate size for processing by a single workgroup.
 
 \subsection{Memory Spaces}
-CPUs are able to automatically manage a memory hiearchy, because the small number of threads access relatively few new memory locations per cycle. On a data-parallel architecture like a GPU, the thousands of threads can pull in massive amounts of data per cycle, making caching impossible. Therefore, the burden is shifted to the programmer to organize which data should be stored in which levels of the memory hiearchy.
+CPUs are able to automatically manage a memory hierarchy, because the small number of threads access relatively few new memory locations per cycle. On a data-parallel architecture like a GPU, the thousands of threads can pull in massive amounts of data per cycle, making caching impossible. Therefore, the burden is shifted to the programmer to organize which data should be stored in which levels of the memory hierarchy.
 
 In OpenCL, video RAM is called \texttt{\_\_global} memory. There is a large amount of it (3GB on the Radeon 7970), but it requires several hundred cycles to access. Each workgroup can allocate an amount of much faster \texttt{\_\_local} memory as a cache or scratch space. A thread can store data in thread-specific, fast registers that are labeled \texttt{\_\_private} memory. In OpenCL, these are completely separate memory spaces; declarations of pointers have to include which memory space they are pointing into.
 
@@ -109,7 +109,7 @@ OpenCL does not support directly running functions that are not marked as kernel
 Some functions, particularly those that involve threads cooperating on a task with temporary data stored in \texttt{\_\_local} memory, cannot be called by \texttt{CLFunction}. One idiom I developed when testing these kinds of functions is to write a shim kernel that copies data into the correct memory space, calls the function to be tested, then copies the results back to \texttt{\_\_global} memory. This idiom uses \texttt{CLKernel} insead of \texttt{CLFunction}. \\ (See \texttt{societies/util/test/max\_min\_tester.cl.in} for an example.)
 
 \subsection{Usage}
-C++11 constructs allow a class to syntactically behave like a variadic function, by defining an overloaded () operator using a variadic template. At this time, compilers only partically support the features needed to make using variadic templates elegant. With C++11, a \texttt{CLKernel} or \texttt{CLFunction} can be called like this:
+C++11 constructs allow a class to syntactically behave like a variadic function, by defining an overloaded () operator using a variadic template. At this time, most compilers partially support the features needed to make using variadic templates elegant. With C++11, a \texttt{CLKernel} or \texttt{CLFunction} can be called like this:
 
 \begin{lstlisting}
 #include <CLKernel.h>
@@ -166,8 +166,8 @@ This causes undesired behaviour if a copy of an original \texttt{CLArgument} is 
 \begin{lstlisting}
 cl_float array[1024];
 CLArgument arrayArg( "float", array, 1024, false, false );
-someKernel( arrayArg ); // stores data into arrayArg, doesn't copy
-                        // data back to host.
+someKernel( arrayArg );      // stores data into arrayArg, doesn't copy
+                             // data back to host.
 someOtherKernel( arrayArg ); // reads data someKernel() stored.
 \end{lstlisting}
 
@@ -186,7 +186,7 @@ The raytracer has two geometric primitives: spheres and planes. Geometry can hav
 The lighting model takes into account ambient and diffuse lighting. There can be any number of diffuse light sources.
 
 \subsection{Limitations}
-Because OpenCL does not support recursion, reflective surfaces do not behave as they do in other raytracers. Reflective surfaces shoot a ray off the reflective surface, and that ray takes the colour of the first object it hits, taking into account only ambient lighting (see Figure \ref{fig:reflections}). Recursive raytracers are able to take into account other types of lighting from the reflected surface, and can simulate rays being reflected more than once. This is not possible with this OpenCL implementation, because it would involve a recursive call from the lighting function of the reflective object to the lighting function of the reflected object.
+Because OpenCL 1.2 does not support recursion, reflective surfaces do not behave as they do in other raytracers. Reflective surfaces shoot a ray off the reflective surface, and that ray takes the colour of the first object it hits, taking into account only ambient lighting (see Figure \ref{fig:reflections}). Recursive raytracers are able to take into account other types of lighting from the reflected surface, and can simulate rays being reflected more than once. This is not possible with this OpenCL implementation, because it would involve a recursive call from the lighting function of the reflective object to the lighting function of the reflected object.
 
 \begin{figure}[ht!]
 \centering
@@ -274,7 +274,7 @@ Therefore, to gain more search depth, another level of sequential minimax was ru
 One optimization question is for a minimax tree of a given depth how many levels shuld be computed in each of the 3 minimax stages. The GPU portion is fixed at 4 levels, so the distribution needs to be between the two sequential minimax stages. On the test system, the optimal allocation was to do 10 levels on the second sequential level before moving the boards to the GPU. This was determined by timing tests on different distributions of depths between the the first and second sequential levels.
 
 \subsubsection{Speedup}
-A recursive sequential algorithm was implemented for performance comparisons. As the table below demonstrates, the using the GPU yielded about a 10x speedup once the problem became sufficiently large. A 10x performance increase for a game with a branching factor of 6 means that the minimax player can look about one more move ahead in the game in the same amount of time. This table compares the wall-clock time to run a minimax search of a given depth using the sequential CPU implementation and the 3-level OpenCL parallel algorithm.
+A recursive sequential algorithm was implemented for performance comparisons. As the table below demonstrates, using the GPU yielded about a 10x speedup once the problem became sufficiently large. A 10x performance increase for a game with a branching factor of 6 means that the minimax player can look about one more move ahead in the game in the same amount of time. This table compares the wall-clock time to run a minimax search of a given depth using the sequential CPU implementation and the 3-level OpenCL parallel algorithm.
 
 \begin{tabular}{| l | l | l | l |}
   \hline
@@ -298,7 +298,7 @@ Since minimax is an embarrasingly parallel problem, a parallel CPU implementatio
 The time it took to run the OpenCL parallel implementation on the CPU was also measured. It took several times longer to run than the sequential algorithm. This demonstrates how optimizing algorithms for CPUs and GPUs requires completely different assumptions, even if OpenCL is able to run the same code on both.
 
 \subsection{Testing}
-Along with testing of each of the GPU minimax algorithm's components, I used fuzz testing to ensure that the output of the GPU minimax algorithm was the same as the output of the sequential CPU minimax implementation. This was done by generating random valid boards then running the sequential and GPU OpenCL algorithms on them and comparing their output.
+Along with unit testing each of the GPU minimax algorithm's components, I used fuzz testing to ensure that the output of the GPU minimax algorithm was the same as the output of the sequential CPU minimax implementation. This was done by generating random valid boards then running the sequential and GPU OpenCL algorithms on them and comparing their output.
 
 \subsection{Sharing Code Between Host and Device}
 In order to avoid code duplication for the Mankalah board logic, the code in \texttt{board.c} and a few other files is used both on the host and device side. To consolidate all a kernel's dependencies into one file, I used the preprocessor to \texttt{\#include} many \texttt{.c} files into one source file. I have tried consistently use the extension \texttt{.cl.in} for OpenCL source files that need to be preprocessed before they will compile.
@@ -500,7 +500,7 @@ function_sum(
 \end{lstlisting}
 
 \subsection{Including Runtime Code}
-The actual code for the \texttt{local\_malloc()} and \texttt{local\_free()} functions needs to be bundled with the rewritten code. One difficulty is that these functions have a different signature before and after rewriting (because the state object is added as a parameter). Also, OpenCL does not support including header files in its compiler. Therefore, the rewriter injects the needed run-time code at the beginning of the program, with the signatures of \texttt{local\_malloc()} and \texttt{local\_free()} as the programmer expects them defined as prototypes. These prototypes are visible only when a preprocessor macro is defined, which is defined for the first pass. This allows Clang to parse the code without errors. This code is left in after rewriting, but the preprocessor macro is no longer defined. This exposes the run-time signatures of \texttt{local\_malloc()} and \texttt{local\_free()} along with their code.
+The actual code for the \texttt{local\_malloc()} and \texttt{local\_free()} functions needs to be bundled with the rewritten code. One difficulty is that these functions have a different signature before and after rewriting (because the state object is added as a parameter). Also, OpenCL does not support including header files in its compiler. Therefore, the rewriter injects the needed run-time code at the beginning of the program, with the signatures of \texttt{local\_malloc()} and \texttt{local\_free()} as the programmer expects them defined as prototypes. These prototypes are visible only when a preprocessor macro is defined, which is defined during the first pass. This allows Clang to parse the code without errors. This code is left in after rewriting, but the preprocessor macro is no longer defined. This exposes the run-time signatures of \texttt{local\_malloc()} and \texttt{local\_free()} along with their code.
 
 I wrote a small tool that allowed me to embed the \texttt{local\_malloc()} support code into the executable of the tool, which means that the tool does not need to find a source code file at runtime.
 
